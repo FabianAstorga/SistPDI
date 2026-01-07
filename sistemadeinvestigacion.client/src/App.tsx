@@ -4,7 +4,6 @@ import viteLogo from '/vite.svg'
 import './App.css'
 import { Route, Routes, useNavigate } from 'react-router-dom'
 import React from 'react'
-
 import Login from './assets/Routes/Admin/login'
 
 function Home() {
@@ -22,7 +21,7 @@ function Home() {
       </div>
       <h1>Hola papus</h1>
       <div className="card">
-              <button onClick={() => navigate('/login')}>
+              <button onClick={() => navigate('/admin')}>
               <p>Mostrar Login</p>
             </button>
         <p>
@@ -40,7 +39,7 @@ function App() {
     return (
         <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />}></Route>
+            <Route path="/admin" element={<Login />}></Route>
         </Routes>
     )
 }
