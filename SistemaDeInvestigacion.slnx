@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="sistemadeinvestigacion.client/sistemadeinvestigacion.client.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+  <Project Path="SistemaDeInvestigacion.Server/SistemaDeInvestigacion.Server.csproj" />
+</Solution>
