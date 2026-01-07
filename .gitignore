@@ -1,3 +1,14 @@
 /SistemaDeInvestigacion.Server/obj/Debug
 /sistemadeinvestigacion.client/obj/Debug
 /.vs
+SistemaDeInvestigacion.Server/obj/project.assets.json
+SistemaDeInvestigacion.Server/obj/project.nuget.cache
+SistemaDeInvestigacion.Server/obj/Release/net10.0/.NETCoreApp,Version=v10.0.AssemblyAttributes.cs
+SistemaDeInvestigacion.Server/obj/Release/net10.0/SistemaDeInvestigacion.Server.AssemblyInfo.cs
+SistemaDeInvestigacion.Server/obj/Release/net10.0/SistemaDeInvestigacion.Server.AssemblyInfoInputs.cache
+SistemaDeInvestigacion.Server/obj/Release/net10.0/SistemaDeInvestigacion.Server.assets.cache
+SistemaDeInvestigacion.Server/obj/SistemaDeInvestigacion.Server.csproj.nuget.g.props
+SistemaDeInvestigacion.Server/obj/SistemaDeInvestigacion.Server.csproj.nuget.dgspec.json
+SistemaDeInvestigacion.Server/obj/Release/net10.0/SistemaDeInvestigacion.Server.GlobalUsings.g.cs
+SistemaDeInvestigacion.Server/obj/Release/net10.0/SistemaDeInvestigacion.Server.GeneratedMSBuildEditorConfig.editorconfig
+SistemaDeInvestigacion.Server/obj/Release/net10.0/SistemaDeInvestigacion.Server.csproj.AssemblyReference.cache
