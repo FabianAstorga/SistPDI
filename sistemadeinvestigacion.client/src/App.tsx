@@ -2,9 +2,13 @@ import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
+import { Route, Routes, useNavigate } from 'react-router-dom'
+import React from 'react'
 
-function App() {
-  const [count, setCount] = useState(0)
+import Login from './assets/Routes/Admin/login'
+
+function Home() {
+  const navigate = useNavigate()
 
   return (
     <>
@@ -16,11 +20,11 @@ function App() {
           <img src={reactLogo} className="logo react" alt="React logo" />
         </a>
       </div>
-      <h1>Vite + React</h1>
+      <h1>Hola papus</h1>
       <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
+              <button onClick={() => navigate('/login')}>
+              <p>Mostrar Login</p>
+            </button>
         <p>
           Edit <code>src/App.tsx</code> and save to test HMR
         </p>
@@ -32,4 +36,12 @@ function App() {
   )
 }
 
+function App() {
+    return (
+        <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />}></Route>
+        </Routes>
+    )
+}
 export default App
