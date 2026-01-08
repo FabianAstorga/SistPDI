@@ -6,7 +6,7 @@ Accept: application/json
 
 ###
 
-GET {{SistemaDeInvestigacion.Server_HostAddress}}/administrador/
+GET {{SistemaDeInvestigacion.Server_HostAddress}}/api/auth/login/
 Accept: application/json
 
 

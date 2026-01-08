@@ -19,7 +19,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto loginRequest)
         {
-            // Cambiado: _context.Users coincide con el DbSet definido en tu DbContext
             var usuarioEncontrado = await _context.Users
                                           .FirstOrDefaultAsync(u => u.Email == loginRequest.Email);
 
@@ -28,20 +27,17 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 return Unauthorized(new { Message = "Correo o contraseña incorrectos" });
             }
 
-            // Implementación de verificación con BCrypt
-            // Nota: Asegúrate de que en tu modelo 'User', la propiedad se llame 'Password'
-            bool passValida = BCrypt.Net.BCrypt.Verify(loginRequest.Password, usuarioEncontrado.Password);
-
-            if (!passValida)
-            {
-                return Unauthorized(new { Message = "Correo o contraseña incorrectos" });
-            }
+//            bool passValida = BCrypt.Net.BCrypt.Verify(loginRequest.Password, usuarioEncontrado.Password);
+//
+//            if (!passValida)
+//            {
+//                return Unauthorized(new { Message = "Correo o contraseña incorrectos" });
+//            }
 
             return Ok(new
             {
                 User = new
                 {
-                    // Ajustado a las propiedades Name y Email de tu modelo User
                     Name = usuarioEncontrado.Name,
                     Email = usuarioEncontrado.Email
                 }

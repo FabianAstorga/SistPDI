@@ -11,5 +11,9 @@
         "Action": "Start"
       }
     ]
+  },
+  {
+    "Name": "Nuevo perfil (1)",
+    "Projects": []
   }
 ]

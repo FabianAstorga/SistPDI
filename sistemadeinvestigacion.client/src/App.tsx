@@ -5,6 +5,7 @@ import './App.css'
 import { Route, Routes, useNavigate } from 'react-router-dom'
 import React from 'react'
 import Login from './assets/Routes/Admin/login'
+import Panel from './assets/Routes/Admin/panel'
 
 function Home() {
   const navigate = useNavigate()
@@ -40,6 +41,7 @@ function App() {
         <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/admin" element={<Login />}></Route>
+            <Route path="/panel" element={<Panel />}></Route>
         </Routes>
     )
 }
