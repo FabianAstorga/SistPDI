@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:5091/api';
+﻿const API_URL = 'http://localhost:5091/api';
 
 export const authService = {
 
@@ -12,7 +12,7 @@ export const authService = {
                 body: JSON.stringify({ email, password }),
             });
 
-            // Si el backend devuelve error (ej: 401), lanzamos excepci�n para que el catch la atrape
+            // Si el backend devuelve error (ej: 401), lanzamos excepción para que el catch la atrape
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.message || 'Error en las credenciales');
