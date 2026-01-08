@@ -22,7 +22,7 @@ function Home() {
       </div>
       <h1>Hola papus</h1>
       <div className="card">
-              <button onClick={() => navigate('/admin')}>
+              <button onClick={() => navigate('/login')}>
               <p>Mostrar Login</p>
             </button>
         <p>
@@ -38,11 +38,13 @@ function Home() {
 
 function App() {
     return (
-        <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/admin" element={<Login />}></Route>
-            <Route path="/panel" element={<Panel />}></Route>
-        </Routes>
+        
+            <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/login" element={<Login />}></Route>
+                <Route path="/panel" element={<Panel />}></Route>
+                </Routes>
+        
     )
 }
 export default App
