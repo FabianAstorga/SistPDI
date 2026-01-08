@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "Nuevo perfil",
+    "Projects": [
+      {
+        "Path": "SistemaDeInvestigacion.Server\\SistemaDeInvestigacion.Server.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "sistemadeinvestigacion.client\\sistemadeinvestigacion.client.esproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

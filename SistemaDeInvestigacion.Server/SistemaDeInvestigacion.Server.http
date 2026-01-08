@@ -3,4 +3,12 @@
 GET {{SistemaDeInvestigacion.Server_HostAddress}}/weatherforecast/
 Accept: application/json
 
+
 ###
+
+GET {{SistemaDeInvestigacion.Server_HostAddress}}/administrador/
+Accept: application/json
+
+
+###
+
