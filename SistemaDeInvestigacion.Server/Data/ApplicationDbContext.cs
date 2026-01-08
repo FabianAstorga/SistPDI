@@ -1,33 +1,39 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SistemaDeInvestigacion.Server.Models;
+
 namespace SistemaDeInvestigacion.Server.Data
 {
     public class ApplicationDbContext : DbContext
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-            : base(options)
-        {
-        }
-        public DbSet<Usuario> Usuarios { get; set; } = null!;
-        public DbSet<Institucion> Instituciones { get; set; } = null!;
-        public DbSet<SvgDocumento> SvgDocumentos { get; set; } = null!;
-        public DbSet<SvgCapa> SvgCapas { get; set; } = null!;
-        public DbSet<SvgCapaVersion> SvgCapaVersiones { get; set; } = null!;
-        public DbSet<SvgDocumentoRender> SvgDocumentoRenders { get; set; } = null!;
+            : base(options) { }
+
+        public DbSet<User> Users { get; set; } = null!;
+        public DbSet<Convenio> Convenios { get; set; } = null!;
+        public DbSet<SvgTemplate> SvgTemplates { get; set; } = null!;
+        public DbSet<Documento> Documentos { get; set; } = null!;
+        public DbSet<Contacto> Contactos { get; set; } = null!;
+        public DbSet<Objetivo> Objetivos { get; set; } = null!;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            modelBuilder.Entity<SvgCapaVersion>()
-                .HasIndex(v => new { v.CapaId, v.NumeroVersion })
-                .IsUnique()
-                .HasDatabaseName("uq_svg_capa_version_capa_numero");
-            modelBuilder.Entity<SvgCapa>()
-                .ToTable(t => t.HasCheckConstraint("chk_svg_capa_opacidad", "opacidad >= 0.0 AND opacidad <= 1.0"));
-            modelBuilder.Entity<SvgCapa>()
-                .HasOne<SvgCapaVersion>()
-                .WithMany()
-                .HasForeignKey(c => c.VersionActualId)
-                .OnDelete(DeleteBehavior.SetNull);
+
+            // Configuramos las relaciones uno a muchos de Convenios
+            modelBuilder.Entity<Convenio>()
+                .HasMany(c => c.Documentos)
+                .WithOne()
+                .HasForeignKey(d => d.ConvenioId);
+
+            modelBuilder.Entity<Convenio>()
+                .HasMany(c => c.Contactos)
+                .WithOne()
+                .HasForeignKey(co => co.ConvenioId);
+
+            modelBuilder.Entity<Convenio>()
+                .HasMany(c => c.Objetivos)
+                .WithOne()
+                .HasForeignKey(o => o.ConvenioId);
         }
     }
 }
