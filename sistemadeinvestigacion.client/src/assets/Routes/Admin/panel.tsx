@@ -1,42 +1,34 @@
 ﻿import React from 'react';
-// Corregido: 3 niveles arriba para llegar a la carpeta components
 import { Navbar } from '../../components/Navbar';
 
 function Panel() {
     return (
-        /* pt-16 añade el espacio necesario para que la Navbar fija no tape el contenido */
-        <div className="min-h-screen bg-gray-100 pt-16">
+        <div className="min-h-screen bg-gray-100 pt-24">
 
-            {/* 1. La Navbar (ahora es una Topbar fija) */}
             <Navbar />
 
-            {/* 2. Encabezado de la página */}
-            <header className="bg-white shadow">
-                <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                    <h1 className="text-3xl font-bold text-gray-900">
+            <header className="mb-6">
+                <div className="max-w-[95%] mx-auto px-4 sm:px-6 lg:px-8">
+                    <h1 className="text-3xl font-bold text-[#003366] border-b-4 border-[#FFCC00] inline-block pb-1">
                         Panel de Administración
                     </h1>
                 </div>
             </header>
 
-            {/* 3. Contenido Principal */}
-            <main>
-                <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <main className="max-w-[95%] mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="grid grid-cols-1 gap-6">
 
-                    {/* Contenedor tipo "Tarjeta" */}
-                    <div className="px-4 py-6 sm:px-0">
-                        <div className="bg-white overflow-hidden shadow rounded-lg min-h-[400px] p-6">
+                    <div className="bg-white overflow-hidden shadow-md rounded-xl p-8 border border-gray-200">
 
-                            <p className="text-xl text-gray-800 font-medium">
+                        
+
+                        <div className="space-y-4">
+                            <p className="text-xl text-gray-700 font-medium">
                                 Hola papus
                             </p>
-                            <p className="text-gray-500 mt-2">
-                                Bienvenido al sistema. Selecciona una opción del menú.
-                            </p>
-
                         </div>
-                    </div>
 
+                    </div>
                 </div>
             </main>
         </div>
