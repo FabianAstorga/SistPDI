@@ -9,8 +9,8 @@ namespace SistemaDeInvestigacion.Server.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-
         private readonly ApplicationDbContext _context;
+
         public AuthController(ApplicationDbContext context)
         {
             _context = context;
@@ -19,26 +19,30 @@ namespace SistemaDeInvestigacion.Server.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto loginRequest)
         {
-            var usuarioEncontrado = await _context.Usuarios
+            // Cambiado: _context.Users coincide con el DbSet definido en tu DbContext
+            var usuarioEncontrado = await _context.Users
                                           .FirstOrDefaultAsync(u => u.Email == loginRequest.Email);
+
             if (usuarioEncontrado == null)
             {
                 return Unauthorized(new { Message = "Correo o contraseña incorrectos" });
             }
 
-// Despues de implementar bcrypt
-//            bool passValida = BCrypt.Net.BCrypt.Verify(loginRequest.Password, usuarioEncontrado.Contraseña);
+            // Implementación de verificación con BCrypt
+            // Nota: Asegúrate de que en tu modelo 'User', la propiedad se llame 'Password'
+            bool passValida = BCrypt.Net.BCrypt.Verify(loginRequest.Password, usuarioEncontrado.Password);
 
-//            if (!passValida)
-//            {
-//                return Unauthorized(new { Message = "Correo o contraseña incorrectos" });
-//            }
+            if (!passValida)
+            {
+                return Unauthorized(new { Message = "Correo o contraseña incorrectos" });
+            }
 
             return Ok(new
             {
                 User = new
                 {
-                    Name = usuarioEncontrado.Nombre,
+                    // Ajustado a las propiedades Name y Email de tu modelo User
+                    Name = usuarioEncontrado.Name,
                     Email = usuarioEncontrado.Email
                 }
             });
