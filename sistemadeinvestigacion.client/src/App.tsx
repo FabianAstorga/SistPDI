@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
@@ -6,6 +6,7 @@ import { Route, Routes, useNavigate } from 'react-router-dom'
 import React from 'react'
 import Login from './assets/Routes/Admin/login'
 import Panel from './assets/Routes/Admin/panel'
+import Lienzo from './assets/Routes/Admin/lienzo'
 
 function Home() {
   const navigate = useNavigate()
@@ -42,6 +43,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />}></Route>
             <Route path="/panel" element={<Panel />}></Route>
+            <Route path="/lienzo" element={<Lienzo />} />
         </Routes>
     )
 }
