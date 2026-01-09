@@ -33,7 +33,7 @@ export const Navbar = () => {
                             alt="Logo PDI"
                         />
                         <span className="text-[#FFCC00] font-bold text-3xl tracking-tight">
-                            Sist Convenios
+                            Sistema de Acuerdos
                         </span>
                     </div>
 
