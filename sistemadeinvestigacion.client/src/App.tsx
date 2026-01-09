@@ -7,6 +7,7 @@ import React from 'react'
 import Login from './assets/Routes/Admin/login'
 import Panel from './assets/Routes/Admin/panel'
 import Lienzo from './assets/Routes/Admin/lienzo'
+import { RouteGuard } from './assets/Routes/Admin/RouteGuard'
 
 function Home() {
   const navigate = useNavigate()
@@ -42,8 +43,10 @@ function App() {
         <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />}></Route>
-            <Route path="/panel" element={<Panel />}></Route>
-            <Route path="/lienzo" element={<Lienzo />} />
+            <Route element={<RouteGuard />}>
+                <Route path="/panel" element={<Panel />} />
+                <Route path="/lienzo" element={<Lienzo />} />
+            </Route>
         </Routes>
     )
 }
