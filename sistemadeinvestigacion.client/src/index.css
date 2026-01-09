@@ -1,16 +1,46 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 
-/* Opcional: Si quieres forzar la fuente del sistema para que se vea moderno */
+/* 1. RESETEO TOTAL: Ocupamos toda la pantalla sin márgenes */
+#root {
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 2. CONFIGURACIÓN DEL BODY: Gris profesional y sin scroll global */
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #ffffff; /* Fondo blanco por defecto para Login/Home */
+    min-height: 100vh;
+    width: 100vw;
+    color: #000000; /* Texto negro por defecto */
+}
+
+/* 3. TIPOGRAFÍA Y BASE */
 :root {
     font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
     line-height: 1.5;
     font-weight: 400;
 }
 
-/* Importante: Aseguramos que el body ocupe todo, pero SIN centrar el contenido */
-body {
-    margin: 0;
-    padding: 0;
-    min-height: 100vh;
-    background-color: #f3f4f6; /* Un gris muy suave de fondo base (opcional) */
+/* Limpieza de estilos de logos para que no estorben en el layout */
+.logo {
+    height: 6em;
+    padding: 1.5em;
+    will-change: filter;
+    transition: filter 300ms;
 }
+
+    .logo:hover {
+        filter: drop-shadow(0 0 2em #646cffaa);
+    }
+
+    .logo.react:hover {
+        filter: drop-shadow(0 0 2em #61dafbaa);
+    }
