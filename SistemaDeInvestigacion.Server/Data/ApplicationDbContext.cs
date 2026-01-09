@@ -10,7 +10,7 @@ namespace SistemaDeInvestigacion.Server.Data
 
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<Convenio> Convenios { get; set; } = null!;
-        public DbSet<SvgTemplate> SvgTemplates { get; set; } = null!;
+        public DbSet<SvgFiles> SvgTemplates { get; set; } = null!;
         public DbSet<Documento> Documentos { get; set; } = null!;
         public DbSet<Contacto> Contactos { get; set; } = null!;
         public DbSet<Objetivo> Objetivos { get; set; } = null!;

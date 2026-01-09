@@ -17,13 +17,13 @@ namespace SistemaDeInvestigacion.Server.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<SvgTemplate>>> GetTemplates()
+        public async Task<ActionResult<IEnumerable<SvgFiles>>> GetTemplates()
         {
             return await _context.SvgTemplates.ToListAsync();
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<SvgTemplate>> GetTemplate(long id)
+        public async Task<ActionResult<SvgFiles>> GetTemplate(long id)
         {
             var template = await _context.SvgTemplates.FindAsync(id);
             if (template == null) return NotFound();
@@ -31,7 +31,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<SvgTemplate>> PostTemplate(SvgTemplate template)
+        public async Task<ActionResult<SvgFiles>> PostTemplate(SvgFiles template)
         {
             _context.SvgTemplates.Add(template);
             await _context.SaveChangesAsync();

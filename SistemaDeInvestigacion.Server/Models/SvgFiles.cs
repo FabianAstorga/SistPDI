@@ -2,8 +2,8 @@
 using System.ComponentModel.DataAnnotations.Schema;
 namespace SistemaDeInvestigacion.Server.Models
 {
-    [Table("svg_templates")]
-    public class SvgTemplate
+    [Table("svg_files")]
+    public class SvgFiles
     {
         [Key]
         [Column("id")]

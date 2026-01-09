@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using SistemaDeInvestigacion.Server.Data;
 using SistemaDeInvestigacion.Server.Models;
+using BCrypt.Net;
 
 namespace SistemaDeInvestigacion.Server.Controllers
 {
@@ -48,6 +49,16 @@ namespace SistemaDeInvestigacion.Server.Controllers
         }
 
         [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteUser(long id)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null) return NotFound();
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        [Htt("{id}")]
         public async Task<IActionResult> DeleteUser(long id)
         {
             var user = await _context.Users.FindAsync(id);

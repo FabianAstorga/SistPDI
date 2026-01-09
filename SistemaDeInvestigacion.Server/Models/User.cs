@@ -30,8 +30,5 @@ namespace SistemaDeInvestigacion.Server.Models
 
         [Column("updated_at")]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-
-        // Relación: Un usuario puede tener muchas plantillas
-        public virtual ICollection<SvgTemplate> SvgTemplates { get; set; } = new List<SvgTemplate>();
     }
 }
