@@ -1,131 +1,158 @@
-﻿import React from 'react';
+﻿import React, { useState, useRef } from 'react';
+import Draggable from 'react-draggable';
 import { Navbar } from '../../components/Navbar';
-import {
-    MousePointer2, Type, Square, Circle, Image as ImageIcon,
-    Layers, Eye, Lock, Move, ChevronDown, Settings2, Maximize, ZoomIn
-} from 'lucide-react';
+import { Square, Circle, Type, Download, Layers, Eye } from 'lucide-react';
+import type { TipoElemento, ElementoCanvas } from '../../../types/canvas';
+
+// --- COMPONENTE DRAGGABLE CON CAPTURA DE POSICIÓN ---
+const DraggableItem = ({ el, children, alTerminarArrastre }: {
+    el: ElementoCanvas,
+    children: React.ReactNode,
+    alTerminarArrastre: (id: number, nuevaX: number, nuevaY: number) => void
+}) => {
+    const nodeRef = useRef(null);
+    return (
+        <Draggable
+            nodeRef={nodeRef}
+            bounds="#canvas-white-sheet"
+            // Usamos defaultPosition para el inicio, pero la librería maneja el resto
+            defaultPosition={{ x: el.x, y: el.y }}
+            // Cuando el usuario suelta el mouse, actualizamos el estado global
+            onStop={(_e, data) => alTerminarArrastre(el.id, data.x, data.y)}
+        >
+            <g ref={nodeRef} className="cursor-move">
+                {children}
+            </g>
+        </Draggable>
+    );
+};
 
 export const Lienzo = () => {
+    const [elementos, setElementos] = useState<ElementoCanvas[]>([]);
+
+    // 1. FUNCIÓN PARA ACTUALIZAR COORDENADAS REALES EN EL ESTADO
+    const manejarParadaArrastre = (id: number, nuevaX: number, nuevaY: number) => {
+        setElementos(prev => prev.map(el =>
+            el.id === id ? { ...el, x: nuevaX, y: nuevaY } : el
+        ));
+    };
+
+    const agregarElemento = (tipo: TipoElemento) => {
+        const nuevoElemento: ElementoCanvas = {
+            id: Date.now(),
+            type: tipo,
+            x: 50,
+            y: 50,
+            width: tipo === 'texto' ? 250 : 100,
+            height: tipo === 'texto' ? 40 : 100,
+            fill: '#003366',
+            text: tipo === 'texto' ? 'Pelado somos un exito😎' : undefined
+        };
+        setElementos([...elementos, nuevoElemento]);
+    };
+
+    // 2. FUNCIÓN DE DESCARGA (Ahora usa las coordenadas X e Y actualizadas)
+    const descargarSVG = () => {
+        let contenido = `<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">\n`;
+
+        elementos.forEach((el) => {
+            if (el.type === 'rectangulo') {
+                contenido += `  <rect x="${el.x}" y="${el.y}" width="${el.width}" height="${el.height}" fill="${el.fill}" rx="2" />\n`;
+            } else if (el.type === 'circulo') {
+                // cx y cy son el centro del círculo
+                contenido += `  <circle cx="${el.x + 50}" cy="${el.y + 50}" r="50" fill="${el.fill}" />\n`;
+            } else if (el.type === 'texto') {
+                contenido += `  <text x="${el.x}" y="${el.y + 20}" fill="${el.fill}" font-family="Arial, sans-serif" font-size="20" font-weight="bold">${el.text}</text>\n`;
+            }
+        });
+        contenido += `</svg>`;
+
+        const blob = new Blob([contenido], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `plantilla_pdi_${new Date().getTime()}.svg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
+
     return (
-        <div className="h-screen bg-[#121212] flex flex-col overflow-hidden">
+        <div className="h-screen bg-[#f3f4f6] flex flex-col overflow-hidden text-gray-800">
             <Navbar />
 
-            {/* BARRA DE CONTROL CONTEXTUAL (Debajo de la Navbar) */}
-            <div className="mt-20 h-10 bg-[#2c2c2c] border-b border-black flex items-center px-4 space-x-6 text-[11px] text-gray-400">
-                <div className="flex items-center space-x-2 border-r border-gray-600 pr-4">
-                    <span className="font-bold text-gray-300">Selección</span>
-                </div>
-                <div className="flex items-center space-x-4">
-                    <span>X: <span className="text-white">120px</span></span>
-                    <span>Y: <span className="text-white">450px</span></span>
-                    <span>W: <span className="text-white">800px</span></span>
-                    <span>H: <span className="text-white">600px</span></span>
-                </div>
-                <div className="flex items-center space-x-2 ml-auto">
-                    <span>Zoom:</span>
-                    <input type="range" className="w-24 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer" />
-                    <span className="text-white">100%</span>
-                </div>
+            <div className="mt-20 h-11 bg-white border-b border-gray-200 flex items-center px-6 space-x-8 text-[12px] shadow-sm shrink-0">
+                <span className="font-semibold text-gray-700 uppercase tracking-wider">Editor de Plantillas Institucionales</span>
+                <div className="h-4 w-[1px] bg-gray-200"></div>
+                <span className="text-gray-400 italic font-medium">Los elementos se guardarán en su posición actual al descargar</span>
             </div>
 
             <div className="flex flex-1 overflow-hidden">
-
-                {/* 1. BARRA DE HERRAMIENTAS (Izquierda) */}
-                <aside className="w-14 bg-[#2c2c2c] border-r border-black flex flex-col items-center py-4 space-y-4">
-                    <button title="Mover" className="p-2 bg-[#3d3d3d] text-[#FFCC00] rounded shadow-inner border border-gray-600">
-                        <MousePointer2 size={20} />
+                {/* TOOLBAR */}
+                <aside className="w-16 bg-white border-r border-gray-200 flex flex-col items-center py-6 space-y-5 shadow-sm shrink-0">
+                    <button onClick={() => agregarElemento('rectangulo')} className="p-3 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all border border-transparent hover:border-blue-100">
+                        <Square size={22} />
                     </button>
-                    <button title="Rectángulo" className="p-2 text-gray-400 hover:text-white hover:bg-[#3d3d3d] rounded transition">
-                        <Square size={20} />
+                    <button onClick={() => agregarElemento('circulo')} className="p-3 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all border border-transparent hover:border-blue-100">
+                        <Circle size={22} />
                     </button>
-                    <button title="Círculo" className="p-2 text-gray-400 hover:text-white hover:bg-[#3d3d3d] rounded transition">
-                        <Circle size={20} />
+                    <button onClick={() => agregarElemento('texto')} className="p-3 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all border border-transparent hover:border-blue-100">
+                        <Type size={22} />
                     </button>
-                    <button title="Texto" className="p-2 text-gray-400 hover:text-white hover:bg-[#3d3d3d] rounded transition">
-                        <Type size={20} />
-                    </button>
-                    <div className="h-[1px] w-8 bg-gray-700 my-2"></div>
-                    <button title="Imagen" className="p-2 text-gray-400 hover:text-white hover:bg-[#3d3d3d] rounded transition">
-                        <ImageIcon size={20} />
-                    </button>
-
-                    {/* Selectores de Color Estilo Photoshop */}
-                    <div className="mt-auto space-y-[-8px] flex flex-col items-center pb-4">
-                        <div className="w-6 h-6 bg-[#003366] border border-white z-10 shadow-lg"></div>
-                        <div className="w-6 h-6 bg-white border border-gray-400 ml-4 shadow-lg"></div>
-                    </div>
                 </aside>
 
-                {/* 2. ÁREA DE TRABAJO (Canvas Central) */}
-                <main className="flex-1 overflow-auto bg-[#1a1a1a] flex items-center justify-center p-20 relative custom-scrollbar">
-                    {/* El "Documento" SVG */}
-                    <div className="bg-white shadow-[0_0_60px_rgba(0,0,0,0.5)] relative" style={{ minWidth: '800px', minHeight: '600px' }}>
-                        {/* Guías de diseño (opcionales visualmente) */}
-                        <div className="absolute top-0 left-[-20px] h-full w-[1px] bg-blue-500/30"></div>
-                        <div className="absolute top-[-20px] left-0 w-full h-[1px] bg-blue-500/30"></div>
-
-                        {/* Contenido Simulado */}
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-gray-100 font-black text-6xl uppercase pointer-events-none select-none">
-                                Template PDI
-                            </span>
-                        </div>
+                {/* CANVAS */}
+                <main className="flex-1 overflow-auto bg-[#e5e7eb] flex items-center justify-center p-20 relative">
+                    <div id="canvas-white-sheet" className="bg-white shadow-2xl relative overflow-hidden shrink-0 rounded-sm" style={{ width: '800px', height: '600px' }}>
+                        <svg width="100%" height="100%" viewBox="0 0 800 600">
+                            {elementos.map((el) => (
+                                <DraggableItem
+                                    key={el.id}
+                                    el={el}
+                                    alTerminarArrastre={manejarParadaArrastre}
+                                >
+                                    {el.type === 'rectangulo' && (
+                                        <rect width={el.width} height={el.height} fill={el.fill} rx="2" />
+                                    )}
+                                    {el.type === 'circulo' && (
+                                        <circle cx={50} cy={50} r={50} fill={el.fill} />
+                                    )}
+                                    {el.type === 'texto' && (
+                                        <text y={20} fill={el.fill} fontSize="20" fontWeight="bold" dominantBaseline="hanging" style={{ userSelect: 'none' }}>
+                                            {el.text}
+                                        </text>
+                                    )}
+                                </DraggableItem>
+                            ))}
+                        </svg>
                     </div>
                 </main>
 
-                {/* 3. PANEL DE CAPAS Y PROPIEDADES (Derecha) */}
-                <aside className="w-72 bg-[#2c2c2c] border-l border-black flex flex-col text-white">
-
-                    {/* Sección Propiedades */}
-                    <div className="p-3 bg-[#383838] flex items-center justify-between border-b border-black">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Propiedades</span>
-                        <Settings2 size={14} className="text-gray-400" />
-                    </div>
-                    <div className="p-4 space-y-4 border-b border-black">
-                        <div className="flex justify-between items-center text-xs">
-                            <span className="text-gray-400">Opacidad</span>
-                            <span className="bg-[#1e1e1e] px-2 py-1 rounded">100%</span>
-                        </div>
-                        <div className="flex justify-between items-center text-xs">
-                            <span className="text-gray-400">Mezcla</span>
-                            <span className="bg-[#1e1e1e] px-2 py-1 rounded flex items-center italic">Normal <ChevronDown size={12} className="ml-1" /></span>
-                        </div>
+                {/* PANEL LATERAL */}
+                <aside className="w-80 bg-white border-l border-gray-200 flex flex-col shadow-sm shrink-0">
+                    <div className="p-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between font-bold uppercase text-[11px] text-gray-500 tracking-widest">
+                        <span>Panel de Capas</span>
+                        <Layers size={14} />
                     </div>
 
-                    {/* Sección Capas */}
-                    <div className="p-3 bg-[#383838] flex items-center justify-between border-b border-black">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Capas</span>
-                        <Layers size={14} className="text-gray-400" />
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto p-2 space-y-1 bg-[#1e1e1e]">
-                        {/* Capa de ejemplo activa */}
-                        <div className="flex items-center space-x-3 p-2 bg-[#444444] border border-[#FFCC00]/50 rounded text-[11px]">
-                            <Eye size={14} className="text-gray-300" />
-                            <div className="w-8 h-8 bg-white/10 rounded flex items-center justify-center border border-gray-600">
-                                <Square size={12} />
-                            </div>
-                            <span className="flex-1 truncate">Rectángulo de Fondo</span>
-                            <Lock size={12} className="text-gray-500" />
-                        </div>
-
-                        {/* Capas de ejemplo inactivas */}
-                        {['Texto Título', 'Logo PDI', 'Capa de Email'].map((name, i) => (
-                            <div key={i} className="flex items-center space-x-3 p-2 hover:bg-[#333333] rounded text-[11px] text-gray-400">
-                                <Eye size={14} />
-                                <div className="w-8 h-8 bg-white/5 rounded flex items-center justify-center border border-gray-700">
-                                    <Layers size={12} />
-                                </div>
-                                <span className="flex-1 truncate">{name}</span>
+                    <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-white">
+                        {elementos.map(el => (
+                            <div key={el.id} className="p-3 bg-gray-50 border border-gray-100 rounded-lg text-[11px] font-bold text-gray-600 shadow-sm flex items-center justify-between">
+                                <span className="uppercase">{el.type}</span>
+                                <span className="text-gray-300 font-normal">#{el.id.toString().slice(-4)}</span>
                             </div>
                         ))}
                     </div>
 
-                    {/* Footer del panel (Acciones de capa) */}
-                    <div className="h-10 bg-[#2c2c2c] border-t border-black flex items-center justify-around text-gray-400 px-4">
-                        <button className="hover:text-white transition">+</button>
-                        <button className="hover:text-white transition">🗑️</button>
-                        <button className="hover:text-white transition">📁</button>
+                    <div className="p-4 border-t border-gray-100 bg-gray-50">
+                        <button
+                            onClick={descargarSVG}
+                            className="w-full bg-[#003366] text-[#FFCC00] py-3 rounded-xl font-bold text-xs hover:bg-[#00264d] transition-all shadow-md flex items-center justify-center space-x-2 active:scale-95 transform"
+                        >
+                            <Download size={16} />
+                            <span>DESCARGAR SVG LOCAL</span>
+                        </button>
                     </div>
                 </aside>
             </div>
