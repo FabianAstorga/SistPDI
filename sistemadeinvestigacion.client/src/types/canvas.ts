@@ -1,4 +1,4 @@
-﻿export type TipoElemento = 'rectangulo' | 'circulo' | 'texto';
+﻿export type TipoElemento = 'rectangulo' | 'circulo' | 'triangulo' | 'texto' | 'lapiz' | 'estrella';
 
 export interface ElementoCanvas {
     id: number;
@@ -8,5 +8,9 @@ export interface ElementoCanvas {
     width: number;
     height: number;
     fill: string;
+    rotation: number; // Nueva
     text?: string;
+    fontSize?: number; // Nueva
+    fontFamily?: string; // Nueva
+    points?: string; // Para el lápiz (path data)
 }

@@ -22,3 +22,4 @@ SistemaDeInvestigacion.Server/obj/project.nuget.cache
 SistemaDeInvestigacion.Server/obj/SistemaDeInvestigacion.Server.csproj.nuget.dgspec.json
 SistemaDeInvestigacion.Server/obj/SistemaDeInvestigacion.Server.csproj.nuget.g.props
 /SistemaDeInvestigacion.Server/bin/Debug
+/node_modules
