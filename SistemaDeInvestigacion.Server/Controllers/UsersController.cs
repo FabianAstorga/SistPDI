@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using SistemaDeInvestigacion.Server.Data;
 using SistemaDeInvestigacion.Server.Models;
 using BCrypt.Net;
+using SistemaDeInvestigacion.Server.Dtos;
 
 namespace SistemaDeInvestigacion.Server.Controllers
 {
@@ -58,11 +59,13 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return NoContent();
         }
 
-        [HttpPost("{id}")]
-        public async Task<IActionResult> CreateUser(long id)
+        [HttpPost("/crear")]
+        public async Task<ActionResult<User>> CreateUser(User createUser)
         {
-            var user = await _context.Users.FindAsync(id);
-            if (user == null) return NotFound();
+            var user = createUser;
+            var HashPass = BCrypt.Net.BCrypt.HashPassword(user.Password);
+            user.Password = HashPass;
+            _context.Users.Add(user);
             await _context.SaveChangesAsync();
             return NoContent();
         }

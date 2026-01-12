@@ -53,7 +53,7 @@ export const Navbar = () => {
                         </button>
 
                         <button
-                            onClick={() => navigate('/login')}
+                            onClick={() => navigate('/configuracion')}
                             className={buttonBaseClass}
                         >
                             Configuración

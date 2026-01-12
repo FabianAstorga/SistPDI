@@ -7,6 +7,7 @@ import React from 'react'
 import Login from './assets/Routes/Admin/login'
 import Panel from './assets/Routes/Admin/panel'
 import Lienzo from './assets/Routes/Admin/lienzo'
+import Configuracion from './assets/Routes/Admin/configuracion'
 import { RouteGuard } from './assets/Routes/Admin/RouteGuard'
 
 function Home() {
@@ -46,6 +47,7 @@ function App() {
             <Route element={<RouteGuard />}>
                 <Route path="/panel" element={<Panel />} />
                 <Route path="/lienzo" element={<Lienzo />} />
+                <Route path="/configuracion" element={<Configuracion />} />
             </Route>
         </Routes>
     )

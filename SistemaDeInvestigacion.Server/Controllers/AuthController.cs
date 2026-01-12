@@ -32,13 +32,14 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 return Unauthorized(new { Message = "Datos ingresados incorrectos" });
             }
 
-            //            bool passValida = BCrypt.Net.BCrypt.Verify(loginRequest.Password, usuarioEncontrado.Password);
-            //
-            //            if (!passValida)
-            //            {
-            //                return Unauthorized(new { Message = "Correo o contraseña incorrectos" });
-            //            }
+            bool passValida = BCrypt.Net.BCrypt.Verify(loginRequest.Password, user.Password);
+            if (!passValida) {
+                return Unauthorized(new { Message = "Correo o contraseña incorrectos" });
+            }
 
+            if (passValida == true) {
+                Console.WriteLine("buenas tardes si funcionó");
+            }
 
             var keyString = _configuration.GetSection("Jwt:Key").Value;
             var issuer = _configuration.GetSection("Jwt:Issuer").Value;
