@@ -73,8 +73,6 @@ export const Lienzo = () => {
     const [herramientaActiva, setHerramientaActiva] = useState<TipoElemento | null>(null);
     const [menuFigurasOpen, setMenuFigurasOpen] = useState(false);
     const [canvasSize, setCanvasSize] = useState({ w: 800, h: 600 });
-
-    // NUEVO: Color predefinido para nuevas figuras y trazos
     const [colorGlobal, setColorGlobal] = useState('#003366');
 
     const [dibujando, setDibujando] = useState(false);

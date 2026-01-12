@@ -1,6 +1,6 @@
 namespace SistemaDeInvestigacion.Server.Dtos
 {
-    public class createuser
+    public class createUserDto
     {
         public required string Name { get; set; }
         public required string Email { get; set; }

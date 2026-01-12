@@ -58,12 +58,11 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return NoContent();
         }
 
-        [Htt("{id}")]
-        public async Task<IActionResult> DeleteUser(long id)
+        [HttpPost("{id}")]
+        public async Task<IActionResult> CreateUser(long id)
         {
             var user = await _context.Users.FindAsync(id);
             if (user == null) return NotFound();
-            _context.Users.Remove(user);
             await _context.SaveChangesAsync();
             return NoContent();
         }
