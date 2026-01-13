@@ -1,11 +1,12 @@
 import { Navbar } from '../../components/Navbar';
 function configuracion() {
     return (
-        <div>
+        <div className = "pt-24">
             <Navbar />
-            <div>
-            <p>Ola papus</p>
-            </div>
+
+            <main className="p-4">
+                <h1>Ola papus</h1>
+            </main>
 
         </div>
   );

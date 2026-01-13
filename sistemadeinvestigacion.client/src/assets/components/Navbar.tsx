@@ -54,7 +54,7 @@ export const Navbar = () => {
 
                         <button
                             onClick={() => navigate('/configuracion')}
-                            className={buttonBaseClass}
+                            className={`${buttonBaseClass} ${location.pathname === '/panel/configuracion' ? 'bg-[#002a66] border border-[#FFCC00]' : ''}`}
                         >
                             Configuración
                         </button>
