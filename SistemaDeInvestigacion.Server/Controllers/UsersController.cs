@@ -2,8 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using SistemaDeInvestigacion.Server.Data;
 using SistemaDeInvestigacion.Server.Models;
-using BCrypt.Net;
-using SistemaDeInvestigacion.Server.Dtos;
 
 namespace SistemaDeInvestigacion.Server.Controllers
 {
@@ -32,18 +30,12 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return user;
         }
 
-        [HttpPost]
-        public async Task<ActionResult<User>> PostUser(User user)
-        {
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
-        }
-
         [HttpPut("{id}")]
         public async Task<IActionResult> PutUser(long id, User user)
         {
-            if (id != user.Id) return BadRequest();
+            // Corregido: IdUsuario
+            if (id != user.IdUsuario) return BadRequest();
+
             _context.Entry(user).State = EntityState.Modified;
             await _context.SaveChangesAsync();
             return NoContent();
@@ -59,15 +51,16 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return NoContent();
         }
 
-        [HttpPost("/crear")]
-        public async Task<ActionResult<User>> CreateUser(User createUser)
+        [HttpPost("crear")]
+        public async Task<ActionResult> CreateUser(User user)
         {
-            var user = createUser;
-            var HashPass = BCrypt.Net.BCrypt.HashPassword(user.Password);
-            user.Password = HashPass;
+            // Corregido: Contrasena y Mail
+            var hashPass = BCrypt.Net.BCrypt.HashPassword(user.Contrasena);
+            user.Contrasena = hashPass;
+
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
-            return NoContent();
+            return Ok(new { Message = "Usuario creado con éxito" });
         }
     }
 }

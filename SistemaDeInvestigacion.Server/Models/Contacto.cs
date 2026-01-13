@@ -1,14 +1,22 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+
 namespace SistemaDeInvestigacion.Server.Models
 {
     [Table("contactos")]
     public class Contacto
     {
-        [Key][Column("id")] public int Id { get; set; }
-        [Column("convenio_id")] public int ConvenioId { get; set; }
-        [Column("name")] public required string Name { get; set; }
-        [Column("role")] public string? Role { get; set; }
-        [Column("email")] public string? Email { get; set; }
+        [Key]
+        [Column("idContacto")]
+        public int IdContacto { get; set; }
+
+        [Column("Nombre")]
+        public required string Nombre { get; set; }
+
+        [Column("Rol")]
+        public string? Rol { get; set; }
+
+        [Column("Email")]
+        public string? Email { get; set; }
     }
 }

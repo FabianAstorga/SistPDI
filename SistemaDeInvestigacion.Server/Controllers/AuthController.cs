@@ -25,20 +25,20 @@ namespace SistemaDeInvestigacion.Server.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto loginRequest)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == loginRequest.Email);
+            // Corregido: Mail en lugar de Email
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Mail == loginRequest.Email);
 
             if (user == null)
             {
                 return Unauthorized(new { Message = "Datos ingresados incorrectos" });
             }
 
-            bool passValida = BCrypt.Net.BCrypt.Verify(loginRequest.Password, user.Password);
-            if (!passValida) {
-                return Unauthorized(new { Message = "Correo o contraseña incorrectos" });
-            }
+            // Corregido: Contrasena en lugar de Password
+            bool passValida = BCrypt.Net.BCrypt.Verify(loginRequest.Password, user.Contrasena);
 
-            if (passValida == true) {
-                Console.WriteLine("buenas tardes si funcionó");
+            if (!passValida)
+            {
+                return Unauthorized(new { Message = "Correo o contraseña incorrectos" });
             }
 
             var keyString = _configuration.GetSection("Jwt:Key").Value;
@@ -46,21 +46,21 @@ namespace SistemaDeInvestigacion.Server.Controllers
             var audience = _configuration.GetSection("Jwt:Audience").Value;
 
             if (string.IsNullOrEmpty(keyString))
-                return StatusCode(500, "clave JWT no configurada.");
+                return StatusCode(500, "Clave JWT no configurada.");
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyString));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var claims = new[]
             {
-                new Claim(ClaimTypes.Name, user.Name ?? "Usuario"),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim("id_usuario", user.Id.ToString())
+                new Claim(ClaimTypes.Name, user.Nombre),
+                new Claim(ClaimTypes.Email, user.Mail),
+                new Claim("id_usuario", user.IdUsuario.ToString())
             };
 
             var token = new JwtSecurityToken(
-                issuer: issuer,      
-                audience: audience,  
+                issuer: issuer,
+                audience: audience,
                 claims: claims,
                 expires: DateTime.Now.AddHours(24),
                 signingCredentials: creds
@@ -68,14 +68,11 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
             var jwtToken = new JwtSecurityTokenHandler().WriteToken(token);
 
-            Console.WriteLine("token:" +jwtToken+ " Usuario datos " + user.Name);
-
             return Ok(new
             {
                 token = jwtToken,
-                user = new { name = user.Name, email = user.Email }
+                user = new { name = user.Nombre, email = user.Mail }
             });
-
         }
     }
 }
