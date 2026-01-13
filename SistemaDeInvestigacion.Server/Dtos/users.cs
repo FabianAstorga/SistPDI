@@ -1,4 +1,4 @@
-namespace SistemaDeInvestigacion.Server.Dtos
+﻿namespace SistemaDeInvestigacion.Server.Dtos
 {
     public class LoginDto
     {

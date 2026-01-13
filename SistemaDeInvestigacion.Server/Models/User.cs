@@ -7,28 +7,26 @@ namespace SistemaDeInvestigacion.Server.Models
     public class User
     {
         [Key]
-        [Column("id")]
-        public long Id { get; set; }
+        [Column("IdUsuario")]
+        public long IdUsuario { get; set; }
 
-        [Column("name")]
-        public required string Name { get; set; }
+        [Column("Nombre")]
+        public required string Nombre { get; set; }
 
-        [Column("email")]
-        public required string Email { get; set; }
+        [Column("Mail")]
+        public required string Mail { get; set; }
 
-        [Column("email_verified_at")]
-        public DateTime? EmailVerifiedAt { get; set; }
+        [Column("FechaCreacion")]
+        public DateTime? FechaCreacion { get; set; } = DateTime.Now;
 
-        [Column("password")]
-        public required string Password { get; set; }
+        [Column("FechaActualizacion")]
+        public DateTime? FechaActualizacion { get; set; } = DateTime.Now;
 
-        [Column("remember_token")]
-        public string? RememberToken { get; set; }
+        [Column("Contrasena")]
+        public required string Contrasena { get; set; }
 
-        [Column("created_at")]
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public virtual ICollection<SvgTemplate> SvgTemplates { get; set; } = new List<SvgTemplate>();
 
-        [Column("updated_at")]
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
     }
 }
