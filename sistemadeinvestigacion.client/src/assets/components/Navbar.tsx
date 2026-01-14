@@ -1,13 +1,14 @@
 ﻿import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../Routes/Services/authService';
-// Importamos algunos iconos de Lucide que ya usas en el Lienzo
 import {
     LayoutDashboard,
     FileSignature,
     Layers,
     PlusCircle,
+    Building,
     LogOut,
+    Settings, // Importamos el icono de engranaje
     User as UserIcon
 } from 'lucide-react';
 
@@ -27,37 +28,34 @@ export const Navbar = () => {
         navigate('/login');
     };
 
-    // Tomado de tu lógica de sidebarBtnClass del Lienzo
     const getBtnClass = (path) => {
         const active = location.pathname === path;
         const base = "flex items-center px-4 py-2 rounded-lg transition-all duration-200 text-sm font-bold uppercase tracking-wider mx-1";
-        // Si está activo, usamos el azul #003385 con sombra del lienzo
         return `${base} ${active
-            ? 'bg-[#003385] text-white shadow-md scale-105'
+            ? 'bg-[#003385] text-white shadow-md scale-105 border border-white/20'
             : 'text-white/80 hover:bg-[#002a66] hover:text-white'}`;
     };
 
     const logoActualizado = "/logo.png";
 
     return (
-        // Usamos la sombra profunda del lienzo pero suavizada
-        <nav className="fixed top-0 left-0 w-full bg-[#003385] shadow-[0_4px_20px_rgba(0,0,0,0.15)] z-50 h-15 flex items-center">
+        <nav className="fixed top-0 left-0 w-full bg-[#003385] shadow-[0_4px_20px_rgba(0,0,0,0.15)] z-50 h-16 flex items-center">
             <div className="w-full px-4 flex items-center justify-between">
 
-                {/* IZQUIERDA: Brand + Menu Estilo Lienzo */}
+                {/* IZQUIERDA: Brand + Menu Principal */}
                 <div className="flex items-center">
-                    <div className="flex items-center mr-10 cursor-pointer" onClick={() => navigate('/panel')}>
+                    <div className="flex items-center mr-8 cursor-pointer" onClick={() => navigate('/panel')}>
                         <img
                             src={logoActualizado}
-                            className="h-8 w-auto mr-3 drop-shadow-md"
+                            className="h-10 w-auto mr-3 drop-shadow-md"
                             alt="Logo PDI"
                         />
-                        <span className="text-white font-black text-3xl  tracking-tighter ">
-                             Acuerdos
+                        <span className="text-white font-black text-2xl tracking-tighter">
+                            Acuerdos
                         </span>
                     </div>
 
-                    <div className="hidden lg:flex items-center space-x-1 border-l border-white/10 pl-3">
+                    <div className="hidden lg:flex items-center space-x-1 border-l border-white/10 pl-4">
                         <button onClick={() => navigate('/panel')} className={getBtnClass('/panel')}>
                             <LayoutDashboard size={16} className="mr-2" /> Inicio
                         </button>
@@ -67,25 +65,40 @@ export const Navbar = () => {
                         <button onClick={() => navigate('/lienzo')} className={getBtnClass('/lienzo')}>
                             <Layers size={16} className="mr-2" /> Lienzo
                         </button>
-                        <button onClick={() => navigate('/configuracion')} className={getBtnClass('/configuracion')}>
-                            <PlusCircle size={16} className="mr-2" /> Nuevo
+                        <button onClick={() => navigate('/institucion')} className={getBtnClass('/institucion')}>
+                            <Building size={16} className="mr-2" /> instituciones
                         </button>
                     </div>
                 </div>
 
-                {/* DERECHA: User Info + Logout */}
-                <div className="flex items-center space-x-6">
-                    <div className="flex flex-col items-end border-r border-white/10 pr-6">
-                        <span className="text-white font-black text-sm uppercase tracking-widest">
+                {/* DERECHA: Configuración + User Info + Logout */}
+                <div className="flex items-center space-x-4">
+
+                    {/* BOTÓN DE CONFIGURACIÓN (ENGRANAJE) */}
+                    
+
+                    <div className="flex flex-col items-end border-l border-white/10 pl-4 pr-2">
+                        <span className="text-white font-black text-xs uppercase tracking-widest">
                             {user?.name || 'Admin'}
                         </span>
                     </div>
 
                     <button
-                        onClick={handleLogout}
-                        className="flex items-center bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl font-black text-xs transition-all shadow-lg active:scale-95 uppercase tracking-widest"
+                        onClick={() => navigate('/configuracion')}
+                        className={`p-2 rounded-full transition-all duration-300 flex items-center justify-center ${location.pathname === '/configuracion'
+                            ? 'bg-[#FFCC00] text-[#003385] shadow-lg rotate-90 scale-110'
+                            : 'text-white/80 hover:bg-white/10 hover:text-white hover:rotate-45'
+                            }`}
+                        title="Configuración"
                     >
-                        <LogOut size={16} className="mr-2" /> Cerrar Sesión
+                        <Settings size={20} />
+                    </button>
+
+                    <button
+                        onClick={handleLogout}
+                        className="flex items-center bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl font-black text-[10px] transition-all shadow-lg active:scale-95 uppercase tracking-widest"
+                    >
+                        <LogOut size={14} className="mr-2" /> Cerrar Sesión
                     </button>
                 </div>
             </div>
