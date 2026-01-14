@@ -52,5 +52,17 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return Ok(new { Message = "Acuerdo Creado" });
         }
 
+        [HttpGet("mejores")]
+        public async Task<ActionResult<IEnumerable<Acuerdo>>> GetMejores()
+        {
+            var acuerdos = await _context.Acuerdos
+                .OrderByDescending(x => x.FechaCreacion)
+                .Take(10)
+                .ToListAsync();
+            return Ok(acuerdos);
+        }
+
     }
+
+
 }
