@@ -18,9 +18,7 @@ function Panel() {
 
             <header className="mb-6">
                 <div className="max-w-[95%] mx-auto px-4 sm:px-6 lg:px-8">
-                    <h1 className="text-3xl font-bold text-[#003366] border-b-4 border-[#FFCC00] inline-block pb-1">
-                        Bienvenido, {user ? user.name : 'Administrador'}
-                    </h1>
+                    
                 </div>
             </header>
 

@@ -1,21 +1,35 @@
 ﻿@import "tailwindcss";
 
+@theme {
+    /* Definimos la paleta blueGray que usa el template original */
+    --color-blueGray-50: #f8fafc;
+    --color-blueGray-100: #f1f5f9;
+    --color-blueGray-200: #e2e8f0;
+    --color-blueGray-300: #cbd5e1;
+    --color-blueGray-400: #94a3b8;
+    --color-blueGray-500: #64748b;
+    --color-blueGray-600: #475569;
+    --color-blueGray-700: #334155;
+    --color-blueGray-800: #1e293b;
+    --color-blueGray-900: #0f172a;
+}
+
 /* 1. RESETEO TOTAL: Ocupamos toda la pantalla sin márgenes */
 #root {
     width: 100vw;
     height: 100vh;
     margin: 0;
     padding: 0;
-    text-align: left;
-    display: flex;
-    flex-direction: column;
+
+
 }
 
 /* 2. CONFIGURACIÓN DEL BODY: Gris profesional y sin scroll global */
 body {
     margin: 0;
     padding: 0;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     background-color: #ffffff; /* Fondo blanco por defecto para Login/Home */
     min-height: 100vh;
     width: 100vw;
