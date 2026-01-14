@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SistemaDeInvestigacion.Server.Data;
 using SistemaDeInvestigacion.Server.Dtos;
 using SistemaDeInvestigacion.Server.Models;
+using Microsoft.EntityFrameworkCore;
 
 
 namespace SistemaDeInvestigacion.Server.Controllers
@@ -29,6 +30,16 @@ namespace SistemaDeInvestigacion.Server.Controllers
             var institucion = await _context.Instituciones.FindAsync(idInstitucion);
             if (institucion == null) return StatusCode(404, "No hay ninguna institucion");
             return institucion;
+        }
+
+        [HttpGet("mejores")]
+        public async Task<ActionResult<IEnumerable<Institucion>>> GetMejores()
+        {
+            var instituciones = await _context.Instituciones
+                .OrderByDescending(x => x.FechaCreacion) 
+                .Take(10)                                
+                .ToListAsync();                         
+            return Ok(instituciones);
         }
 
         [HttpPost("crear")]
