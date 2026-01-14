@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SistemaDeInvestigacion.Server.Data;
+using SistemaDeInvestigacion.Server.Dtos;
 using SistemaDeInvestigacion.Server.Models;
 
 namespace SistemaDeInvestigacion.Server.Controllers
@@ -31,12 +32,26 @@ namespace SistemaDeInvestigacion.Server.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutUser(long id, User user)
+        public async Task<IActionResult> UpdateUser(long id, [FromForm] UpdateUserDto updateUserDto)
         {
-            // Corregido: IdUsuario
-            if (id != user.IdUsuario) return BadRequest();
+            var user = await _context.Users.FindAsync(id);
+            
+            if (updateUserDto.Nombre != null)
+            {
+                user.Nombre = updateUserDto.Nombre;
+            }
 
-            _context.Entry(user).State = EntityState.Modified;
+            if (updateUserDto.Mail != null)
+            {
+                user.Mail = updateUserDto.Mail;
+            }
+
+            if (updateUserDto.Contrasena != null)
+            {
+                user.Contrasena = BCrypt.Net.BCrypt.HashPassword(updateUserDto.Contrasena);
+            }
+
+            user.FechaActualizacion = DateTime.UtcNow;
             await _context.SaveChangesAsync();
             return NoContent();
         }
@@ -52,15 +67,22 @@ namespace SistemaDeInvestigacion.Server.Controllers
         }
 
         [HttpPost("crear")]
-        public async Task<ActionResult> CreateUser(User user)
+        public async Task<ActionResult<User>> CreateUser([FromForm] CreateUserDto users)
         {
-            // Corregido: Contrasena y Mail
-            var hashPass = BCrypt.Net.BCrypt.HashPassword(user.Contrasena);
-            user.Contrasena = hashPass;
-
-            _context.Users.Add(user);
+            var UserDto = users;
+            var hashPass = BCrypt.Net.BCrypt.HashPassword(users.Contrasena);
+            var nuevoUser = new User
+            {
+                Nombre = UserDto.Nombre,
+                Mail = UserDto.Mail,
+                Contrasena = hashPass,
+                FechaActualizacion = DateTime.UtcNow
+            };
+            _context.Users.Add(nuevoUser);
             await _context.SaveChangesAsync();
-            return Ok(new { Message = "Usuario creado con éxito" });
+            return Ok(new { 
+                Message = "Usuario creado correctamente"
+            });
         }
     }
 }

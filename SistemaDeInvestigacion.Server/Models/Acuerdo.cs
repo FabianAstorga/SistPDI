@@ -7,6 +7,7 @@ namespace SistemaDeInvestigacion.Server.Models
     public class Acuerdo
     {
         [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         [Column("IdAcuerdo")]
         public int IdAcuerdo { get; set; }
 

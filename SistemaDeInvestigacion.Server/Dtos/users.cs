@@ -1,8 +1,25 @@
-﻿namespace SistemaDeInvestigacion.Server.Dtos
+﻿using System.ComponentModel.DataAnnotations;
+using System.Runtime.InteropServices;
+
+namespace SistemaDeInvestigacion.Server.Dtos
+
 {
-    public class LoginDto
+    public class CreateUserDto
     {
-        public required string Email { get; set; }
-        public required string Password { get; set; }
+        [Required]
+        public required string Nombre { get; set; }
+        [Required]
+        [EmailAddress]
+        public required string Mail { get; set; }
+        [Required]
+        public required string Contrasena { get; set; }
+    }
+
+    public class UpdateUserDto
+    {
+        public string? Nombre { get; set; }
+        [EmailAddress]
+        public string? Mail { get; set; }
+        public string? Contrasena { get; set; }
     }
 }

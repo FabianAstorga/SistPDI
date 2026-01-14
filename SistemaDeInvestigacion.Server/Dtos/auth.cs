@@ -1,9 +1,8 @@
 ﻿namespace SistemaDeInvestigacion.Server.Dtos
 {
-    public class CreateUserDto
+    public class LoginDto
     {
-        public required string Nombre { get; set; }
-        public required string Mail { get; set; }
-        public required string Contrasena { get; set; }
+        public required string Email { get; set; }
+        public required string Password { get; set; }
     }
 }
