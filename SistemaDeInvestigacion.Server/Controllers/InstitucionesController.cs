@@ -4,6 +4,7 @@ using SistemaDeInvestigacion.Server.Data;
 using SistemaDeInvestigacion.Server.Dtos;
 using SistemaDeInvestigacion.Server.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 
 namespace SistemaDeInvestigacion.Server.Controllers
@@ -16,14 +17,13 @@ namespace SistemaDeInvestigacion.Server.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
 
-        // GET: InstitucionesController
-
         public InstitucionesController(ApplicationDbContext context, IConfiguration configuration)
         {
             _context = context;
             _configuration = configuration;
         }
 
+        [Authorize]
         [HttpGet("{idInstitucion}")]
         public async Task<ActionResult<Institucion>> GetInstitucion(int idInstitucion)
         {
@@ -32,16 +32,8 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return institucion;
         }
 
-        [HttpGet("mejores")]
-        public async Task<ActionResult<IEnumerable<Institucion>>> GetMejores()
-        {
-            var instituciones = await _context.Instituciones
-                .OrderByDescending(x => x.FechaCreacion) 
-                .Take(10)                                
-                .ToListAsync();                         
-            return Ok(instituciones);
-        }
 
+        [Authorize]
         [HttpPost("crear")]
         public async Task<ActionResult<Acuerdo>> PublicarInstitucion([FromForm] CreateInstitucionesDto createInstitucionesDto)
         {

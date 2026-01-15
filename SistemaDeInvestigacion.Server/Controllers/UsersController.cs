@@ -32,6 +32,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return await _context.Users.ToListAsync();
         }
 
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<ActionResult<User>> GetUser(long id)
         {
@@ -44,12 +45,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
         [HttpPut()]
         public async Task<IActionResult> UpdateUser([FromForm] UpdateUserDto updateUserDto)
         {
-            var userRole = User.GetUserRole();
-
-            if (userRole != 1)
-            {
-                return BadRequest("No es SuperAdministrador");
-            }
 
             var userId = User.GetUserId();
 
@@ -86,9 +81,17 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return NoContent();
         }
 
+        [Authorize]
         [HttpPost("crear")]
         public async Task<ActionResult<User>> CreateUser([FromForm] CreateUserDto users)
         {
+            var userRole = User.GetUserRole();
+
+            if (userRole != 1)
+            {
+                return BadRequest("No es SuperAdministrador");
+            }
+
             var UserDto = users;
             var hashPass = BCrypt.Net.BCrypt.HashPassword(users.Contrasena);
             var nuevoUser = new User
