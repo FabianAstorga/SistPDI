@@ -13,6 +13,8 @@ namespace SistemaDeInvestigacion.Server.Dtos
         public required string Mail { get; set; }
         [Required]
         public required string Contrasena { get; set; }
+        [Required]
+        public required int Rol { get; set; }
     }
 
     public class UpdateUserDto

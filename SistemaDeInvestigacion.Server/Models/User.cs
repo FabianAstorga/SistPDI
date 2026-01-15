@@ -27,6 +27,9 @@ namespace SistemaDeInvestigacion.Server.Models
         [Column("Contrasena")]
         public required string Contrasena { get; set; }
 
+        [Column("Rol")]
+        public required int Rol { get; set; }
+
         public virtual ICollection<SvgTemplate> SvgTemplates { get; set; } = new List<SvgTemplate>();
 
 

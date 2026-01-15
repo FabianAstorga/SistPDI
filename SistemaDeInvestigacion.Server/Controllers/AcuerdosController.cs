@@ -65,6 +65,15 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return Ok(acuerdos);
         }
 
+        [HttpGet()]
+        public async Task<ActionResult<IEnumerable<Acuerdo>>> GetAcuerdos()
+        {
+            var acuerdos = await _context.Acuerdos
+                .OrderByDescending(x => x.FechaCreacion)
+                .ToListAsync();
+            return (acuerdos);
+        }
+
     }
 
 

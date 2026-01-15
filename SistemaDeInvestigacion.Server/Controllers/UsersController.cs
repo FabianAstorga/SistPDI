@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SistemaDeInvestigacion.Server.Data;
 using SistemaDeInvestigacion.Server.Dtos;
@@ -17,9 +18,17 @@ namespace SistemaDeInvestigacion.Server.Controllers
             _context = context;
         }
 
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<User>>> GetUsers()
         {
+            var userId = User.GetUserId();
+            if (userId == null) {
+                return NotFound(new
+                {
+                    message = "Usuario no autenticado"
+                });
+            }
             return await _context.Users.ToListAsync();
         }
 
@@ -31,11 +40,21 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return user;
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(long id, [FromForm] UpdateUserDto updateUserDto)
+        [Authorize]
+        [HttpPut()]
+        public async Task<IActionResult> UpdateUser([FromForm] UpdateUserDto updateUserDto)
         {
-            var user = await _context.Users.FindAsync(id);
-            
+            var userRole = User.GetUserRole();
+
+            if (userRole != 1)
+            {
+                return BadRequest("No es SuperAdministrador");
+            }
+
+            var userId = User.GetUserId();
+
+            var user = await _context.Users.FindAsync(userId);
+
             if (updateUserDto.Nombre != null)
             {
                 user.Nombre = updateUserDto.Nombre;
@@ -56,6 +75,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return NoContent();
         }
 
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(long id)
         {
@@ -76,6 +96,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 Nombre = UserDto.Nombre,
                 Mail = UserDto.Mail,
                 Contrasena = hashPass,
+                Rol = UserDto.Rol,
                 FechaActualizacion = DateTime.UtcNow
             };
             _context.Users.Add(nuevoUser);
