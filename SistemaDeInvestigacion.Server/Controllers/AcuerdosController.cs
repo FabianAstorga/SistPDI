@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SistemaDeInvestigacion.Server.Data;
@@ -28,9 +29,11 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return acuerdos;
         }
 
+        [Authorize]
         [HttpPost("crear")]
         public async Task<ActionResult<Acuerdo>> PublicarAcuerdo([FromForm] acuerdoDto AcuerdoDto)
         {
+            var userId = User.GetUserId();
             var acuerdos = AcuerdoDto;
             var NewAcuerdo = new Acuerdo
             {
@@ -43,7 +46,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 ImagenUrl = acuerdos.imagenUrl,
                 Habilitado = acuerdos.habilitado,
                 FechaCreacion = DateTime.UtcNow,
-                IdCreador = acuerdos.idCreador,
+                IdCreador = userId,
                 IdInstitucion = acuerdos.idInstitucion,
                 IdSvgTemplate = acuerdos.idSvgTemplate
             };

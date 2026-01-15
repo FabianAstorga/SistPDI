@@ -10,7 +10,6 @@
         public required string pdfUrl { get; set; }
         public required string imagenUrl { get; set; }
         public required Boolean habilitado {  get; set; }
-        public required int idCreador { get; set; }
         public required int idInstitucion { get; set; }
         public required int idSvgTemplate { get; set; }
     }

@@ -7,8 +7,11 @@ using System.Security.Claims;
 
 namespace SistemaDeInvestigacion.Server.Controllers
 {
+    [Authorize]
+    [Route("api/[controller]")]
     public class SvgController : Controller
     {
+
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
 
