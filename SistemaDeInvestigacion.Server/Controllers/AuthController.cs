@@ -53,6 +53,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
             var claims = new[]
             {
+                new Claim(ClaimTypes.NameIdentifier, user.IdUsuario.ToString()),
                 new Claim(ClaimTypes.Name, user.Nombre),
                 new Claim(ClaimTypes.Email, user.Mail),
                 new Claim("id_usuario", user.IdUsuario.ToString())
