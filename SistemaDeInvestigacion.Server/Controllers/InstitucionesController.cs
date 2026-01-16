@@ -35,6 +35,15 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return institucion;
         }
 
+        [Authorize]
+        [HttpGet()]
+        public async Task<ActionResult<IEnumerable< Institucion>>> GetInstituciones()
+        {
+            var institucion = await _context.Instituciones.ToListAsync();
+            if (institucion == null) return StatusCode(404, "No hay ninguna institucion");
+            return institucion;
+        }
+
 
         [Authorize]
         [HttpPost("crear")]
