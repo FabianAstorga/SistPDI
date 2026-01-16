@@ -9,11 +9,23 @@ export const readResponseBody = async (res: Response) => {
     }
 };
 
+const getSvgStringFromDom = (): string | null => {
+    try {
+        const byId = document.querySelector('svg#lienzo-svg') as SVGElement | null;
+        const svgEl = byId ?? (document.querySelector('svg') as SVGElement | null);
+        if (!svgEl) return null;
+
+        return new XMLSerializer().serializeToString(svgEl);
+    } catch {
+        return null;
+    }
+};
+
 export const guardarAcuerdoFinal = async (params: {
     navigate: (path: string) => void;
-    getSvgString: () => string | null;
+    getSvgString?: (() => string | null) | unknown;
 }) => {
-    const { navigate, getSvgString } = params;
+    const { navigate } = params;
 
     const token = localStorage.getItem('token');
     const storageRaw = localStorage.getItem('temp_acuerdo');
@@ -29,27 +41,49 @@ export const guardarAcuerdoFinal = async (params: {
         return;
     }
 
-    const svgString = getSvgString();
+    const maybeFn = params.getSvgString;
+    const svgString =
+        typeof maybeFn === 'function'
+            ? (maybeFn as () => string | null)()
+            : getSvgStringFromDom();
+
     if (!svgString) {
-        alert('Error: No se encontró el SVG del lienzo.');
+        alert("Error: No se encontró el SVG del lienzo. (Idealmente pon id='lienzo-svg' al <svg>).");
         return;
     }
 
     try {
+        // 1) Crear SVG
         const svgPayload = { svg_original: svgString, svg_editado: svgString, estado: true };
 
         const resSvg = await fetch('http://localhost:5091/api/Svg/crear', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+            },
             body: JSON.stringify(svgPayload)
         });
 
         const svgBody = await readResponseBody(resSvg);
-        if (!resSvg.ok) throw new Error('Error al guardar el diseño.');
 
+        if (!resSvg.ok) {
+            console.error('Respuesta SVG:', svgBody.data);
+            alert('No se pudo guardar el diseño SVG. Revisa consola.');
+            return;
+        }
+
+        // ✅ AHORA tu backend devuelve { id: ... } (o un objeto con id)
         const svgData = (svgBody.kind === 'json' ? svgBody.data : null) as any;
-        const idGeneradoSvg = toInt(pick(svgData, ['id', 'Id', 'idSvgTemplate', 'IdSvgTemplate'], 0), 0);
+        const idGeneradoSvg = toInt(pick(svgData, ['id', 'Id'], 0), 0);
 
+        if (!idGeneradoSvg) {
+            console.error('SVG create response (sin id):', svgData);
+            alert('Error: el backend no devolvió el id del SVG. Revisa el return del SvgController.');
+            return;
+        }
+
+        // 2) Armar acuerdo con FK correcta
         const acuerdoFinalObj: any = {
             idAcuerdo: 0,
             titulo: String(pick(acuerdoBase, ['Titulo', 'titulo'], '') || '').trim(),
@@ -63,10 +97,19 @@ export const guardarAcuerdoFinal = async (params: {
             pdfUrl: String(pick(acuerdoBase, ['PdfUrl', 'pdfUrl'], '') || '').trim(),
             imagenUrl: String(pick(acuerdoBase, ['ImagenUrl', 'imagenUrl'], '') || '').trim(),
             habilitado: toBool(pick(acuerdoBase, ['Habilitado', 'habilitado'], true)),
-            idInstitucion: toInt(pick(acuerdoBase, ['IdInstitucion', 'idInstitucion'], 1), 1),
-            idSvgTemplate: toInt(idGeneradoSvg, 0)
+            idInstitucion: toInt(pick(acuerdoBase, ['IdInstitucion', 'idInstitucion'], 0), 0),
+
+            // ✅ ESTE ES EL CAMBIO CLAVE: el acuerdo debe apuntar al svg creado
+            idSvgTemplate: idGeneradoSvg
         };
 
+        if (!acuerdoFinalObj.idInstitucion) {
+            console.warn('acuerdoBase:', acuerdoBase);
+            alert('Error: No hay institución seleccionada. Vuelve al formulario y selecciona una.');
+            return;
+        }
+
+        // 3) Enviar acuerdo
         const fd = new FormData();
         Object.entries(acuerdoFinalObj).forEach(([k, v]) => {
             if (v === undefined || v === null) return;

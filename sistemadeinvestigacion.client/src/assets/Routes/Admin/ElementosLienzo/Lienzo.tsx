@@ -22,7 +22,6 @@ export const Lienzo = () => {
         ...modelSinRefs
     } = model as any;
 
-
     return (
         <div className="h-screen bg-gray-50 flex flex-col overflow-hidden font-sans antialiased text-gray-900">
             <Navbar />
@@ -42,8 +41,8 @@ export const Lienzo = () => {
                     {/* LeftToolbar sí usa refs */}
                     <LeftToolbar model={{ ...modelSinRefs, fileInputRef, idCapaDibujoActual }} />
 
-                    {/* CanvasStage sí usa svgRef */}
-                    <CanvasStage model={{ ...modelSinRefs, svgRef }} />
+                    {/* CanvasStage sí usa svgRef + le pasamos el id fijo */}
+                    <CanvasStage model={{ ...modelSinRefs, svgRef }} svgId="lienzo-svg" />
 
                     {/* RightPanel NO necesita refs */}
                     <RightPanel model={modelSinRefs} />

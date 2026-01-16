@@ -1,44 +1,22 @@
 ﻿import type { Pt } from '../types/lienzo.types';
 
 export const clamp = (n: number, a: number, b: number) => Math.max(a, Math.min(b, n));
-
 export const clonePts = (pts: Pt[]) => pts.map((p) => ({ x: p.x, y: p.y }));
-
 export const ptsToString = (pts: Pt[]) => pts.map((p) => `${p.x},${p.y}`).join(' ');
 
-// ✅ ahora incluye rectangulo y circulo
+// Polígonos “clásicos”
 export const isEditablePolygon = (type: string) =>
-    ['rectangulo', 'circulo', 'triangulo', 'estrella', 'rombo', 'hexagono', 'octagono'].includes(type);
+    ['triangulo', 'estrella', 'rombo', 'hexagono', 'octagono'].includes(type);
+
+// NUEVO: trazos por puntos
+export const isStrokeType = (type: string) => ['linea', 'flecha', 'curva'].includes(type);
+
+// Cualquier elemento con pointsArr se puede editar por puntos
+export const isEditableByPoints = (el: any) => Array.isArray(el?.pointsArr) && el.pointsArr.length >= 2;
 
 export const getBasePolygonPoints = (type: string, w: number, h: number): Pt[] => {
     const W = w || 120;
     const H = h || 120;
-
-    // ✅ RECT como polígono editable
-    if (type === 'rectangulo') {
-        return [
-            { x: 0, y: 0 },
-            { x: W, y: 0 },
-            { x: W, y: H },
-            { x: 0, y: H }
-        ];
-    }
-
-    // ✅ CIRCULO como polígono editable (aprox)
-    if (type === 'circulo') {
-        const n = 24; // sube a 32/48 si quieres más redondo
-        const cx = W / 2;
-        const cy = H / 2;
-        const rx = W / 2;
-        const ry = H / 2;
-
-        const pts: Pt[] = [];
-        for (let i = 0; i < n; i++) {
-            const t = (i / n) * Math.PI * 2;
-            pts.push({ x: cx + Math.cos(t) * rx, y: cy + Math.sin(t) * ry });
-        }
-        return pts;
-    }
 
     if (type === 'triangulo')
         return [
@@ -86,7 +64,6 @@ export const getBasePolygonPoints = (type: string, w: number, h: number): Pt[] =
     }
 
     if (type === 'estrella') {
-        // 10-point star
         return [
             { x: W / 2, y: 0 },
             { x: W * 0.6, y: H * 0.4 },
@@ -120,11 +97,9 @@ export const applyInverseElTransformToPoint = (pWorld: Pt, el: any): Pt => {
     const cx = (el.x || 0) + w / 2;
     const cy = (el.y || 0) + h / 2;
 
-    // move to center
     let x = pWorld.x - cx;
     let y = pWorld.y - cy;
 
-    // inverse rotation
     const ang = -((el.rotation || 0) * Math.PI) / 180;
     const cos = Math.cos(ang);
     const sin = Math.sin(ang);
@@ -133,9 +108,46 @@ export const applyInverseElTransformToPoint = (pWorld: Pt, el: any): Pt => {
     x = xr;
     y = yr;
 
-    // inverse flipX (scale(-1,1) about center)
     if (el.flipX) x = -x;
 
-    // back to local top-left
     return { x: x + w / 2, y: y + h / 2 };
+};
+
+// ===== Helpers para trazos =====
+export const bboxFromPts = (pts: Pt[]) => {
+    let minX = Number.POSITIVE_INFINITY;
+    let minY = Number.POSITIVE_INFINITY;
+    let maxX = Number.NEGATIVE_INFINITY;
+    let maxY = Number.NEGATIVE_INFINITY;
+
+    for (const p of pts) {
+        minX = Math.min(minX, p.x);
+        minY = Math.min(minY, p.y);
+        maxX = Math.max(maxX, p.x);
+        maxY = Math.max(maxY, p.y);
+    }
+
+    if (!Number.isFinite(minX)) return { minX: 0, minY: 0, maxX: 0, maxY: 0 };
+    return { minX, minY, maxX, maxY };
+};
+
+export const normalizePtsToLocal = (ptsWorld: Pt[]) => {
+    const { minX, minY, maxX, maxY } = bboxFromPts(ptsWorld);
+    const w = Math.max(1, maxX - minX);
+    const h = Math.max(1, maxY - minY);
+    const ptsLocal = ptsWorld.map((p) => ({ x: p.x - minX, y: p.y - minY }));
+    return { x: minX, y: minY, w, h, ptsLocal };
+};
+
+export const buildStrokePathD = (el: any) => {
+    const pts: Pt[] = Array.isArray(el?.pointsArr) ? el.pointsArr : [];
+    if (el.type === 'linea' || el.type === 'flecha') {
+        if (pts.length < 2) return '';
+        return `M ${pts[0].x} ${pts[0].y} L ${pts[1].x} ${pts[1].y}`;
+    }
+    if (el.type === 'curva') {
+        if (pts.length < 3) return '';
+        return `M ${pts[0].x} ${pts[0].y} Q ${pts[1].x} ${pts[1].y} ${pts[2].x} ${pts[2].y}`;
+    }
+    return '';
 };

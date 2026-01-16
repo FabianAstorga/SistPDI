@@ -40,7 +40,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
             _context.SvgTemplates.Add(svgNuevo);
             await _context.SaveChangesAsync();
-            return Ok(new {Message = "Svg creado Correctamente"});
+            return Ok(new { id = svgNuevo.Id });
         }
 
         [Authorize]

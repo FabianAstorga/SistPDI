@@ -6,14 +6,14 @@ import {
     clonePts,
     getBasePolygonPoints,
     isEditablePolygon,
+    isStrokeType,
+    isEditableByPoints,
+    normalizePtsToLocal,
     applyInverseElTransformToPoint,
     svgPointFromMouse
 } from '../Utils/lienzo.geometry';
 import { pick, readUserNameFromLocalStorage, safeJson } from '../Utils/lienzo.storage';
 import { guardarAcuerdoFinal } from '../Utils/lienzo.http';
-
-// ✅ icons para FIGURAS
-import { Square, Circle, Triangle, Star, Diamond, Hexagon, Octagon } from 'lucide-react';
 
 export const useLienzoModel = (navigate: (path: string) => void): LienzoModel => {
     const [elementos, setElementos] = useState<any[]>([]);
@@ -25,14 +25,20 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
     const [colorGlobal, setColorGlobal] = useState('#003385');
     const [grosorLapiz, setGrosorLapiz] = useState(3);
     const [dibujando, setDibujando] = useState(false);
+
     const [tituloAcuerdo, setTituloAcuerdo] = useState('No acuerdo seleccionado');
     const [autorNombre, setAutorNombre] = useState('—');
+
     const [modoPuntos, setModoPuntos] = useState(false);
     const [dragHandle, setDragHandle] = useState<DragHandle>(null);
 
     const idCapaDibujoActual = useRef<number | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const svgRef = useRef<SVGSVGElement | null>(null);
+
+    // === NUEVO: creación de trazos por drag (id + punto inicial fijo) ===
+    const creandoTrazoId = useRef<number | null>(null);
+    const creandoTrazoStartWorld = useRef<Pt | null>(null);
 
     const seleccionadosIdsRef = useRef<number[]>([]);
     useEffect(() => {
@@ -78,7 +84,11 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
 
     const manejarCambioColor = (nuevoColor: string) => {
         setColorGlobal(nuevoColor);
-        if (seleccionadoId) actualizarAtributo(seleccionadoId, { fill: nuevoColor });
+        if (seleccionadoId) {
+            const el = elementos.find((x) => x.id === seleccionadoId);
+            if (el && isStrokeType(el.type)) actualizarAtributo(seleccionadoId, { stroke: nuevoColor });
+            else actualizarAtributo(seleccionadoId, { fill: nuevoColor });
+        }
     };
 
     const eliminarElemento = (id: number) => {
@@ -98,13 +108,11 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
             setSeleccionadosIds([id]);
             return;
         }
-
         if (herramientaActiva === 'multiseleccion') {
             setSeleccionadoId(id);
             setSeleccionadosIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
             return;
         }
-
         setSeleccionadoId(id);
         setSeleccionadosIds([id]);
     };
@@ -115,13 +123,11 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
             setSeleccionadosIds([id]);
             return;
         }
-
         if (herramientaActiva === 'multiseleccion') {
             setSeleccionadoId(id);
             setSeleccionadosIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
             return;
         }
-
         setSeleccionadoId(id);
         setSeleccionadosIds([id]);
     };
@@ -165,7 +171,12 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
 
     const manejarClickLienzo = (e: any) => {
         if (modoPuntos) return;
+
+        // trazos se crean con drag (mousedown + move)
+        if (isStrokeType(herramientaActiva || '')) return;
+
         if (herramientaActiva === 'lapiz') return;
+
         if (!herramientaActiva) {
             limpiarSeleccion();
             return;
@@ -203,7 +214,43 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
         setHerramientaActiva(null);
     };
 
+    // === mousedown dentro del SVG ===
     const iniciarDibujo = (e: any) => {
+        // crear trazo por drag
+        if (herramientaActiva && isStrokeType(herramientaActiva)) {
+            if (!svgRef.current) return;
+
+            const start = svgPointFromMouse(svgRef.current, e.clientX, e.clientY);
+            const id = Date.now();
+
+            creandoTrazoId.current = id;
+            creandoTrazoStartWorld.current = start;
+            setDibujando(true);
+
+            const nuevo: any = {
+                id,
+                type: herramientaActiva,
+                x: start.x,
+                y: start.y,
+                width: 1,
+                height: 1,
+                rotation: 0,
+                flipX: false,
+                stroke: colorGlobal,
+                strokeWidth: Math.max(1, grosorLapiz),
+                pointsArr:
+                    herramientaActiva === 'curva'
+                        ? [{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }]
+                        : [{ x: 0, y: 0 }, { x: 0, y: 0 }]
+            };
+
+            setElementos((prev) => [...prev, nuevo]);
+            setSeleccionadoId(id);
+            setSeleccionadosIds([id]);
+            return;
+        }
+
+        // lápiz original
         if (herramientaActiva !== 'lapiz') return;
 
         setDibujando(true);
@@ -241,6 +288,38 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
     };
 
     const dibujar = (e: any) => {
+        // === trazos por drag ===
+        if (dibujando && creandoTrazoId.current && svgRef.current && creandoTrazoStartWorld.current) {
+            const id = creandoTrazoId.current;
+            const el = elementos.find((x) => x.id === id);
+            if (!el || !isStrokeType(el.type)) return;
+
+            const startWorld = creandoTrazoStartWorld.current; // ✅ fijo
+            const endWorld = svgPointFromMouse(svgRef.current, e.clientX, e.clientY);
+
+            let ptsWorld: Pt[] = [];
+            if (el.type === 'curva') {
+                const mx = (startWorld.x + endWorld.x) / 2;
+                const my = (startWorld.y + endWorld.y) / 2;
+                const dx = endWorld.x - startWorld.x;
+                const dy = endWorld.y - startWorld.y;
+                const control: Pt = { x: mx - dy * 0.15, y: my + dx * 0.15 };
+                ptsWorld = [startWorld, control, endWorld];
+            } else {
+                ptsWorld = [startWorld, endWorld];
+            }
+
+            const { x, y, w, h, ptsLocal } = normalizePtsToLocal(ptsWorld);
+
+            setElementos((prev) =>
+                prev.map((item) =>
+                    item.id === id ? { ...item, x, y, width: w, height: h, pointsArr: ptsLocal } : item
+                )
+            );
+            return;
+        }
+
+        // === lápiz original ===
         if (!dibujando || !idCapaDibujoActual.current) return;
         const rect = e.currentTarget.getBoundingClientRect();
         const x = e.clientX - rect.left;
@@ -249,7 +328,9 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
 
         const nextPoint = `L ${x} ${y}`;
         setElementos((prev) =>
-            prev.map((el) => (el.id === idCapaDibujoActual.current ? { ...el, points: (el.points || '') + ' ' + nextPoint } : el))
+            prev.map((el) =>
+                el.id === idCapaDibujoActual.current ? { ...el, points: (el.points || '') + ' ' + nextPoint } : el
+            )
         );
     };
 
@@ -263,14 +344,17 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
             y: (seleccionado.y || 0) + 20
         };
 
-        const nuevo = isEditablePolygon(nuevoBase.type)
-            ? {
-                ...nuevoBase,
-                pointsArr: Array.isArray(nuevoBase.pointsArr)
-                    ? clonePts(nuevoBase.pointsArr)
-                    : getBasePolygonPoints(nuevoBase.type, nuevoBase.width || 120, nuevoBase.height || 120)
-            }
-            : nuevoBase;
+        const nuevo =
+            Array.isArray(nuevoBase.pointsArr) && nuevoBase.pointsArr.length >= 2
+                ? { ...nuevoBase, pointsArr: clonePts(nuevoBase.pointsArr) }
+                : isEditablePolygon(nuevoBase.type)
+                    ? {
+                        ...nuevoBase,
+                        pointsArr: Array.isArray(nuevoBase.pointsArr)
+                            ? clonePts(nuevoBase.pointsArr)
+                            : getBasePolygonPoints(nuevoBase.type, nuevoBase.width || 120, nuevoBase.height || 120)
+                    }
+                    : nuevoBase;
 
         setElementos((prev) => [...prev, nuevo]);
         setSeleccionadoId(nuevo.id);
@@ -283,10 +367,12 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
         if (herramientaActiva === 'multiseleccion') {
             const current = seleccionadosIdsRef.current || [];
             const nextSelected = current.includes(id) ? current : [...current, id];
+
             if (!current.includes(id)) {
                 setSeleccionadosIds(nextSelected);
                 setSeleccionadoId(id);
             }
+
             const setSel = new Set(nextSelected);
             setElementos((prev) =>
                 prev.map((el) => (setSel.has(el.id) ? { ...el, x: (el.x || 0) + dx, y: (el.y || 0) + dy } : el))
@@ -294,7 +380,9 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
             return;
         }
 
-        setElementos((prev) => prev.map((el) => (el.id === id ? { ...el, x: (el.x || 0) + dx, y: (el.y || 0) + dy } : el)));
+        setElementos((prev) =>
+            prev.map((el) => (el.id === id ? { ...el, x: (el.x || 0) + dx, y: (el.y || 0) + dy } : el))
+        );
     };
 
     const moverCapa = (id: number, direction: 'up' | 'down') => {
@@ -358,42 +446,63 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
     };
 
     const onSvgMouseMove = (e: any) => {
-        if (herramientaActiva === 'lapiz') {
+        // si estamos dibujando (lápiz o trazo), sigue
+        if (herramientaActiva === 'lapiz' || (dibujando && creandoTrazoId.current)) {
             dibujar(e);
             return;
         }
+
         if (!modoPuntos) return;
         if (!dragHandle) return;
         if (!svgRef.current) return;
 
         const el = elementos.find((x) => x.id === dragHandle.elId);
         if (!el) return;
-        if (!isEditablePolygon(el.type)) return;
+
+        if (!isEditableByPoints(el) && !isEditablePolygon(el.type)) return;
 
         const pWorld = svgPointFromMouse(svgRef.current, e.clientX, e.clientY);
         const local = applyInverseElTransformToPoint(pWorld, el);
 
         const w = el.width || 120;
         const h = el.height || 120;
+
         const x = clamp(local.x, 0, w);
         const y = clamp(local.y, 0, h);
 
         setElementos((prev) =>
             prev.map((item) => {
                 if (item.id !== el.id) return item;
-                const pts = Array.isArray(item.pointsArr) ? clonePts(item.pointsArr) : getBasePolygonPoints(item.type, w, h);
-                if (!pts[dragHandle.idx]) return item;
-                pts[dragHandle.idx] = { x, y };
-                return { ...item, pointsArr: pts };
+
+                const basePts =
+                    Array.isArray(item.pointsArr) && item.pointsArr.length >= 2
+                        ? clonePts(item.pointsArr)
+                        : isEditablePolygon(item.type)
+                            ? getBasePolygonPoints(item.type, w, h)
+                            : [];
+
+                if (!basePts[dragHandle.idx]) return item;
+
+                basePts[dragHandle.idx] = { x, y };
+                return { ...item, pointsArr: basePts };
             })
         );
     };
 
     const onSvgMouseUp = () => {
+        // cerrar trazo
+        if (dibujando && creandoTrazoId.current) {
+            creandoTrazoId.current = null;
+            creandoTrazoStartWorld.current = null;
+            setDibujando(false);
+            return;
+        }
+
         if (herramientaActiva === 'lapiz') {
             setDibujando(false);
             return;
         }
+
         setDragHandle(null);
     };
 
@@ -406,7 +515,7 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
                 const oldH = el.height || 120;
                 const next: any = { ...el, width, height };
 
-                if (isEditablePolygon(el.type) && Array.isArray(el.pointsArr) && el.pointsArr.length >= 3) {
+                if (Array.isArray(el.pointsArr) && el.pointsArr.length >= 2) {
                     const sx = oldW > 0 ? width / oldW : 1;
                     const sy = oldH > 0 ? height / oldH : 1;
                     next.pointsArr = el.pointsArr.map((p: Pt) => ({
@@ -420,43 +529,7 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
         );
     };
 
-    const fontsDisponibles = [
-        'Arial',
-        'Helvetica',
-        'Verdana',
-        'Trebuchet MS',
-        'Tahoma',
-        'Georgia',
-        'Times New Roman',
-        'Courier New',
-        'Lucida Console',
-        'Impact',
-        'Comic Sans MS',
-        'MS Sans Serif',
-        'MS Serif',
-        'System',
-        'Fixedsys',
-        'Terminal',
-        'Lucida Sans Typewriter',
-        'Palatino Linotype',
-        'Book Antiqua',
-        'Garamond',
-        'Century Schoolbook',
-        'Courier',
-        'Monaco',
-        'Consolas',
-        'Lucida Bright',
-        'Bookman Old Style',
-        'Century Gothic',
-        'Franklin Gothic Medium',
-        'Copperplate',
-        'Rockwell',
-        'Baskerville',
-        'OCR A Std',
-        'OCR A Extended',
-        'American Typewriter',
-        'Andale Mono'
-    ];
+    const fontsDisponibles = ['Arial', 'Helvetica', 'Verdana', 'Tahoma', 'Georgia', 'Times New Roman', 'Courier New'];
 
     const presetsLienzo = [
         { w: 800, h: 600 },
@@ -469,23 +542,21 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
         { w: 1080, h: 1920 }
     ];
 
-    // ✅ ahora con iconos
     const FIGURAS = [
-        { id: 'rectangulo', label: 'Rectángulo', icon: Square },
-        { id: 'circulo', label: 'Círculo', icon: Circle },
-        { id: 'triangulo', label: 'Triángulo', icon: Triangle },
-        { id: 'estrella', label: 'Estrella', icon: Star },
-        { id: 'rombo', label: 'Rombo', icon: Diamond },
-        { id: 'hexagono', label: 'Hexágono', icon: Hexagon },
-        { id: 'octagono', label: 'Octágono', icon: Octagon }
+        { id: 'rectangulo', label: 'Rectángulo' },
+        { id: 'circulo', label: 'Círculo' },
+        { id: 'triangulo', label: 'Triángulo' },
+        { id: 'estrella', label: 'Estrella' },
+        { id: 'rombo', label: 'Rombo' },
+        { id: 'hexagono', label: 'Hexágono' },
+        { id: 'octagono', label: 'Octágono' }
     ] as const;
 
-    const tiposConSaturacion = useMemo(
-        () => new Set(['rectangulo', 'circulo', 'triangulo', 'estrella', 'rombo', 'hexagono', 'octagono', 'imagen']),
-        []
-    );
-
-    const canEditPoints = useMemo(() => !!(seleccionado && isEditablePolygon(seleccionado.type)), [seleccionado]);
+    const tiposConSaturacion = useMemo(() => new Set(['rectangulo', 'circulo', 'triangulo', 'estrella', 'rombo', 'hexagono', 'octagono', 'imagen']), []);
+    const canEditPoints = useMemo(() => {
+        if (!seleccionado) return false;
+        return isEditablePolygon(seleccionado.type) || (Array.isArray(seleccionado.pointsArr) && seleccionado.pointsArr.length >= 2);
+    }, [seleccionado]);
 
     useEffect(() => {
         if (modoPuntos && !canEditPoints) setModoPuntos(false);
@@ -496,9 +567,7 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
         }`;
 
     const controlLabel = 'text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 block';
-
-    const inputStyle =
-        'w-full bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2';
+    const inputStyle = 'w-full bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2';
 
     return {
         elementos,
@@ -515,18 +584,22 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
         autorNombre,
         modoPuntos,
         dragHandle,
+
         fileInputRef,
         svgRef,
         idCapaDibujoActual,
+
         modoSeleccionActivo,
         fontsDisponibles,
         presetsLienzo,
         FIGURAS,
         tiposConSaturacion,
         canEditPoints,
+
         sidebarBtnClass,
         controlLabel,
         inputStyle,
+
         setElementos,
         setSeleccionadoId,
         setSeleccionadosIds,
@@ -536,6 +609,7 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
         setColorGlobal,
         setGrosorLapiz,
         setModoPuntos,
+
         actualizarAtributo,
         manejarCambioColor,
         eliminarElemento,
