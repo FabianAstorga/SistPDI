@@ -432,6 +432,7 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
     };
 
     const manejarGuardadoFinal = async () => {
+
         await guardarAcuerdoFinal({
             elementos,
             canvasSize,

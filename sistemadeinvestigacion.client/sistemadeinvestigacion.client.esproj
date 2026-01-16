@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.VisualStudio.JavaScript.Sdk/1.0.3864779">
+﻿<Project Sdk="Microsoft.VisualStudio.JavaScript.Sdk/1.0.3864779">
   <PropertyGroup>
     <StartupCommand>npm run dev</StartupCommand>
     <JavaScriptTestRoot>src\</JavaScriptTestRoot>
@@ -9,6 +9,9 @@
     <BuildOutputFolder>$(MSBuildProjectDirectory)\dist</BuildOutputFolder>
   </PropertyGroup>
   <ItemGroup>
+    <Folder Include="src\assets\Routes\Admin\ElementosLienzo\Hooks\" />
+    <Folder Include="src\assets\Routes\Admin\ElementosLienzo\types\" />
+    <Folder Include="src\assets\Routes\Admin\ElementosLienzo\Utils\" />
     <Folder Include="src\assets\Routes\Client\" />
   </ItemGroup>
 </Project>
