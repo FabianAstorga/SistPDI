@@ -1,33 +1,32 @@
 ﻿import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../../components/Navbar';
-import { Settings2, Save } from 'lucide-react';
+import { Settings2, Save, FileText, ImageIcon } from 'lucide-react';
 
 function Acuerdos() {
-    const [formData, setFormData] = useState(() => {
-        const userStored = localStorage.getItem('user');
-        let userId = 0;
+    const navigate = useNavigate();
 
-        if (userStored) {
+    const [formData, setFormData] = useState(() => {
+        const tempStored = localStorage.getItem('temp_acuerdo');
+        if (tempStored) {
             try {
-                const userData = JSON.parse(userStored);
-                userId = userData.idUsuario || userData.id || 0;
+                return JSON.parse(tempStored);
             } catch (e) {
-                console.error("Error inicializando user ID", e);
+                console.error("Error recuperando datos temporales", e);
             }
         }
 
         return {
-            titulo: '',
-            descripcion: '',
-            detallesDescripcion: '',
-            fechaVencimiento: '',
-            estado: 'Activo',
-            pdfUrl: '',
-            imagenUrl: '',
-            habilitado: 'true',
-            idCreador: userId,
-            idInstitucion: 0,
-            idSvgTemplate: 0
+            Titulo: '',
+            Descripcion: '',
+            DetallesDescripcion: '',
+            FechaVencimiento: '',
+            Estado: 'Activo',
+            PdfUrl: '',
+            ImagenUrl: '',
+            Habilitado: 'true',
+            IdInstitucion: 1,
+            IdSvgTemplate: 0
         };
     });
 
@@ -39,142 +38,93 @@ function Acuerdos() {
         setFormData({ ...formData, [name]: value });
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         if (e) e.preventDefault();
 
-        if (!formData.titulo) {
-            alert("El titulo es obligatorio");
+        if (!formData.Titulo || !formData.FechaVencimiento) {
+            alert("El Titulo y la Fecha son obligatorios");
             return;
         }
 
-        const dataToSend = new FormData();
-        Object.keys(formData).forEach(key => {
-            let value = formData[key];
-
-            if (key === 'fechaVencimiento' && value) {
-                value = new Date(value).toISOString();
-            }
-
-            dataToSend.append(key, value);
-        });
-
-        try {
-            const response = await fetch('http://localhost:5091/api/Acuerdos/crear', {
-                method: 'POST',
-                body: dataToSend
-            });
-
-            if (response.ok) {
-                alert("Acuerdo publicado con exito");
-            } else {
-                const errorText = await response.text();
-                alert("Error: " + errorText);
-            }
-        } catch (error) {
-            console.error("No pudo subirse el acuerdo:", error);
-            alert("Error de conexion con el servidor");
-        }
+        localStorage.setItem('temp_acuerdo', JSON.stringify(formData));
+        navigate('/lienzo');
     };
 
     return (
         <div className="min-h-screen bg-slate-100 overflow-y-auto w-full">
             <Navbar />
-
             <main className="pt-24 pb-20 px-6">
                 <section className="max-w-[95%] mx-auto mt-6">
-                    <form id="form-acuerdo" onSubmit={handleSubmit} className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-2xl rounded-xl bg-white border border-gray-200 overflow-hidden">
-
+                    <form id="form-acuerdo" onSubmit={handleSubmit} autoComplete="off" className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-2xl rounded-xl bg-white border border-gray-200 overflow-hidden">
                         <div className="rounded-t bg-white border-b border-gray-100 px-8 py-6 flex justify-between items-center">
                             <div className="flex items-center">
                                 <div className="p-2 bg-gray-100 rounded-lg mr-3">
                                     <Settings2 size={24} className="text-black" />
                                 </div>
-                                <h6 className="text-black text-xl font-black uppercase tracking-tighter">
-                                    Configuracion de Acuerdo
-                                </h6>
+                                <h6 className="text-black text-xl font-black uppercase tracking-tighter">Configuracion de Acuerdo</h6>
                             </div>
-                            <button
-                                form="form-acuerdo"
-                                className="bg-[#003385] hover:bg-[#002a66] text-white font-bold uppercase text-xs px-8 py-3 rounded-xl shadow-lg transition-all active:scale-95 flex items-center"
-                                type="submit"
-                            >
-                                <Save size={16} className="mr-2" /> Guardar Convenio
+                            <button form="form-acuerdo" className="bg-[#003385] hover:bg-[#002a66] text-white font-bold uppercase text-xs px-8 py-3 rounded-xl shadow-lg transition-all active:scale-95 flex items-center" type="submit">
+                                <Save size={16} className="mr-2" /> Continuar al Lienzo
                             </button>
                         </div>
 
                         <div className="flex-auto bg-gray-50 px-6 lg:px-12 py-10 shadow-inner">
                             <div className="space-y-12">
                                 <div className="space-y-6">
-                                    <span className="text-xs font-black text-black uppercase tracking-widest pb-1">Informacion General y Plazos</span>
-
+                                    <span className="text-xs font-black text-black uppercase tracking-widest pb-1 border-b-2 border-[#003385]">1. Informacion General</span>
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                                         <div className="w-full lg:col-span-2">
                                             <label className={controlLabel}>Titulo del Acuerdo</label>
-                                            <input name="titulo" value={formData.titulo} onChange={handleChange} type="text" className={inputStyle} placeholder="Ej: Convenio Marco de Colaboración" />
+                                            <input name="Titulo" value={formData.Titulo} onChange={handleChange} type="text" className={inputStyle} required placeholder="Ej: Convenio Marco de Colaboración" />
                                         </div>
-
                                         <div className="w-full">
-                                            <label className={controlLabel}>Estado Operativo</label>
-                                            <select name="estado" value={formData.estado} onChange={handleChange} className={`${inputStyle} font-bold`}>
+                                            <label className={controlLabel}>Estado</label>
+                                            <select name="Estado" value={formData.Estado} onChange={handleChange} className={inputStyle}>
                                                 <option value="Activo">Activo</option>
                                                 <option value="Pendiente">Pendiente</option>
-                                                <option value="Finalizado">Finalizado</option>
                                             </select>
                                         </div>
-
-                                        <div className="w-full">
-                                            <label className={controlLabel}>Visibilidad</label>
-                                            <select name="habilitado" value={formData.habilitado} onChange={handleChange} className={inputStyle}>
-                                                <option value="true">Visible en Plataforma</option>
-                                                <option value="false">Oculto / Borrador</option>
-                                            </select>
-                                        </div>
-
                                         <div className="w-full">
                                             <label className={controlLabel}>Fecha Vencimiento</label>
-                                            <input name="fechaVencimiento" value={formData.fechaVencimiento} onChange={handleChange} type="datetime-local" className={inputStyle} />
-                                        </div>
-
-                                        <div className="w-full">
-                                            <label className={controlLabel}>ID Institucion</label>
-                                            <input name="idInstitucion" value={formData.idInstitucion} onChange={handleChange} type="number" className={inputStyle} />
-                                        </div>
-
-                                        <div className="w-full">
-                                            <label className={controlLabel}>ID Template SVG</label>
-                                            <input name="idSvgTemplate" value={formData.idSvgTemplate} onChange={handleChange} type="number" className={inputStyle} />
+                                            <input name="FechaVencimiento" value={formData.FechaVencimiento} onChange={handleChange} type="datetime-local" className={inputStyle} required />
                                         </div>
                                     </div>
                                 </div>
 
-                                <hr className="border-gray-300" />
-
                                 <div className="space-y-6">
-                                    <span className="text-xs font-black text-black uppercase tracking-widest pb-1">Documentacion y Media</span>
+                                    <span className="text-xs font-black text-black uppercase tracking-widest pb-1 border-b-2 border-[#003385]">2. Recursos y Documentación</span>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <div className="w-full">
-                                            <label className={controlLabel}>URL del PDF</label>
-                                            <input name="pdfUrl" value={formData.pdfUrl} onChange={handleChange} type="text" className={inputStyle} placeholder="https://..." />
+                                            <label className={controlLabel}>URL del Documento PDF</label>
+                                            <div className="relative">
+                                                <FileText size={16} className="absolute left-3 top-3 text-gray-400" />
+                                                <input name="PdfUrl" value={formData.PdfUrl} onChange={handleChange} type="text" className={`${inputStyle} pl-10`} placeholder="https://ejemplo.com/archivo.pdf" />
+                                            </div>
                                         </div>
                                         <div className="w-full">
-                                            <label className={controlLabel}>URL de la Imagen</label>
-                                            <input name="imagenUrl" value={formData.imagenUrl} onChange={handleChange} type="text" className={inputStyle} placeholder="https://..." />
+                                            <label className={controlLabel}>URL de Imagen Representativa</label>
+                                            <div className="relative">
+                                                <ImageIcon size={16} className="absolute left-3 top-3 text-gray-400" />
+                                                <input name="ImagenUrl" value={formData.ImagenUrl} onChange={handleChange} type="text" className={`${inputStyle} pl-10`} placeholder="https://ejemplo.com/imagen.jpg" />
+                                            </div>
                                         </div>
+                                    </div>
+                                    <div className="w-full md:w-1/4">
+                                        <label className={controlLabel}>ID Institucion</label>
+                                        <input name="IdInstitucion" value={formData.IdInstitucion} onChange={handleChange} type="number" className={inputStyle} />
                                     </div>
                                 </div>
 
-                                <hr className="border-gray-300" />
-
                                 <div className="space-y-6">
-                                    <span className="text-xs font-black text-black uppercase tracking-widest pb-1">Contenido del Convenio</span>
+                                    <span className="text-xs font-black text-black uppercase tracking-widest pb-1 border-b-2 border-[#003385]">3. Cuerpo del Convenio</span>
                                     <div className="grid grid-cols-1 gap-8">
-                                        <div className="w-full">
+                                        <div>
                                             <label className={controlLabel}>Descripcion Breve</label>
-                                            <textarea name="descripcion" value={formData.descripcion} onChange={handleChange} className={`${inputStyle} h-20 resize-none`} placeholder="Resumen..." />
+                                            <textarea name="Descripcion" value={formData.Descripcion} onChange={handleChange} className={`${inputStyle} h-20 resize-none`} placeholder="Resumen del acuerdo..." />
                                         </div>
-                                        <div className="w-full">
+                                        <div>
                                             <label className={controlLabel}>Detalles Completos</label>
-                                            <textarea name="detallesDescripcion" value={formData.detallesDescripcion} onChange={handleChange} className={`${inputStyle} h-40 resize-none`} placeholder="Cuerpo completo..." />
+                                            <textarea name="DetallesDescripcion" value={formData.DetallesDescripcion} onChange={handleChange} className={`${inputStyle} h-40 resize-none`} placeholder="Escriba aquí todas las cláusulas y detalles..." />
                                         </div>
                                     </div>
                                 </div>
