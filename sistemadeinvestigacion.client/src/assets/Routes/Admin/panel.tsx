@@ -1,5 +1,7 @@
 ﻿import React, { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Navbar } from '../../components/Navbar';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const BilliardCarousel = () => {
     const [acuerdos, setAcuerdos] = useState([]);
@@ -7,7 +9,7 @@ const BilliardCarousel = () => {
     const [isTicking, setIsTicking] = useState(false);
     const [loading, setLoading] = useState(true);
 
-    const slideWidth = 25;
+    const slideWidth = 35;
 
     useEffect(() => {
         const fetchAcuerdos = async () => {
@@ -49,6 +51,15 @@ const BilliardCarousel = () => {
         }
     }, [isTicking]);
 
+    useEffect(() => {
+        if (acuerdos.length > 0) {
+            const autoPlay = setInterval(() => {
+                nextClick();
+            }, 5000);
+            return () => clearInterval(autoPlay);
+        }
+    }, [acuerdos, isTicking]);
+
     if (loading) return <div className="text-center py-20">Cargando acuerdos...</div>;
     if (acuerdos.length === 0) return <div className="text-center py-20">No hay acuerdos para mostrar.</div>;
 
@@ -56,13 +67,12 @@ const BilliardCarousel = () => {
 
     return (
         <div className="relative w-full">
-            {/* Subimos la altura mínima para evitar que se corte el contenido de abajo */}
             <div className="flex items-center justify-center relative min-h-[550px] w-full">
                 <button
                     onClick={() => prevClick()}
-                    className="absolute left-0 md:-left-4 z-20 bg-white p-3 rounded-full shadow-xl hover:bg-gray-100 border border-gray-100 transition-all"
+                    className="absolute left-0 md:-left-4 z-20 bg-[#003385] hover:bg-[#002a66] text-white p-3 rounded-full shadow-xl transition-all duration-200 active:scale-95 border border-white/10 group"
                 >
-                    ←
+                    <ChevronLeft size={24} className="group-hover:-translate-x-0.5 transition-transform" />
                 </button>
 
                 <ul className="relative flex list-none p-0 m-0 w-full justify-center items-center">
@@ -79,13 +89,12 @@ const BilliardCarousel = () => {
                                     transform: `translateX(${(pos - length) * slideWidth}rem)`,
                                     opacity: isVisible ? 1 : 0,
                                     width: '35rem',
-                                    filter: isActive ? 'none' : 'grayscale(1) blur(1px)',
+                                    filter: isActive ? 'none' : ' blur(3px)',
                                     zIndex: isActive ? 10 : 5,
                                     scale: isActive ? '1.05' : '0.85',
                                     pointerEvents: isActive ? 'auto' : 'none'
                                 }}
                             >
-                                {/* CAMBIO AQUÍ: Fondo gris claro y object-contain para ver la imagen completa */}
                                 <div className="h-72 w-full bg-gray-50 flex items-center justify-center overflow-hidden">
                                     <img
                                         src={acuerdo.imagenUrl || 'https://via.placeholder.com/800x400?text=Convenio'}
@@ -100,7 +109,6 @@ const BilliardCarousel = () => {
                                     <p className="text-base text-gray-600 leading-relaxed line-clamp-3">
                                         {acuerdo.descripcion}
                                     </p>
-                                  
                                 </div>
                             </li>
                         );
@@ -109,9 +117,9 @@ const BilliardCarousel = () => {
 
                 <button
                     onClick={() => nextClick()}
-                    className="absolute right-0 md:-right-4 z-20 bg-white p-3 rounded-full shadow-xl hover:bg-gray-100 border border-gray-100 transition-all"
+                    className="absolute right-0 md:-right-4 z-20 bg-[#003385] hover:bg-[#002a66] text-white p-3 rounded-full shadow-xl transition-all duration-200 active:scale-95 border border-white/10 group"
                 >
-                    →
+                    <ChevronRight size={24} className="group-hover:translate-x-0.5 transition-transform" />
                 </button>
             </div>
         </div>
@@ -122,7 +130,7 @@ function Panel() {
     return (
         <div className="min-h-screen bg-gray-50 pt-24">
             <Navbar />
-            <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+            <main className="w-full mt-[10px] px-[50px] pb-[50px]">
                 <div className="grid grid-cols-1 gap-6">
                     <div className="bg-white shadow-sm rounded-3xl p-8 md:p-12 border border-gray-200">
                         <BilliardCarousel />

@@ -5,34 +5,46 @@ import {
     LayoutDashboard,
     FileSignature,
     Layers,
-    PlusCircle,
     Building,
     LogOut,
-    Settings, // Importamos el icono de engranaje
-    User as UserIcon
+    Settings,
 } from 'lucide-react';
 
 export const Navbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const [user, setUser] = useState(null);
+
+    // Recuperar info del usuario para el saludo
+    const [user, setUser] = useState<any>(null);
 
     useEffect(() => {
-        const userStored = localStorage.getItem('user');
-        if (userStored) setUser(JSON.parse(userStored));
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            try {
+                setUser(JSON.parse(storedUser));
+            } catch (e) {
+                console.error("Error al leer usuario", e);
+            }
+        }
     }, []);
 
     const handleLogout = async () => {
+        // Ejecutar servicio de logout
         await authService.logout();
+
+        // Limpiar TODA la información de sesión
         localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        localStorage.removeItem('temp_acuerdo'); // Limpia el borrador al salir
+
         navigate('/login');
     };
 
-    const getBtnClass = (path) => {
+    const getBtnClass = (path: string) => {
         const active = location.pathname === path;
         const base = "flex items-center px-4 py-2 rounded-lg transition-all duration-200 text-sm font-bold uppercase tracking-wider mx-1";
         return `${base} ${active
-            ? 'bg-[#003385] text-white shadow-md scale-105 border border-white/20'
+            ? 'bg-white/20 text-white shadow-md scale-105 border border-white/20'
             : 'text-white/80 hover:bg-[#002a66] hover:text-white'}`;
     };
 
@@ -66,17 +78,13 @@ export const Navbar = () => {
                             <Layers size={16} className="mr-2" /> Lienzo
                         </button>
                         <button onClick={() => navigate('/institucion')} className={getBtnClass('/institucion')}>
-                            <Building size={16} className="mr-2" /> instituciones
+                            <Building size={16} className="mr-2" /> Instituciones
                         </button>
                     </div>
                 </div>
 
                 {/* DERECHA: Configuración + User Info + Logout */}
                 <div className="flex items-center space-x-4">
-
-                    {/* BOTÓN DE CONFIGURACIÓN (ENGRANAJE) */}
-                    
-
                     <div className="flex flex-col items-end border-l border-white/10 pl-4 pr-2">
                         <span className="text-white font-black text-xs uppercase tracking-widest">
                             {user?.name || 'Admin'}

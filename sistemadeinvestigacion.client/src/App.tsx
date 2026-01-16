@@ -4,7 +4,7 @@ import {  Route, Routes } from 'react-router-dom'
 import React from 'react'
 import Login from './assets/Routes/Admin/login'
 import Panel from './assets/Routes/Admin/panel'
-import { Lienzo } from './assets/Routes/Admin/lienzo';
+import { Lienzo } from './assets/Routes/Admin/ElementosLienzo/Lienzo';
 import Configuracion from './assets/Routes/Admin/configuracion';
 import Acuerdos from './assets/Routes/Admin/acuerdos';
 import Institucion from './assets/Routes/Admin/institucion';
