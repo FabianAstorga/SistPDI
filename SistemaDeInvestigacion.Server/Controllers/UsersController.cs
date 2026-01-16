@@ -23,11 +23,21 @@ namespace SistemaDeInvestigacion.Server.Controllers
         public async Task<ActionResult<IEnumerable<User>>> GetUsers()
         {
             var userId = User.GetUserId();
+            var userRole = User.GetUserRole();
             if (userId == null) {
                 return NotFound(new
                 {
                     message = "Usuario no autenticado"
                 });
+            }
+
+            if (userRole != 1) {
+                return NotFound(
+                    new
+                    {
+                       message = "Usuario no es Super-Admin"
+                    }
+                    );
             }
             return await _context.Users.ToListAsync();
         }

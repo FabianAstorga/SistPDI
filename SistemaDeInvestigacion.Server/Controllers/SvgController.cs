@@ -4,7 +4,7 @@ using SistemaDeInvestigacion.Server.Models;
 using SistemaDeInvestigacion.Server.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
-using System.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 
 namespace SistemaDeInvestigacion.Server.Controllers
 {
@@ -47,10 +47,10 @@ namespace SistemaDeInvestigacion.Server.Controllers
         [HttpGet("obtenerSvg")]
         public async Task<ActionResult<IEnumerable<SvgTemplate>>> ObtenerSvgs()
         {
-            var listaSvg = _context.SvgTemplates
-                .Where(x => x.Estado == true)
+            var listaSvg = await _context.SvgTemplates
+                .Where(s => s.Estado == true)
                 .ToListAsync();
-            return Ok();
+            return Ok(listaSvg);
         }
 
     }

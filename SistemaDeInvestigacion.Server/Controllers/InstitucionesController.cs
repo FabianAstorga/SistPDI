@@ -1,10 +1,11 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.EntityFrameworkCore;
 using SistemaDeInvestigacion.Server.Data;
 using SistemaDeInvestigacion.Server.Dtos;
 using SistemaDeInvestigacion.Server.Models;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authorization;
 
 
 namespace SistemaDeInvestigacion.Server.Controllers
@@ -16,11 +17,13 @@ namespace SistemaDeInvestigacion.Server.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
+        private readonly IWebHostEnvironment _env;
 
-        public InstitucionesController(ApplicationDbContext context, IConfiguration configuration)
+        public InstitucionesController(ApplicationDbContext context, IConfiguration configuration, IWebHostEnvironment env)
         {
             _context = context;
             _configuration = configuration;
+            _env = env;
         }
 
         [Authorize]
@@ -37,12 +40,40 @@ namespace SistemaDeInvestigacion.Server.Controllers
         [HttpPost("crear")]
         public async Task<ActionResult<Acuerdo>> PublicarInstitucion([FromForm] CreateInstitucionesDto createInstitucionesDto)
         {
+            string dbroute = null;
+            if (createInstitucionesDto.logo != null && createInstitucionesDto.logo.Length > 0)
+            {
+ 
+                string carpetaImagenes = Path.Combine(_env.ContentRootPath, "LogosMedia");
+                Console.WriteLine("Carpeta:", carpetaImagenes);
+                if (!Directory.Exists(carpetaImagenes))
+                {
+                    Directory.CreateDirectory(carpetaImagenes);
+                }
+
+                string extension = Path.GetExtension(createInstitucionesDto.logo.FileName);
+                string name = createInstitucionesDto.nombre.Replace(" ", "_").ToLower();
+                string filename = $"logo-{name}{extension}";
+                string routecomplete = Path.Combine(carpetaImagenes, filename);
+                Console.WriteLine($"{routecomplete}");
+
+
+                using (var stream = new FileStream(routecomplete, FileMode.Create))
+                {
+                    await createInstitucionesDto.logo.CopyToAsync(stream);
+                }
+
+                dbroute = $"/imagenes/{filename}";
+
+                }
+
+            Console.WriteLine("Nombre del archivo: ", dbroute);
             var nuevaInstitucion = new Institucion
             {
                 Nombre = createInstitucionesDto.nombre,
                 Descripcion = createInstitucionesDto.descripcion,
-                Logo = createInstitucionesDto.logo,
-                SitioWeb = createInstitucionesDto.email,
+                Logo = dbroute,
+                SitioWeb = createInstitucionesDto.sitioWeb,
                 Telefono = createInstitucionesDto.telefono,
                 Direccion = createInstitucionesDto.direccion,
                 FechaCreacion = DateTime.UtcNow,
@@ -55,6 +86,9 @@ namespace SistemaDeInvestigacion.Server.Controllers
             {
                 message = "Institucion creada correctamente"
             });
-        }
+        
+            
+            }
+            
     }
 }
