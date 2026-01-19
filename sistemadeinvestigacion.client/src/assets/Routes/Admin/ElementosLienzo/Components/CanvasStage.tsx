@@ -12,7 +12,7 @@ import {
 
 type Props = {
     model: any;
-    svgId?: string; // ✅ nuevo
+    svgId?: string; 
 };
 
 export const CanvasStage: React.FC<Props> = ({ model, svgId = 'lienzo-svg' }) => {
@@ -65,7 +65,7 @@ export const CanvasStage: React.FC<Props> = ({ model, svgId = 'lienzo-svg' }) =>
                     onClick={(e) => e.stopPropagation()}
                 >
                     <svg
-                        id={svgId}        // ✅ nuevo: permite que guardarAcuerdoFinal lo encuentre
+                        id={svgId}        
                         ref={svgRef}
                         width="100%"
                         height="100%"
@@ -77,7 +77,7 @@ export const CanvasStage: React.FC<Props> = ({ model, svgId = 'lienzo-svg' }) =>
                         className={herramientaActiva ? 'cursor-crosshair' : 'cursor-default'}
                     >
                         <defs>
-                            {/* Saturación */}
+                            
                             {elementos
                                 .filter((el: any) => {
                                     const sat = Number(el.saturation);
@@ -92,7 +92,6 @@ export const CanvasStage: React.FC<Props> = ({ model, svgId = 'lienzo-svg' }) =>
                                     );
                                 })}
 
-                            {/* Flecha */}
                             <marker
                                 id="arrowhead"
                                 markerWidth="10"
@@ -134,7 +133,7 @@ export const CanvasStage: React.FC<Props> = ({ model, svgId = 'lienzo-svg' }) =>
                                     alRedimensionar={(id: number, width: number, height: number) => redimensionarElemento(id, width, height)}
                                     puedeInteractuar={modoSeleccionActivo}
                                 >
-                                    {/* POLÍGONOS editables */}
+                                   
                                     {isEditablePolygon(el.type) && polygonPts.length >= 3 && (
                                         <>
                                             <polygon
@@ -166,7 +165,6 @@ export const CanvasStage: React.FC<Props> = ({ model, svgId = 'lienzo-svg' }) =>
                                         </>
                                     )}
 
-                                    {/* RECT */}
                                     {el.type === 'rectangulo' && (
                                         <rect
                                             data-elid={el.id}
@@ -178,7 +176,6 @@ export const CanvasStage: React.FC<Props> = ({ model, svgId = 'lienzo-svg' }) =>
                                         />
                                     )}
 
-                                    {/* CIRCLE */}
                                     {el.type === 'circulo' && (
                                         <ellipse
                                             data-elid={el.id}
@@ -191,7 +188,6 @@ export const CanvasStage: React.FC<Props> = ({ model, svgId = 'lienzo-svg' }) =>
                                         />
                                     )}
 
-                                    {/* TRAZOS (línea / flecha / curva) */}
                                     {isStrokeType(el.type) && (
                                         <>
                                             <path
@@ -228,7 +224,7 @@ export const CanvasStage: React.FC<Props> = ({ model, svgId = 'lienzo-svg' }) =>
                                         </>
                                     )}
 
-                                    {/* IMAGE */}
+                                   
                                     {el.type === 'imagen' && (
                                         <image
                                             data-elid={el.id}
@@ -240,7 +236,6 @@ export const CanvasStage: React.FC<Props> = ({ model, svgId = 'lienzo-svg' }) =>
                                         />
                                     )}
 
-                                    {/* PEN */}
                                     {el.type === 'lapiz' && (
                                         <path
                                             data-elid={el.id}
@@ -253,7 +248,6 @@ export const CanvasStage: React.FC<Props> = ({ model, svgId = 'lienzo-svg' }) =>
                                         />
                                     )}
 
-                                    {/* TEXT */}
                                     {el.type === 'texto' && (
                                         <foreignObject data-elid={el.id} width={el.width || 100} height={el.height || 100}>
                                             <div
@@ -276,7 +270,6 @@ export const CanvasStage: React.FC<Props> = ({ model, svgId = 'lienzo-svg' }) =>
                     </svg>
                 </div>
 
-                {/* RESIZE CANVAS HANDLE */}
                 <div
                     className="absolute -bottom-2 -right-2 w-6 h-6 bg-white border-2 border-blue-500 rounded-full cursor-nwse-resize flex items-center justify-center text-blue-500 hover:scale-110 shadow-md"
                     onMouseDown={(e) => {

@@ -8,13 +8,13 @@ import {
     Building,
     LogOut,
     Settings,
+    Users,
 } from 'lucide-react';
 
 export const Navbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Recuperar info del usuario para el saludo
     const [user, setUser] = useState<any>(null);
 
     useEffect(() => {
@@ -29,19 +29,19 @@ export const Navbar = () => {
     }, []);
 
     const handleLogout = async () => {
-        // Ejecutar servicio de logout
         await authService.logout();
-
-        // Limpiar TODA la información de sesión
         localStorage.removeItem('user');
         localStorage.removeItem('token');
-        localStorage.removeItem('temp_acuerdo'); // Limpia el borrador al salir
-
+        localStorage.removeItem('temp_acuerdo');
         navigate('/login');
     };
 
     const getBtnClass = (path: string) => {
-        const active = location.pathname === path;
+        const active =
+            location.pathname === path ||
+            location.pathname.startsWith(path + '/') ||
+            (path === '/institucionList' && location.pathname.startsWith('/institucion'));
+
         const base = "flex items-center px-4 py-2 rounded-lg transition-all duration-200 text-sm font-bold uppercase tracking-wider mx-1";
         return `${base} ${active
             ? 'bg-white/20 text-white shadow-md scale-105 border border-white/20'
@@ -54,7 +54,6 @@ export const Navbar = () => {
         <nav className="fixed top-0 left-0 w-full bg-[#003385] shadow-[0_4px_20px_rgba(0,0,0,0.15)] z-50 h-16 flex items-center">
             <div className="w-full px-4 flex items-center justify-between">
 
-                {/* IZQUIERDA: Brand + Menu Principal */}
                 <div className="flex items-center">
                     <div className="flex items-center mr-8 cursor-pointer" onClick={() => navigate('/panel')}>
                         <img
@@ -74,17 +73,23 @@ export const Navbar = () => {
                         <button onClick={() => navigate('/acuerdos')} className={getBtnClass('/acuerdos')}>
                             <FileSignature size={16} className="mr-2" /> Acuerdos
                         </button>
-                        <button onClick={() => navigate('/lienzo')} className={getBtnClass('/lienzo')}>
-                            <Layers size={16} className="mr-2" /> Lienzo
-                        </button>
-                        <button onClick={() => navigate('/institucion')} className={getBtnClass('/institucion')}>
+
+                        <button onClick={() => navigate('/institucionList')} className={getBtnClass('/institucionList')}>
                             <Building size={16} className="mr-2" /> Instituciones
+                        </button>
+                        <button onClick={() => navigate('/empleado')} className={getBtnClass('/empleado')}>
+                            <Users size={16} className="mr-2" /> Empleados
                         </button>
                     </div>
                 </div>
 
-                {/* DERECHA: Configuración + User Info + Logout */}
                 <div className="flex items-center space-x-4">
+
+                    {/* BOTÓN LIENZO SANDBOX A LA DERECHA */}
+                    <button onClick={() => navigate('/lienzo')} className={getBtnClass('/lienzo')}>
+                        <Layers size={16} className="mr-2" /> Lienzo Sandbox
+                    </button>
+
                     <div className="flex flex-col items-end border-l border-white/10 pl-4 pr-2">
                         <span className="text-white font-black text-xs uppercase tracking-widest">
                             {user?.name || 'Admin'}

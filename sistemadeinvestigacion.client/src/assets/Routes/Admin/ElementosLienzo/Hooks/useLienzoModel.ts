@@ -447,7 +447,6 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
     };
 
     const onSvgMouseMove = (e: any) => {
-        // si estamos dibujando (lápiz o trazo), sigue
         if (herramientaActiva === 'lapiz' || (dibujando && creandoTrazoId.current)) {
             dibujar(e);
             return;
@@ -491,7 +490,6 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
     };
 
     const onSvgMouseUp = () => {
-        // cerrar trazo
         if (dibujando && creandoTrazoId.current) {
             creandoTrazoId.current = null;
             creandoTrazoStartWorld.current = null;

@@ -16,7 +16,6 @@ function Acuerdos() {
                 const parsed = JSON.parse(tempStored);
                 return {
                     ...parsed,
-                    // ✅ tu backend usa idInstitucion (número)
                     IdInstitucion: parsed?.IdInstitucion !== undefined && parsed?.IdInstitucion !== null
                         ? Number(parsed.IdInstitucion)
                         : ''
@@ -35,12 +34,11 @@ function Acuerdos() {
             PdfUrl: '',
             ImagenUrl: '',
             Habilitado: 'true',
-            IdInstitucion: '', // number | ''
+            IdInstitucion: '', 
             IdSvgTemplate: 0
         };
     });
 
-    // ✅ feedback: encuentra por idInstitucion
     const institucionSeleccionada = useMemo(() => {
         if (formData.IdInstitucion === '' || formData.IdInstitucion === null || formData.IdInstitucion === undefined) return null;
         return (
@@ -73,7 +71,6 @@ function Acuerdos() {
                 const list = Array.isArray(data) ? data : [];
                 setInstituciones(list);
 
-                // ✅ setea default SOLO si no hay uno ya
                 setFormData((prev: any) => {
                     if (prev.IdInstitucion !== '' && prev.IdInstitucion !== null && prev.IdInstitucion !== undefined) return prev;
                     if (list.length === 0) return prev;
@@ -129,7 +126,8 @@ function Acuerdos() {
                         autoComplete="off"
                         className="relative flex flex-col w-full mb-6 shadow-2xl rounded-xl bg-white border border-gray-200 overflow-hidden"
                     >
-                        <div className="rounded-t bg-white border-b px-8 py-6 flex justify-between items-center">
+                        <div className="rounded-t bg-white border-b border-gray-100 px-8 py-6 flex justify-between items-center">
+
                             <div className="flex items-center">
                                 <div className="p-2 bg-gray-100 rounded-lg mr-3">
                                     <Settings2 size={24} className="text-black" />
@@ -147,10 +145,10 @@ function Acuerdos() {
                             </button>
                         </div>
 
-                        <div className="bg-gray-50 px-6 lg:px-12 py-10">
+                        <div className="bg-gray-50 px-6 lg:px-12 py-10 shadow-inner">
+
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
 
-                                {/* Columna Izquierda */}
                                 <div className="space-y-8">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="md:col-span-2">
@@ -239,8 +237,8 @@ function Acuerdos() {
                                                         )}
                                                         {instituciones.map((inst: any) => (
                                                             <option
-                                                                key={String(inst.idInstitucion)}   // ✅ key único
-                                                                value={Number(inst.idInstitucion)} // ✅ value número válido
+                                                                key={String(inst.idInstitucion)}   
+                                                                value={Number(inst.idInstitucion)} 
                                                             >
                                                                 {inst.nombre}
                                                             </option>
@@ -258,7 +256,6 @@ function Acuerdos() {
                                     </div>
                                 </div>
 
-                                {/* Columna Derecha */}
                                 <div className="space-y-6">
                                     <div>
                                         <label className={controlLabel}>Descripción Breve</label>

@@ -8,6 +8,8 @@ import { Lienzo } from './assets/Routes/Admin/ElementosLienzo/Lienzo';
 import Configuracion from './assets/Routes/Admin/configuracion';
 import Acuerdos from './assets/Routes/Admin/acuerdos';
 import Institucion from './assets/Routes/Admin/institucion';
+import Empleado from './assets/Routes/Admin/Empleado';
+import InstitucionList from './assets/Routes/Admin/institucionList';
 import { RouteGuard } from './assets/Routes/Admin/RouteGuard'
 
 
@@ -23,6 +25,9 @@ function App() {
                 <Route path="/configuracion" element={<Configuracion />} />
                 <Route path="/acuerdos" element={<Acuerdos />} />
                 <Route path="/institucion" element={<Institucion />} />
+                <Route path="/empleado" element={<Empleado />} />
+                <Route path="/institucionList" element={<InstitucionList/>} />
+
             </Route>
         </Routes>
     )

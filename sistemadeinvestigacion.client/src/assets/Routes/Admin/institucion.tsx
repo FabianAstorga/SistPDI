@@ -1,8 +1,11 @@
 ﻿import React, { useMemo, useState } from 'react';
 import { Navbar } from '../../components/Navbar';
-import { Building, Globe, Image as ImageIcon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Building, Globe, Image as ImageIcon, List, Save } from 'lucide-react';
 
 function Institucion() {
+    const navigate = useNavigate();
+
     const [nombre, setNombre] = useState('');
     const [descripcion, setDescripcion] = useState('');
     const [sitioWeb, setSitioWeb] = useState('');
@@ -65,7 +68,6 @@ function Institucion() {
             if (email.trim()) fd.append('email', email.trim());
             if (telefono.trim()) fd.append('telefono', telefono.trim());
 
-          
             if (logoFile) fd.append('logo', logoFile);
 
             const res = await fetch('http://localhost:5091/api/Instituciones/crear', {
@@ -104,7 +106,7 @@ function Institucion() {
             <main className="pt-24 pb-20 px-6">
                 <section className="max-w-[95%] mx-auto mt-6">
                     <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-2xl rounded-xl bg-white border border-gray-200 overflow-hidden">
-                        {/* HEADER PRINCIPAL */}
+
                         <div className="rounded-t bg-white border-b border-gray-100 px-8 py-6 flex justify-between items-center">
                             <div className="flex items-center">
                                 <div className="p-2 bg-gray-100 rounded-lg mr-3">
@@ -115,17 +117,31 @@ function Institucion() {
                                 </h6>
                             </div>
 
-                            <button
-                                className={`${canSubmit && !saving
-                                        ? 'bg-green-600 hover:bg-green-700'
+                            <div className="flex items-center gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => navigate('/institucionList')}
+                                    className="bg-[#003385] hover:bg-[#002a66] text-white font-bold uppercase text-xs px-4 py-3 rounded-xl shadow-lg transition-all active:scale-95 flex items-center"
+                                    
+                                >
+                                    <List size={16} className="mr-2" />
+                                    Listado Instituciones
+                                </button>
+
+
+                                <button
+                                    className={`${canSubmit && !saving
+                                        ? 'bg-[#003385] hover:bg-[#002a66]'
                                         : 'bg-gray-400 cursor-not-allowed'
-                                    } text-white font-bold uppercase text-xs px-8 py-3 rounded-xl shadow-lg transition-all active:scale-95 flex items-center`}
-                                type="button"
-                                onClick={handleSubmit}
-                                disabled={!canSubmit || saving}
-                            >
-                                {saving ? 'Guardando...' : 'Guardar Institución'}
-                            </button>
+                                        } text-white font-bold uppercase text-xs px-8 py-3 rounded-xl shadow-lg transition-all active:scale-95 flex items-center`}
+                                    type="button"
+                                    onClick={handleSubmit}
+                                    disabled={!canSubmit || saving}
+                                >
+                                    <Save size={16} className="mr-2" />
+                                    {saving ? 'Guardando...' : 'Guardar Institución'}
+                                </button>
+                            </div>
                         </div>
 
                         {/* Mensajes */}
@@ -206,7 +222,7 @@ function Institucion() {
                                         <div>
                                             <label className={controlLabel}>Descripción *</label>
                                             <textarea
-                                                className={`${inputStyle} h-32 resize-none`}
+                                                className={`${inputStyle} h-47 resize-none`}
                                                 placeholder="Breve reseña de la institución..."
                                                 value={descripcion}
                                                 onChange={(e) => setDescripcion(e.target.value)}
@@ -215,7 +231,6 @@ function Institucion() {
                                     </div>
                                 </div>
 
-                                {/* COLUMNA DERECHA */}
                                 <div className="space-y-6">
                                     <div className="border-b border-gray-300 pb-1">
                                         <span className="text-xs font-black text-black uppercase tracking-widest">
@@ -268,9 +283,6 @@ function Institucion() {
                                 </div>
                             </form>
 
-                            <p className="mt-6 text-[11px] text-gray-500">
-                                * Campos obligatorios según tu API.
-                            </p>
                         </div>
                     </div>
                 </section>

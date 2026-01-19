@@ -53,7 +53,7 @@ export const guardarAcuerdoFinal = async (params: {
     }
 
     try {
-        // 1) Crear SVG
+
         const svgPayload = { svg_original: svgString, svg_editado: svgString, estado: true };
 
         const resSvg = await fetch('http://localhost:5091/api/Svg/crear', {
@@ -73,7 +73,6 @@ export const guardarAcuerdoFinal = async (params: {
             return;
         }
 
-        // ✅ AHORA tu backend devuelve { id: ... } (o un objeto con id)
         const svgData = (svgBody.kind === 'json' ? svgBody.data : null) as any;
         const idGeneradoSvg = toInt(pick(svgData, ['id', 'Id'], 0), 0);
 
@@ -83,7 +82,6 @@ export const guardarAcuerdoFinal = async (params: {
             return;
         }
 
-        // 2) Armar acuerdo con FK correcta
         const acuerdoFinalObj: any = {
             idAcuerdo: 0,
             titulo: String(pick(acuerdoBase, ['Titulo', 'titulo'], '') || '').trim(),
@@ -99,7 +97,6 @@ export const guardarAcuerdoFinal = async (params: {
             habilitado: toBool(pick(acuerdoBase, ['Habilitado', 'habilitado'], true)),
             idInstitucion: toInt(pick(acuerdoBase, ['IdInstitucion', 'idInstitucion'], 0), 0),
 
-            // ✅ ESTE ES EL CAMBIO CLAVE: el acuerdo debe apuntar al svg creado
             idSvgTemplate: idGeneradoSvg
         };
 
@@ -109,7 +106,6 @@ export const guardarAcuerdoFinal = async (params: {
             return;
         }
 
-        // 3) Enviar acuerdo
         const fd = new FormData();
         Object.entries(acuerdoFinalObj).forEach(([k, v]) => {
             if (v === undefined || v === null) return;

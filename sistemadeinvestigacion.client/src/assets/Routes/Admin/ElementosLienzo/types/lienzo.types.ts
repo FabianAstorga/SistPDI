@@ -12,7 +12,6 @@
     | 'hexagono'
     | 'octagono'
     | 'imagen'
-    // NUEVO (trazos)
     | 'linea'
     | 'flecha'
     | 'curva';
@@ -29,10 +28,8 @@ export type ElementoBase = {
     width?: number;
     height?: number;
 
-    // fill (figuras / lápiz)
     fill?: string;
 
-    // stroke (trazos)
     stroke?: string;
     strokeWidth?: number;
 
@@ -40,7 +37,6 @@ export type ElementoBase = {
     flipX?: boolean;
     saturation?: number;
 
-    // Para edición vector (polígonos y trazos)
     pointsArr?: Pt[];
 };
 
