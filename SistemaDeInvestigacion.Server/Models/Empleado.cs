@@ -11,10 +11,10 @@ namespace SistemaDeInvestigacion.Server.Models
         public int Id { get; set; }
 
         [Column("nombre")]
-        public string? Nombre { get; set; }
+        public required string Nombre { get; set; }
 
         [Column("rut")]
-        public string? Rut { get; set; }
+        public required string Rut { get; set; }
 
         [Column("brigada")]
         public string? Brigada { get; set; }
@@ -24,5 +24,15 @@ namespace SistemaDeInvestigacion.Server.Models
 
         [Column("telefono")]
         public int? Telefono { get; set; }
+
+        [Column("mail")]
+        public required string Mail { get; set; }
+
+        [Column("idCreador")]
+        public required long idCreador { get; set; }
+
+        [ForeignKey("idCreador")]
+        public virtual User? user { get; set; }
+
     }
 }

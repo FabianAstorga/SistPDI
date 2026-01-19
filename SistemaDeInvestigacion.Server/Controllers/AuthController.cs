@@ -25,7 +25,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto loginRequest)
         {
-            // Corregido: Mail en lugar de Email
+
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Mail == loginRequest.Email);
 
             if (user == null)
@@ -33,7 +33,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 return Unauthorized(new { Message = "Datos ingresados incorrectos" });
             }
 
-            // Corregido: Contrasena en lugar de Password
             bool passValida = BCrypt.Net.BCrypt.Verify(loginRequest.Password, user.Contrasena);
 
             if (!passValida)

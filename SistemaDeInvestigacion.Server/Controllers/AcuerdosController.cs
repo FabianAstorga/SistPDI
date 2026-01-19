@@ -65,7 +65,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return Ok(acuerdos);
         }
 
-        [HttpGet("acuerdos")]
+        [HttpGet()]
         public async Task<ActionResult<IEnumerable<Acuerdo>>> GetAcuerdos()
         {
             return await _context.Acuerdos.ToListAsync();
