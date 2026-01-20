@@ -27,7 +27,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             var empleado = empleadoDto;
             var NewEmpleado = new Empleado
             {
-                Nombre = empleado.Nombre,
+                NombreCompleto = empleado.Nombre,
                 Rut = empleado.Rut,
                 Brigada = empleado.brigada,
                 Cargo = empleado.cargo,

@@ -1,80 +1,32 @@
-﻿import React, { useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { Navbar } from '../../components/Navbar';
 import { Save } from 'lucide-react';
+import { Users, Search, User, Phone, IdCard, Briefcase, Mail } from 'lucide-react';
 
-import { Users, Search, X, User, Phone, IdCard, Briefcase } from 'lucide-react';
-
-type UserRow = {
-    id: string;
-    firstname: string;
-    lastname: string;
-    country: string;
-    photo: string;
+type EmpleadoApi = {
+    id: number;
+    nombre: string;
+    rut: string;
+    brigada: string;
+    cargo: string;
+    telefono: number | string;
+    mail?: string | null;
+    idCreador?: number | null;
 };
 
 function Empleado() {
-    
-    const [users] = useState<UserRow[]>([
-        {
-            id: 'u1',
-            firstname: 'Juan',
-            lastname: 'Topo',
-            country: 'Chi/le',
-            photo: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR8IDFWYReimH4pWG_dqzpLmUf0ftToyQsxjw&s',
-        },
-        {
-            id: 'u2',
-            firstname: 'Papi ',
-            lastname: 'el Micky',
-            country: 'kong xa lí',
-            photo: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRpl4naH2wUPok15s57KZdK1qMewdFsrXltWA&s',
-        },
-        {
-            id: 'u3',
-            firstname: 'Juan',
-            lastname: 'Alcayaga',
-            country: 'Bv',
-            photo: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSGjUhNrFwRrJNShcz1AYtsLMhqUpAuZnzYgg&s',
-        },
-        {
-            id: 'u4',
-            firstname: 'Roman',
-            lastname: 'Corchea',
-            country: 'La grieta del invocador',
-            photo: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQE__oPyA1VIbCfrcU_pZ5B6gS7v9Voaam8Og&s',
-        },
-        {
-            id: 'u5',
-            firstname: 'Angel',
-            lastname: 'Caiman',
-            country: 'Tel aviv',
-            photo: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQlD0Iy7inMA9_6QalnYsAOePopZgBcbIDCYQ&s',
-        },
-        {
-            id: 'u6',
-            firstname: 'Mister',
-            lastname: 'Beast',
-            country: 'Rancagua',
-            photo: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSflzUm2nYsZhTw4POn91VmMu-GASO6O4nQ_g&s',
-        },
-        {
-            id: 'u7',
-            firstname: 'Kitty',
-            lastname: 'Bellaka',
-            country: 'colina 2',
-            photo: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQWZBXzm2l4G-sxYDnMqVVRSd61GZN3CveMVw&s',
-        },
-    ]);
+    const [empleados, setEmpleados] = useState<EmpleadoApi[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
 
     const [inputSearch, setInputSearch] = useState('');
 
     const searchResult = useMemo(() => {
         const q = inputSearch.trim().toLowerCase();
-        if (!q) return users;
-        return users.filter((u) => `${u.firstname} ${u.lastname}`.toLowerCase().includes(q));
-    }, [users, inputSearch]);
+        if (!q) return empleados;
+        return empleados.filter((e) => (e.nombre || '').toLowerCase().includes(q));
+    }, [empleados, inputSearch]);
 
-    
     const [modalOpen, setModalOpen] = useState(false);
 
     const [nombre, setNombre] = useState('');
@@ -82,12 +34,14 @@ function Empleado() {
     const [brigada, setBrigada] = useState('');
     const [cargo, setCargo] = useState('');
     const [telefono, setTelefono] = useState('');
+    const [mail, setMail] = useState('');
 
     const [saving, setSaving] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [okMsg, setOkMsg] = useState<string | null>(null);
 
-    const controlLabel = 'text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 block';
+    const controlLabel =
+        'text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 block';
 
     const inputStyle =
         'w-full bg-white border border-gray-300 text-black text-sm rounded-lg focus:ring-2 focus:ring-[#003385] focus:border-transparent p-2.5 transition-all duration-200 outline-none shadow-sm';
@@ -95,7 +49,7 @@ function Empleado() {
     const cleanRut = (value: string) => value.replace(/\./g, '').replace(/-/g, '').trim();
 
     const formatRut = (value: string) => {
-        const v = cleanRut(value);
+        const v = cleanRut(value).toUpperCase();
         if (v.length <= 1) return v;
         const body = v.slice(0, -1);
         const dv = v.slice(-1);
@@ -132,9 +86,10 @@ function Empleado() {
             brigada.trim().length > 0 &&
             cargo.trim().length > 0 &&
             telefono.trim().length > 0 &&
+            mail.trim().length > 0 &&
             isRutValid(rut)
         );
-    }, [nombre, rut, brigada, cargo, telefono]);
+    }, [nombre, rut, brigada, cargo, telefono, mail]);
 
     const resetForm = () => {
         setNombre('');
@@ -142,6 +97,7 @@ function Empleado() {
         setBrigada('');
         setCargo('');
         setTelefono('');
+        setMail('');
         setSaving(false);
         setErrorMsg(null);
         setOkMsg(null);
@@ -154,7 +110,6 @@ function Empleado() {
 
     const closeModal = () => {
         setModalOpen(false);
-        
     };
 
     const handleRutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -163,12 +118,51 @@ function Empleado() {
         setErrorMsg(null);
     };
 
+    const fetchEmpleados = async () => {
+        try {
+            setLoading(true);
+            setLoadError(null);
+
+            const token = localStorage.getItem('token');
+
+            const res = await fetch('http://localhost:5091/api/Empleados', {
+                method: 'GET',
+                headers: {
+                    accept: 'text/plain',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+            });
+
+            if (!res.ok) {
+                const text = await res.text().catch(() => '');
+                throw new Error(text || `Error HTTP ${res.status}`);
+            }
+
+            const data = (await res.json().catch(() => null)) as any;
+            if (!Array.isArray(data)) {
+                // si tu backend devolviera {data:[...]} o similar, ajusta acá
+                throw new Error('Respuesta inesperada del servidor (no es una lista).');
+            }
+
+            setEmpleados(data as EmpleadoApi[]);
+        } catch (err: any) {
+            setLoadError(err?.message || 'Error al cargar empleados.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchEmpleados();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     const handleSubmit = async () => {
         setErrorMsg(null);
         setOkMsg(null);
 
-        if (!nombre.trim() || !rut.trim() || !brigada.trim() || !cargo.trim() || !telefono.trim()) {
-            setErrorMsg('Faltan campos obligatorios: nombre, rut, brigada, cargo y teléfono.');
+        if (!nombre.trim() || !rut.trim() || !brigada.trim() || !cargo.trim() || !telefono.trim() || !mail.trim()) {
+            setErrorMsg('Faltan campos obligatorios: nombre, rut, mail, brigada, cargo y teléfono.');
             return;
         }
         if (!isRutValid(rut)) {
@@ -178,23 +172,28 @@ function Empleado() {
 
         try {
             setSaving(true);
+
             const token = localStorage.getItem('token');
 
-            const payload: any = {
-                nombre: nombre.trim(),
-                rut: cleanRut(rut).toUpperCase(),
-                brigada: brigada.trim(),
-                cargo: cargo.trim(),
-                telefono: telefono.trim(),
-            };
+            // ✅ NUEVO ENDPOINT: multipart/form-data (según tu swagger/curl)
+            const fd = new FormData();
+            fd.append('Nombre', nombre.trim());
+            fd.append('Rut', formatRut(rut).toUpperCase()); // backend espera "Rut=string" con guion
+            fd.append('Mail', mail.trim());
+            fd.append('brigada', brigada.trim());
+            fd.append('cargo', cargo.trim());
 
-            const res = await fetch('http://localhost:5091/api/Empleados/crear', {
+            const telNum = Number(String(telefono).replace(/[^\d]/g, ''));
+            fd.append('telefono', Number.isFinite(telNum) ? String(telNum) : '0');
+
+            const res = await fetch('http://localhost:5091/api/Empleados', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    accept: 'text/plain',
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                    // OJO: NO poner Content-Type aquí (el browser lo setea con boundary)
                 },
-                body: JSON.stringify(payload),
+                body: fd,
             });
 
             if (!res.ok) {
@@ -203,12 +202,17 @@ function Empleado() {
             }
 
             setOkMsg('Empleado creado correctamente.');
-           
+
+            // refresca lista
+            await fetchEmpleados();
+
+            // limpia form
             setNombre('');
             setRut('');
             setBrigada('');
             setCargo('');
             setTelefono('');
+            setMail('');
         } catch (err: any) {
             setErrorMsg(err?.message || 'Error al crear el empleado.');
         } finally {
@@ -223,19 +227,15 @@ function Empleado() {
             <main className="pt-24 pb-20 px-6">
                 <section className="max-w-[95%] mx-auto mt-6">
                     <div className="w-full mb-6 shadow-2xl rounded-xl bg-white border border-gray-200 overflow-hidden">
-                        
                         <div className="bg-white border-b border-gray-100 px-8 py-6 flex justify-between items-center gap-4">
                             <div className="flex items-center">
                                 <div className="p-2 bg-gray-100 rounded-lg mr-3">
                                     <Users size={24} className="text-black" />
                                 </div>
-                                <h6 className="text-black text-xl font-black uppercase tracking-tighter">
-                                    Empleados
-                                </h6>
+                                <h6 className="text-black text-xl font-black uppercase tracking-tighter">Empleados</h6>
                             </div>
 
                             <div className="flex items-center gap-3 w-full justify-end">
-                             
                                 <div className="w-full max-w-xs relative">
                                     <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
                                         <Search size={14} />
@@ -257,38 +257,70 @@ function Empleado() {
                                     <Save size={16} className="mr-2" />
                                     Crear Empleado
                                 </button>
-
                             </div>
                         </div>
 
                         <div className="bg-gray-50 px-6 lg:px-6 py-6 shadow-inner">
                             <div className="w-full max-h-[650px] overflow-y-auto pr-1">
-                                {searchResult.length === 0 ? (
+                                {loading ? (
+                                    <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
+                                        <p className="text-sm text-gray-700 font-semibold">Cargando empleados...</p>
+                                    </div>
+                                ) : loadError ? (
+                                    <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
+                                        <p className="text-sm text-red-600 font-semibold">{loadError}</p>
+                                        <button
+                                            type="button"
+                                            onClick={fetchEmpleados}
+                                            className="mt-3 bg-gray-900 hover:bg-black text-white font-bold uppercase text-xs px-6 py-2 rounded-xl shadow-lg transition-all active:scale-95"
+                                        >
+                                            Reintentar
+                                        </button>
+                                    </div>
+                                ) : searchResult.length === 0 ? (
                                     <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
                                         <p className="text-sm text-indigo-700 font-bold">No results found!</p>
                                         <p className="text-xs text-gray-500 mt-1">Prueba otro nombre.</p>
                                     </div>
                                 ) : (
                                     <ul className="space-y-2">
-                                        {searchResult.map((user) => (
-                                            <li key={user.id}>
+                                        {searchResult.map((emp) => (
+                                            <li key={emp.id}>
                                                 <button
                                                     type="button"
-                                                    onClick={() => console.log('Selected user:', user)}
+                                                    onClick={async () => {
+                                                        // ✅ ejemplo: obtener 1 empleado usando GET /api/Empleados/{id}
+                                                        try {
+                                                            const token = localStorage.getItem('token');
+                                                            const res = await fetch(`http://localhost:5091/api/Empleados/${emp.id}`, {
+                                                                method: 'GET',
+                                                                headers: {
+                                                                    accept: 'text/plain',
+                                                                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                                                                },
+                                                            });
+                                                            if (!res.ok) return console.log('No se pudo obtener empleado', emp.id);
+                                                            const data = await res.json();
+                                                            console.log('Empleado detalle:', data);
+                                                        } catch (e) {
+                                                            console.log('Error al obtener empleado', e);
+                                                        }
+                                                    }}
                                                     className="w-full text-left bg-indigo-50 rounded-xl p-8 border border-transparent hover:shadow-lg hover:border-indigo-300 transition-all active:scale-[0.99]"
                                                 >
                                                     <div className="flex items-center gap-4">
-                                                        <img
-                                                            src={user.photo}
-                                                            alt={`${user.firstname} ${user.lastname}`}
-                                                            className="rounded-full w-16 h-16 object-cover border border-white shadow shrink-0"
-                                                        />
+                                                        <div className="rounded-full w-16 h-16 bg-white border border-white shadow shrink-0 flex items-center justify-center">
+                                                            <User size={26} className="text-gray-700" />
+                                                        </div>
 
                                                         <div className="flex-1 min-w-0">
-                                                            <h2 className="text-base font-black text-gray-900 truncate">
-                                                                {user.firstname} {user.lastname}
-                                                            </h2>
-                                                            <p className="text-sm text-gray-600 truncate">{user.country}</p>
+                                                            <h2 className="text-base font-black text-gray-900 truncate">{emp.nombre}</h2>
+                                                            <p className="text-sm text-gray-600 truncate">
+                                                                {emp.brigada} · {emp.cargo}
+                                                            </p>
+                                                            <p className="text-xs text-gray-500 truncate">
+                                                                {emp.rut} · {emp.mail || 'sin mail'} · {String(emp.telefono ?? '')}
+                                                            </p>
                                                         </div>
                                                     </div>
                                                 </button>
@@ -302,14 +334,8 @@ function Empleado() {
                 </section>
             </main>
 
-            
             {modalOpen && (
-                <div
-                    className="fixed inset-0 z-[9999] flex items-center justify-center"
-                    aria-modal="true"
-                    role="dialog"
-                >
-                    
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center" aria-modal="true" role="dialog">
                     <button
                         type="button"
                         className="absolute inset-0 bg-black/40"
@@ -318,15 +344,12 @@ function Empleado() {
                     />
 
                     <div className="relative w-[min(1100px,95vw)] max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-gray-200">
-                        
                         <div className="rounded-t bg-white border-b border-gray-100 px-8 py-6 flex justify-between items-center">
                             <div className="flex items-center">
                                 <div className="p-2 bg-gray-100 rounded-lg mr-3">
                                     <User size={24} className="text-black" />
                                 </div>
-                                <h6 className="text-black text-xl font-black uppercase tracking-tighter">
-                                    Ingresar Nuevo Empleado
-                                </h6>
+                                <h6 className="text-black text-xl font-black uppercase tracking-tighter">Ingresar Nuevo Empleado</h6>
                             </div>
 
                             <div className="flex items-center gap-3">
@@ -339,7 +362,6 @@ function Empleado() {
                                 >
                                     {saving ? 'Guardando...' : 'Guardar Empleado'}
                                 </button>
-
                             </div>
                         </div>
 
@@ -358,12 +380,9 @@ function Empleado() {
                                     handleSubmit();
                                 }}
                             >
-                                
                                 <div className="space-y-6">
                                     <div className="border-b border-gray-300 pb-1">
-                                        <span className="text-xs font-black text-black uppercase tracking-widest">
-                                            Datos del empleado
-                                        </span>
+                                        <span className="text-xs font-black text-black uppercase tracking-widest">Datos del empleado</span>
                                     </div>
 
                                     <div className="space-y-4">
@@ -383,7 +402,7 @@ function Empleado() {
                                         </div>
 
                                         <div>
-                                            <label className={controlLabel}>RUT</label>
+                                            <label className={controlLabel}>RUT *</label>
                                             <div className="relative">
                                                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
                                                     <IdCard size={14} />
@@ -398,14 +417,32 @@ function Empleado() {
                                             </div>
 
                                             {rut.trim().length > 0 && !isRutValid(rut) && (
-                                                <p className="mt-1 text-[11px] text-red-600 font-semibold">
-                                                    RUT inválido.
-                                                </p>
+                                                <p className="mt-1 text-[11px] text-red-600 font-semibold">RUT inválido.</p>
                                             )}
                                         </div>
 
                                         <div>
-                                            <label className={controlLabel}>Teléfono</label>
+                                            <label className={controlLabel}>Mail *</label>
+                                            <div className="relative">
+                                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                                                    <Mail size={14} />
+                                                </span>
+                                                <input
+                                                    type="email"
+                                                    className={`${inputStyle} pl-10`}
+                                                    placeholder="usuario@mail.com"
+                                                    value={mail}
+                                                    onChange={(e) => {
+                                                        setMail(e.target.value);
+                                                        setOkMsg(null);
+                                                        setErrorMsg(null);
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className={controlLabel}>Teléfono *</label>
                                             <div className="relative">
                                                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
                                                     <Phone size={14} />
@@ -428,14 +465,12 @@ function Empleado() {
 
                                 <div className="space-y-6">
                                     <div className="border-b border-gray-300 pb-1">
-                                        <span className="text-xs font-black text-black uppercase tracking-widest">
-                                            Organización
-                                        </span>
+                                        <span className="text-xs font-black text-black uppercase tracking-widest">Organización</span>
                                     </div>
 
                                     <div className="space-y-4">
                                         <div className="bg-white p-6 rounded-xl border border-gray-300 shadow-sm">
-                                            <label className={controlLabel}>Brigada</label>
+                                            <label className={controlLabel}>Brigada *</label>
                                             <div className="relative">
                                                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
                                                     <Users size={14} />
@@ -455,7 +490,7 @@ function Empleado() {
                                         </div>
 
                                         <div className="bg-white p-6 rounded-xl border border-gray-300 shadow-sm">
-                                            <label className={controlLabel}>Cargo</label>
+                                            <label className={controlLabel}>Cargo *</label>
                                             <div className="relative">
                                                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
                                                     <Briefcase size={14} />
@@ -477,11 +512,7 @@ function Empleado() {
                                 </div>
                             </form>
 
-                            <div className="mt-8 flex justify-end gap-3">
-
-
-
-                            </div>
+                            <div className="mt-8 flex justify-end gap-3"></div>
                         </div>
                     </div>
                 </div>

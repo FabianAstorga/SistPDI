@@ -41,19 +41,25 @@ namespace SistemaDeInvestigacion.Server.Models
         [Column("FechaActualizacion")]
         public DateTime? FechaActualizacion { get; set; }
 
-        [Column("idCreador")]
-        public long? IdCreador { get; set; }
+        [Column("IdEmpresa")]
+        public int IdEmpresa { get; set; }
 
-        [Column("IdInstitucion")]
-        public int? IdInstitucion { get; set; }
+        [ForeignKey("IdEmpresa")]
+        public virtual Empresas? Empresas { get; set; }
 
-        [Column("idSvgTemplate")]
-        public int? IdSvgTemplate { get; set; }
+        //[Column("idCreador")]
+        //public long? IdCreador { get; set; }
 
-        [ForeignKey("IdInstitucion")]
-        public virtual Institucion? Institucion { get; set; }
+        //[Column("IdInstitucion")]
+        //public int? IdInstitucion { get; set; }
 
-        [ForeignKey("IdSvgTemplate")]
-        public virtual SvgTemplate? SvgTemplate { get; set; }
+        //[Column("idSvgTemplate")]
+        //public int? IdSvgTemplate { get; set; }
+
+        //[ForeignKey("IdInstitucion")]
+        //public virtual Institucion? Institucion { get; set; }
+
+        //[ForeignKey("IdSvgTemplate")]
+        //public virtual SvgTemplate? SvgTemplate { get; set; }
     }
 }

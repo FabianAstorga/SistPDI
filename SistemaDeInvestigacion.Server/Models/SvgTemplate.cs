@@ -24,11 +24,5 @@ namespace SistemaDeInvestigacion.Server.Models
 
         [Column("fechaActualizacion")]
         public DateTime? FechaActualizacion { get; set; }
-
-        [Column("idUser")]
-        public long IdUser { get; set; }
-
-        [ForeignKey("IdUser")]
-        public virtual User? User { get; set; }
     }
 }

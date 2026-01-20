@@ -8,21 +8,11 @@ namespace SistemaDeInvestigacion.Server.Models
     public class User
     {
         [Key]
-        [Column("IdUsuario")]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public long IdUsuario { get; set; }
-
-        [Column("Nombre")]
-        public required string Nombre { get; set; }
-
-        [Column("Mail")]
-        public required string Mail { get; set; }
+        [Column("idPersona")]
+        public required string IdPersona { get; set; }
 
         [Column("FechaCreacion")]
         public DateTime? FechaCreacion { get; set; }
-
-        [Column("FechaActualizacion")]
-        public DateTime? FechaActualizacion { get; set; }
 
         [Column("Contrasena")]
         public required string Contrasena { get; set; }
@@ -30,7 +20,9 @@ namespace SistemaDeInvestigacion.Server.Models
         [Column("Rol")]
         public required int Rol { get; set; }
 
-        public virtual ICollection<SvgTemplate> SvgTemplates { get; set; } = new List<SvgTemplate>();
+        [ForeignKey("idPersona")]
+        public virtual Empleado? Empleado { get; set; }
+
 
 
     }

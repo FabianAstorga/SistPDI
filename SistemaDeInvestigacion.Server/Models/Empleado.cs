@@ -7,32 +7,16 @@ namespace SistemaDeInvestigacion.Server.Models
     public class Empleado
     {
         [Key]
-        [Column("id")]
-        public int Id { get; set; }
-
-        [Column("nombre")]
-        public required string Nombre { get; set; }
-
         [Column("rut")]
-        public required string Rut { get; set; }
+        public required string Id { get; set; }
 
-        [Column("brigada")]
-        public string? Brigada { get; set; }
+        [Column("correo_electronico")]
+        public required string CorreoElectronico { get; set; }
 
-        [Column("cargo")]
-        public string? Cargo { get; set; }
+        [Column("nombre_completo")]
+        public required string NombreCompleto { get; set; }
 
-        [Column("telefono")]
-        public int? Telefono { get; set; }
 
-        [Column("mail")]
-        public required string Mail { get; set; }
-
-        [Column("idCreador")]
-        public required long idCreador { get; set; }
-
-        [ForeignKey("idCreador")]
-        public virtual User? user { get; set; }
 
     }
 }

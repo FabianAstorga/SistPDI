@@ -3,12 +3,12 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SistemaDeInvestigacion.Server.Models
 {
-    [Table("instituciones")]
-    public class Institucion
+    [Table("Empresas")]
+    public class Empresas
     {
         [Key]
-        [Column("IdInstitucion")]
-        public int IdInstitucion { get; set; }
+        [Column("IdEmpresas")]
+        public required int IdEmpresas { get; set; }
 
         [Column("Nombre")]
         public required string Nombre { get; set; }

@@ -8,7 +8,7 @@ namespace SistemaDeInvestigacion.Server.Models
     {
         [Key]
         [Column("idContacto")]
-        public int IdContacto { get; set; }
+        public  required int IdContacto { get; set; }
 
         [Column("Nombre")]
         public required string Nombre { get; set; }
