@@ -7,6 +7,7 @@ namespace SistemaDeInvestigacion.Server.Models
     public class SvgTemplate
     {
         [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         [Column("id")]
         public int Id { get; set; }
 

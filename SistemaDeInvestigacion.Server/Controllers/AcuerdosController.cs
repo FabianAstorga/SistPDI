@@ -46,9 +46,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 ImagenUrl = acuerdos.imagenUrl,
                 Habilitado = acuerdos.habilitado,
                 FechaCreacion = DateTime.UtcNow,
-                IdCreador = userId,
-                IdInstitucion = acuerdos.idInstitucion,
-                IdSvgTemplate = acuerdos.idSvgTemplate
             };
             _context.Acuerdos.Add(NewAcuerdo);
             await _context.SaveChangesAsync();

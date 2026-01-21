@@ -21,36 +21,46 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
 
         [HttpPost]
-        public async Task<ActionResult<Empleado>> CrearEmpleado([FromForm] createEmpleadoDto empleadoDto)
+        public async Task<ActionResult<User>> CrearUsuario([FromForm] createEmpleados empleadoDto)
         {
             var userId = User.GetUserId();
-            var empleado = empleadoDto;
-            var NewEmpleado = new Empleado
+
+            if (userId != 1 )
             {
-                NombreCompleto = empleado.Nombre,
+                return BadRequest("Usuario no es SuperAdministrador");
+            }
+
+            var empleado = empleadoDto;
+
+            bool rutExiste = await _context.Empleados.AnyAsync(x => x.Rut == empleado.Rut);
+
+            if (!rutExiste ) {
+                BadRequest("Rut no existente");
+            }
+
+            var NewEmpleado = new User
+            {
+                FechaCreacion = DateTime.UtcNow,
                 Rut = empleado.Rut,
-                Brigada = empleado.brigada,
-                Cargo = empleado.cargo,
-                Telefono = empleado.telefono,
-                Mail = empleado.Mail,
-                idCreador = userId
+                Rol = empleado.Rol,
+                Contrasena = BCrypt.Net.BCrypt.HashPassword(empleado.Contrasena),
             };
             Console.WriteLine("OLA LLEGUE ACA");
-            _context.Empleados.Add(NewEmpleado);
+            _context.Users.Add(NewEmpleado);
             await _context.SaveChangesAsync();
-            return Ok(new { Message = "Empleado Creado" });
+            return Ok(new { Message = "Usuario Nuevo Creado" });
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Empleado>> TenerEmpleado(int id)
+        public async Task<ActionResult<User>> TenerUsuario(int id)
         {
-            var EmpleadoData = await _context.Empleados.FindAsync(id);
+            var UserData = await _context.Users.FindAsync(id);
 
-            if (EmpleadoData == null)
+            if (UserData == null)
             {
                 return NotFound();
             }
-            return Ok(EmpleadoData);
+            return Ok(UserData);
         }
 
         [HttpGet]

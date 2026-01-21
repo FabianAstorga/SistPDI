@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 namespace SistemaDeInvestigacion.Server.Dtos
 {
-    public class CreateInstitucionesDto
+    public class CreateEmpresaDto
     {
         public required string nombre { get; set; }
         public required string descripcion { get; set; }

@@ -7,8 +7,9 @@ namespace SistemaDeInvestigacion.Server.Models
     public class Empresas
     {
         [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         [Column("IdEmpresas")]
-        public required int IdEmpresas { get; set; }
+        public int IdEmpresas { get; set; }
 
         [Column("Nombre")]
         public required string Nombre { get; set; }

@@ -3,22 +3,16 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SistemaDeInvestigacion.Server.Dtos
 {
-    public class createEmpleadoDto
+    public class createEmpleados
     {
         [Required]
-        public required string Nombre { get; set; }
+        public required int Rol { get; set; }
+        
+        [Required]
+        public required string Contrasena { get; set; }
         
         [Required]
         public required string Rut { get; set; }
         
-        [Required]
-        [EmailAddress]
-        public required string Mail { get; set; }
-       
-        public string? brigada { get; set; }
-
-        public string? cargo { get; set; }
-
-        public int? telefono { get; set; }
     }
 }

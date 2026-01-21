@@ -6,15 +6,20 @@ namespace SistemaDeInvestigacion.Server.Models
     [Table("acuerdos/users/templates")]
     public class AcuerdosUsersTemplates
     {
-       
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        [Column("idBorrador")]
+        public int? IdBorrador { get; set; }
+
+
         [Column("idUsuario")]
-        public required string IdUsuario { get; set; }
+        public required int IdUsuario { get; set; }
 
         [Column("idSvg")]
-        public required long IdSvg { get; set; }
+        public int? IdSvg { get; set; }
 
         [Column("idAcuerdo")]
-        public  required long IdAcuerdo { get; set; }
+        public int? IdAcuerdo { get; set; }
 
 
         [ForeignKey("IdUsuario")]

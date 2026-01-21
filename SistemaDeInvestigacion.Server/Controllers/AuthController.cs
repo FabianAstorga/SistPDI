@@ -25,15 +25,16 @@ namespace SistemaDeInvestigacion.Server.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto loginRequest)
         {
+            var userAuth = await _context.Users
+                .Include(u => u.Empleado)
+                .FirstOrDefaultAsync(u => u.Empleado != null && u.Empleado.CorreoElectronico == loginRequest.Email);
 
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Mail == loginRequest.Email);
-
-            if (user == null)
+            if (userAuth == null)
             {
                 return Unauthorized(new { Message = "Datos ingresados incorrectos" });
             }
 
-            bool passValida = BCrypt.Net.BCrypt.Verify(loginRequest.Password, user.Contrasena);
+            bool passValida = BCrypt.Net.BCrypt.Verify(loginRequest.Password, userAuth.Contrasena);
 
             if (!passValida)
             {
@@ -45,18 +46,18 @@ namespace SistemaDeInvestigacion.Server.Controllers
             var audience = _configuration.GetSection("Jwt:Audience").Value;
 
             if (string.IsNullOrEmpty(keyString))
-                return StatusCode(500, "Clave JWT no configurada.");
+                return StatusCode(500, "Clave JWT no configurada en appsettings.");
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyString));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            var claims = new[]
+            var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.NameIdentifier, user.IdUsuario.ToString()),
-                new Claim(ClaimTypes.Role, user.Rol.ToString()),
-                new Claim(ClaimTypes.Name, user.Nombre),
-                new Claim(ClaimTypes.Email, user.Mail),
-                new Claim("id_usuario", user.IdUsuario.ToString())
+                new Claim(ClaimTypes.NameIdentifier, userAuth.IdPersona.ToString()),
+                new Claim(ClaimTypes.Role, userAuth.Rol.ToString()),
+                new Claim(ClaimTypes.Name, userAuth.Empleado?.NombreCompleto ?? "Sin Nombre"),
+                new Claim(ClaimTypes.Email, userAuth.Empleado?.CorreoElectronico ?? ""),
+                new Claim("rut", userAuth.Rut)
             };
 
             var token = new JwtSecurityToken(
@@ -72,7 +73,12 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return Ok(new
             {
                 token = jwtToken,
-                user = new { name = user.Nombre, email = user.Mail }
+                user = new
+                {
+                    nombre = userAuth.Empleado?.NombreCompleto,
+                    email = userAuth.Empleado?.CorreoElectronico,
+                    rol = userAuth.Rol
+                }
             });
         }
     }

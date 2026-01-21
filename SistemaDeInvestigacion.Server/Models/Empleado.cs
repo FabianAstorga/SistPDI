@@ -8,7 +8,7 @@ namespace SistemaDeInvestigacion.Server.Models
     {
         [Key]
         [Column("rut")]
-        public required string Id { get; set; }
+        public required string Rut { get; set; }
 
         [Column("correo_electronico")]
         public required string CorreoElectronico { get; set; }

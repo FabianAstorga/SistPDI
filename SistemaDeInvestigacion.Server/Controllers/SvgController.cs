@@ -23,8 +23,8 @@ namespace SistemaDeInvestigacion.Server.Controllers
         }
 
         [Authorize]
-        [HttpPost("crear")] 
-        public async Task<ActionResult<SvgTemplate>> CrearSvg([FromBody]CreateSvgDto createSvgDto)
+        [HttpPost("crear")]
+        public async Task<IActionResult> CrearSvg([FromBody] CreateSvgDto createSvgDto)
         {
             var userId = User.GetUserId();
             var svgNuevo = new SvgTemplate
@@ -33,14 +33,25 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 Estado = createSvgDto.estado,
                 SvgEditado = null,
                 FechaCreacion = DateTime.UtcNow,
-                FechaActualizacion = null,
-                IdUser = userId
+                FechaActualizacion = null
             };
+
+
 
 
             _context.SvgTemplates.Add(svgNuevo);
             await _context.SaveChangesAsync();
+
+            var borradorNuevo = new AcuerdosUsersTemplates
+            {
+                IdUsuario = userId,
+                IdSvg = svgNuevo.Id
+            };
+
+            _context.AcuerdosUserTemplates.Add(borradorNuevo);
+            await _context.SaveChangesAsync();
             return Ok(new { id = svgNuevo.Id });
+
         }
 
         [Authorize]

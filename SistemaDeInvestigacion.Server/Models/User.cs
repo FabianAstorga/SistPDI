@@ -8,8 +8,9 @@ namespace SistemaDeInvestigacion.Server.Models
     public class User
     {
         [Key]
-        [Column("idPersona")]
-        public required string IdPersona { get; set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        [Column("IdPersona")]
+        public int? IdPersona { get; set; }
 
         [Column("FechaCreacion")]
         public DateTime? FechaCreacion { get; set; }
@@ -20,7 +21,10 @@ namespace SistemaDeInvestigacion.Server.Models
         [Column("Rol")]
         public required int Rol { get; set; }
 
-        [ForeignKey("idPersona")]
+        [Column("Rut")]
+        public required string Rut { get; set; }
+
+        [ForeignKey("Rut")]
         public virtual Empleado? Empleado { get; set; }
 
 

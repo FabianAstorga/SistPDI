@@ -13,13 +13,13 @@ namespace SistemaDeInvestigacion.Server.Controllers
     [Route("api/[controller]")]
     [ApiController]
 
-    public class InstitucionesController : Controller
+    public class EmpresaController : Controller
     {
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
         private readonly IWebHostEnvironment _env;
 
-        public InstitucionesController(ApplicationDbContext context, IConfiguration configuration, IWebHostEnvironment env)
+        public EmpresaController(ApplicationDbContext context, IConfiguration configuration, IWebHostEnvironment env)
         {
             _context = context;
             _configuration = configuration;
@@ -28,26 +28,26 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
         [Authorize]
         [HttpGet("{idInstitucion}")]
-        public async Task<ActionResult<Institucion>> GetInstitucion(int idInstitucion)
+        public async Task<ActionResult<Empresas>> GetInstitucion(int idEmpresas)
         {
-            var institucion = await _context.Instituciones.FindAsync(idInstitucion);
-            if (institucion == null) return StatusCode(404, "No hay ninguna institucion");
-            return institucion;
+            var empresas = await _context.Empresas.FindAsync(idEmpresas);
+            if (empresas == null) return StatusCode(404, "No hay ninguna Empresa");
+            return empresas;
         }
 
         [Authorize]
         [HttpGet()]
-        public async Task<ActionResult<IEnumerable< Institucion>>> GetInstituciones()
+        public async Task<ActionResult<IEnumerable<Empresas>>> GetInstituciones()
         {
-            var institucion = await _context.Instituciones.ToListAsync();
-            if (institucion == null) return StatusCode(404, "No hay ninguna institucion");
-            return institucion;
+            var empresas = await _context.Empresas.ToListAsync();
+            if (empresas == null) return StatusCode(404, "No hay ninguna Empresa");
+            return empresas;
         }
 
 
         [Authorize]
         [HttpPost("crear")]
-        public async Task<ActionResult<Acuerdo>> PublicarInstitucion([FromForm] CreateInstitucionesDto createInstitucionesDto)
+        public async Task<ActionResult<Acuerdo>> PublicarInstitucion([FromForm] CreateEmpresaDto createInstitucionesDto)
         {
             string dbroute = null;
             if (createInstitucionesDto.logo != null && createInstitucionesDto.logo.Length > 0)
@@ -77,8 +77,9 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 }
 
             Console.WriteLine("Nombre del archivo: ", dbroute);
-            var nuevaInstitucion = new Institucion
+            var newEmpresa = new Empresas
             {
+                
                 Nombre = createInstitucionesDto.nombre,
                 Descripcion = createInstitucionesDto.descripcion,
                 Logo = dbroute,
@@ -89,7 +90,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 Email = createInstitucionesDto.email
             };
 
-            _context.Instituciones.Add(nuevaInstitucion);
+            _context.Empresas.Add(newEmpresa);
             await _context.SaveChangesAsync();
             return Ok(new
             {

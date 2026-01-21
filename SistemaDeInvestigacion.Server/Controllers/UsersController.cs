@@ -1,122 +1,70 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc;
 using SistemaDeInvestigacion.Server.Data;
 using SistemaDeInvestigacion.Server.Dtos;
 using SistemaDeInvestigacion.Server.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace SistemaDeInvestigacion.Server.Controllers
 {
-    [ApiController]
     [Route("api/[controller]")]
-    public class UsersController : ControllerBase
+    [ApiController]
+    public class UsersController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IConfiguration _configuration;
 
-        public UsersController(ApplicationDbContext context)
+        public UsersController(ApplicationDbContext context, IConfiguration configuration)
         {
             _context = context;
+            _configuration = configuration;
         }
 
-        [Authorize]
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+
+        [HttpPost]
+        public async Task<ActionResult<User>> CrearUsuario([FromForm] createEmpleados empleadoDto)
         {
-            var userId = User.GetUserId();
-            var userRole = User.GetUserRole();
-            if (userId == null) {
-                return NotFound(new
-                {
-                    message = "Usuario no autenticado"
-                });
+
+
+            var empleado = empleadoDto;
+
+            bool rutExiste = await _context.Empleados.AnyAsync(x => x.Rut == empleado.Rut);
+
+            if (!rutExiste)
+            {
+                BadRequest("Rut no existente");
             }
 
-            if (userRole != 1) {
-                return NotFound(
-                    new
-                    {
-                       message = "Usuario no es Super-Admin"
-                    }
-                    );
+            var NewEmpleado = new User
+            {
+                FechaCreacion = DateTime.UtcNow,
+                Rut = empleado.Rut,
+                Rol = empleado.Rol,
+                Contrasena = BCrypt.Net.BCrypt.HashPassword(empleado.Contrasena),
+            };
+            Console.WriteLine("OLA LLEGUE ACA");
+            _context.Users.Add(NewEmpleado);
+            await _context.SaveChangesAsync();
+            return Ok(new { Message = "Usuario Nuevo Creado" });
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<User>> TenerUsuario(int id)
+        {
+            var UserData = await _context.Users.FindAsync(id);
+
+            if (UserData == null)
+            {
+                return NotFound();
             }
+            return Ok(UserData);
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<User>>> GetEmpleados()
+        {
+            Console.WriteLine("ola");
             return await _context.Users.ToListAsync();
         }
 
-        [Authorize]
-        [HttpGet("{id}")]
-        public async Task<ActionResult<User>> GetUser(long id)
-        {
-            var user = await _context.Users.FindAsync(id);
-            if (user == null) return NotFound();
-            return user;
-        }
-
-        [Authorize]
-        [HttpPut()]
-        public async Task<IActionResult> UpdateUser([FromForm] UpdateUserDto updateUserDto)
-        {
-
-            var userId = User.GetUserId();
-
-            var user = await _context.Users.FindAsync(userId);
-
-            if (updateUserDto.Nombre != null)
-            {
-                user.Nombre = updateUserDto.Nombre;
-            }
-
-            if (updateUserDto.Mail != null)
-            {
-                user.Mail = updateUserDto.Mail;
-            }
-
-            if (updateUserDto.Contrasena != null)
-            {
-                user.Contrasena = BCrypt.Net.BCrypt.HashPassword(updateUserDto.Contrasena);
-            }
-
-            user.FechaActualizacion = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
-            return NoContent();
-        }
-
-        [Authorize]
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteUser(long id)
-        {
-            var user = await _context.Users.FindAsync(id);
-            if (user == null) return NotFound();
-            _context.Users.Remove(user);
-            await _context.SaveChangesAsync();
-            return NoContent();
-        }
-
-        [Authorize]
-        [HttpPost("crear")]
-        public async Task<ActionResult<User>> CreateUser([FromForm] CreateUserDto users)
-        {
-            var userRole = User.GetUserRole();
-
-            if (userRole != 1)
-            {
-                return BadRequest("No es SuperAdministrador");
-            }
-
-            var UserDto = users;
-            var hashPass = BCrypt.Net.BCrypt.HashPassword(users.Contrasena);
-            var nuevoUser = new User
-            {
-                Nombre = UserDto.Nombre,
-                Mail = UserDto.Mail,
-                Contrasena = hashPass,
-                Rol = UserDto.Rol,
-                FechaActualizacion = DateTime.UtcNow
-            };
-            _context.Users.Add(nuevoUser);
-            await _context.SaveChangesAsync();
-            return Ok(new { 
-                Message = "Usuario creado correctamente"
-            });
-        }
     }
 }
