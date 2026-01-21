@@ -57,7 +57,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 new Claim(ClaimTypes.Role, userAuth.Rol.ToString()),
                 new Claim(ClaimTypes.Name, userAuth.Empleado?.NombreCompleto ?? "Sin Nombre"),
                 new Claim(ClaimTypes.Email, userAuth.Empleado?.CorreoElectronico ?? ""),
-                new Claim("rut", userAuth.Rut)
             };
 
             var token = new JwtSecurityToken(

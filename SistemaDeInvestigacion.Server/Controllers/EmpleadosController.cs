@@ -64,10 +64,10 @@ namespace SistemaDeInvestigacion.Server.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Empleado>>> GetEmpleados()
+        public async Task<ActionResult<IEnumerable<User>>> GetEmpleados()
         {
             Console.WriteLine("ola");
-            return await _context.Empleados.ToListAsync();
+            return await _context.Users.ToListAsync();
         }
 
     }

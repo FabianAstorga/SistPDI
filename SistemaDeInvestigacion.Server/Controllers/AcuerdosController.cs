@@ -31,10 +31,12 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
         [Authorize]
         [HttpPost("crear")]
-        public async Task<ActionResult<Acuerdo>> PublicarAcuerdo([FromForm] acuerdoDto AcuerdoDto)
+        public async Task<ActionResult<Acuerdo>> PublicarAcuerdo([FromForm] createAcuerdoDto AcuerdoDto)
         {
             var userId = User.GetUserId();
             var acuerdos = AcuerdoDto;
+
+            //falta crear imagen a partir del svg
             var NewAcuerdo = new Acuerdo
             {
                 Titulo = acuerdos.titulo,
@@ -45,10 +47,39 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 PDFUrl = acuerdos.pdfUrl,
                 ImagenUrl = acuerdos.imagenUrl,
                 Habilitado = acuerdos.habilitado,
-                FechaCreacion = DateTime.UtcNow,
+                FechaCreacion = DateTime.UtcNow
             };
+
             _context.Acuerdos.Add(NewAcuerdo);
             await _context.SaveChangesAsync();
+
+            var acuerdoId = NewAcuerdo.IdAcuerdo;
+
+            var NewSvg = new SvgTemplate
+            {
+                SvgEditado = acuerdos.svgEditado,
+                SvgOriginal = acuerdos.svgOriginal,
+                Estado = true,
+                FechaCreacion = DateTime.UtcNow
+
+            };
+
+            _context.SvgTemplates.Add(NewSvg);
+            await _context.SaveChangesAsync();
+
+            var SvgId = NewSvg.Id;
+
+            var NewDatos = new AcuerdosUsersTemplates
+            {
+                IdUsuario = userId,
+                IdAcuerdo = NewAcuerdo.IdAcuerdo,
+                IdSvg = SvgId
+            };
+
+            _context.AcuerdosUserTemplates.Add(NewDatos);
+            await _context.SaveChangesAsync();
+
+
             return Ok(new { Message = "Acuerdo Creado" });
         }
 

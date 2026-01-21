@@ -23,7 +23,12 @@ namespace SistemaDeInvestigacion.Server.Controllers
         [HttpPost]
         public async Task<ActionResult<User>> CrearUsuario([FromForm] createEmpleados empleadoDto)
         {
+            var userId = User.GetUserId();
 
+            if (userId != 1)
+            {
+                return BadRequest("Usuario no es SuperAdministrador");
+            }
 
             var empleado = empleadoDto;
 

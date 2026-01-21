@@ -42,7 +42,7 @@ namespace SistemaDeInvestigacion.Server.Models
         public DateTime? FechaActualizacion { get; set; }
 
         [Column("IdEmpresa")]
-        public int IdEmpresa { get; set; }
+        public int? IdEmpresa { get; set; }
 
         [ForeignKey("IdEmpresa")]
         public virtual Empresas? Empresas { get; set; }

@@ -38,15 +38,20 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
 
 
-
             _context.SvgTemplates.Add(svgNuevo);
             await _context.SaveChangesAsync();
+
+            var idsvg = svgNuevo.Id;
+            Console.WriteLine($"___________________ este es el id :{svgNuevo.Id}");
+
 
             var borradorNuevo = new AcuerdosUsersTemplates
             {
                 IdUsuario = userId,
-                IdSvg = svgNuevo.Id
+                IdSvg = svgNuevo.Id,
+                IdAcuerdo = null
             };
+
 
             _context.AcuerdosUserTemplates.Add(borradorNuevo);
             await _context.SaveChangesAsync();
@@ -55,8 +60,8 @@ namespace SistemaDeInvestigacion.Server.Controllers
         }
 
         [Authorize]
-        [HttpGet("obtenerSvg")]
-        public async Task<ActionResult<IEnumerable<SvgTemplate>>> ObtenerSvgs()
+        [HttpGet("obtenerTemplates")]
+        public async Task<ActionResult<IEnumerable<SvgTemplate>>> ObtenerTemplates()
         {
             var listaSvg = await _context.SvgTemplates
                 .Where(s => s.Estado == true)
@@ -64,7 +69,20 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return Ok(listaSvg);
         }
 
-    }
+        [Authorize]
+        [HttpGet("obtenerBorradores")]
+        public async Task<ActionResult<IEnumerable<SvgTemplate>>> ObtenerBorradores()
+        {
+            var userId = User.GetUserId();
 
+            var listaSvg = await _context.AcuerdosUserTemplates
+                .Where(relacion => relacion.IdUsuario == userId) // 1. Primero buscas en la tabla intermedia tus filas
+                .Select(relacion => relacion.SvgTemplate)        // 2. De esas filas, extraes SOLAMENTE el objeto SvgTemplate real
+                .Where(svg => svg.Estado == false)                // 3. Filtras que el SVG esté activo
+                .ToListAsync();
+
+            return Ok(listaSvg);
+        }
+    }
 
 }

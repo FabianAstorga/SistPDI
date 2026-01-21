@@ -129,7 +129,7 @@ namespace SistemaDeInvestigacion.Server.Data
                 entity.ToTable("acuerdos/users/templates");
                 
                 // Clave compuesta de 3 campos
-                entity.HasKey(e => new { e.IdUsuario, e.IdSvg, e.IdAcuerdo });
+                entity.HasKey(e => new { e.IdUsuario, e.IdSvg});
 
                 entity.Property(e => e.IdUsuario).HasColumnName("idUsuario");
                 entity.Property(e => e.IdSvg).HasColumnName("idSvg");
@@ -139,7 +139,8 @@ namespace SistemaDeInvestigacion.Server.Data
                     .WithMany()
                     .HasForeignKey(d => d.IdAcuerdo)
                     .OnDelete(DeleteBehavior.Cascade)
-                    .HasConstraintName("fk_acuerdo");
+                    .HasConstraintName("fk_acuerdo")
+                    .IsRequired(false);
 
                 entity.HasOne(d => d.User)
                     .WithMany()
