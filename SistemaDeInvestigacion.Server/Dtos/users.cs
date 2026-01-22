@@ -7,14 +7,11 @@ namespace SistemaDeInvestigacion.Server.Dtos
     public class CreateUserDto
     {
         [Required]
-        public required string Nombre { get; set; }
-        [Required]
-        [EmailAddress]
-        public required string Mail { get; set; }
-        [Required]
-        public required string Contrasena { get; set; }
+        public required string Rut { get; set; }
         [Required]
         public required int Rol { get; set; }
+        [Required]
+        public required string Contrasena { get; set; }
     }
 
     public class UpdateUserDto

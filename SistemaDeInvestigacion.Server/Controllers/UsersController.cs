@@ -21,7 +21,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
 
         [HttpPost]
-        public async Task<ActionResult<User>> CrearUsuario([FromForm] createEmpleados empleadoDto)
+        public async Task<ActionResult<User>> CrearUsuario([FromForm] CreateUserDto createUserDto)
         {
             var userId = User.GetUserId();
 
@@ -30,24 +30,24 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 return BadRequest("Usuario no es SuperAdministrador");
             }
 
-            var empleado = empleadoDto;
+            var user = createUserDto;
 
-            bool rutExiste = await _context.Empleados.AnyAsync(x => x.Rut == empleado.Rut);
+            bool rutExiste = await _context.Empleados.AnyAsync(x => x.Rut == user.Rut);
 
             if (!rutExiste)
             {
                 BadRequest("Rut no existente");
             }
 
-            var NewEmpleado = new User
+            var newUser = new User
             {
                 FechaCreacion = DateTime.UtcNow,
-                Rut = empleado.Rut,
-                Rol = empleado.Rol,
-                Contrasena = BCrypt.Net.BCrypt.HashPassword(empleado.Contrasena),
+                Rut = user.Rut,
+                Rol = user.Rol,
+                Contrasena = BCrypt.Net.BCrypt.HashPassword(user.Contrasena),
             };
             Console.WriteLine("OLA LLEGUE ACA");
-            _context.Users.Add(NewEmpleado);
+            _context.Users.Add(newUser);
             await _context.SaveChangesAsync();
             return Ok(new { Message = "Usuario Nuevo Creado" });
         }

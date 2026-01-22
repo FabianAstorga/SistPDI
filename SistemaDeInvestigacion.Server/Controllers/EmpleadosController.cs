@@ -13,55 +13,77 @@ namespace SistemaDeInvestigacion.Server.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
 
+        //se pueden crear empleados solo que la tabla empleados tiene que ser una tabla "puerta" para los datos de la institucion
+        //con los datos de la plataforma acuerdos
+
         public EmpleadosController(ApplicationDbContext context, IConfiguration configuration)
         {
             _context = context;
             _configuration = configuration;
         }
 
+        //datos de retorno de persona, la información de usuario (encriptación)
 
-        [HttpPost]
-        public async Task<ActionResult<User>> CrearUsuario([FromForm] createEmpleados empleadoDto)
+
+        [HttpGet("{idPersona}")]
+        public async Task<ActionResult> TenerUsuario(int idPersona)
         {
-            var userId = User.GetUserId();
+            var userID = User.GetUserId();
 
-            if (userId != 1 )
-            {
-                return BadRequest("Usuario no es SuperAdministrador");
+            if (userID != 1) {
+                return BadRequest("Usuario no es Super-Administrador");
             }
 
-            var empleado = empleadoDto;
 
-            bool rutExiste = await _context.Empleados.AnyAsync(x => x.Rut == empleado.Rut);
+            var resultado = await _context.Users
+                    .Where(u => u.IdPersona == idPersona)
+                    .Select(u => new
+                    {
+                        // Datos de la tabla Users
+                        u.Rol,
+                        u.Rut,
+                        u.FechaCreacion,
 
-            if (!rutExiste ) {
-                BadRequest("Rut no existente");
-            }
+                        // Datos de la tabla Empleados (accediendo por la relación)
+                        Correo = u.Empleado.CorreoElectronico,
+                        Nombre = u.Empleado.NombreCompleto
+                    })
+                    .FirstOrDefaultAsync();
 
-            var NewEmpleado = new User
-            {
-                FechaCreacion = DateTime.UtcNow,
-                Rut = empleado.Rut,
-                Rol = empleado.Rol,
-                Contrasena = BCrypt.Net.BCrypt.HashPassword(empleado.Contrasena),
-            };
-            Console.WriteLine("OLA LLEGUE ACA");
-            _context.Users.Add(NewEmpleado);
-            await _context.SaveChangesAsync();
-            return Ok(new { Message = "Usuario Nuevo Creado" });
-        }
-
-        [HttpGet("{id}")]
-        public async Task<ActionResult<User>> TenerUsuario(int id)
-        {
-            var UserData = await _context.Users.FindAsync(id);
-
-            if (UserData == null)
+            if (resultado == null)
             {
                 return NotFound();
             }
-            return Ok(UserData);
+
+
+            return Ok(resultado);
+
         }
+
+        [HttpPost("crear")]
+        public async Task<ActionResult> crearUsuario(createEmpleadoDto createEmpleadoDto)
+        {
+            var userID = User.GetUserId();
+            if (userID != 1)
+            {
+                return BadRequest("Usuario no es SuperAdministrador");
+            }
+            //Aqui falta la informaciòn de cifrado y comparacion con la otra base de datos
+            var empleadoDto = createEmpleadoDto;
+
+
+            var newEmpleado = new Empleado
+            {
+                CorreoElectronico = empleadoDto.CorreoElectronico,
+                Rut = empleadoDto.rut,
+                NombreCompleto = empleadoDto.NombreCompleto
+            };
+
+            _context.Empleados.Add(newEmpleado);
+            await _context.SaveChangesAsync();
+            return Ok("Empleado creado Exitosamente");
+        }
+
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<User>>> GetEmpleados()
