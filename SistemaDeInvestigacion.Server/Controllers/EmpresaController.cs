@@ -27,17 +27,17 @@ namespace SistemaDeInvestigacion.Server.Controllers
         }
 
         [Authorize]
-        [HttpGet("{idInstitucion}")]
-        public async Task<ActionResult<Empresas>> GetInstitucion(int idEmpresas)
+        [HttpGet("{idEmpresa}")]
+        public async Task<ActionResult<Empresas>> GetEmpresa(int IdEmpresa)
         {
-            var empresas = await _context.Empresas.FindAsync(idEmpresas);
-            if (empresas == null) return StatusCode(404, "No hay ninguna Empresa");
-            return empresas;
+            var empresa = await _context.Empresas.FindAsync(IdEmpresa);
+            if (empresa == null) return StatusCode(404, "No hay ninguna Empresa");
+            return empresa;
         }
 
         [Authorize]
         [HttpGet()]
-        public async Task<ActionResult<IEnumerable<Empresas>>> GetInstituciones()
+        public async Task<ActionResult<IEnumerable<Empresas>>> GetEmpresas()
         {
             var empresas = await _context.Empresas.ToListAsync();
             if (empresas == null) return StatusCode(404, "No hay ninguna Empresa");
@@ -47,10 +47,10 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
         [Authorize]
         [HttpPost("crear")]
-        public async Task<ActionResult<Acuerdo>> PublicarInstitucion([FromForm] CreateEmpresaDto createInstitucionesDto)
+        public async Task<ActionResult<Acuerdo>> PublicarInstitucion([FromForm] CreateEmpresaDto createEmpresaDto)
         {
             string dbroute = null;
-            if (createInstitucionesDto.logo != null && createInstitucionesDto.logo.Length > 0)
+            if (createEmpresaDto.logo != null && createEmpresaDto.logo.Length > 0)
             {
  
                 string carpetaImagenes = Path.Combine(_env.ContentRootPath, "LogosMedia");
@@ -60,8 +60,8 @@ namespace SistemaDeInvestigacion.Server.Controllers
                     Directory.CreateDirectory(carpetaImagenes);
                 }
 
-                string extension = Path.GetExtension(createInstitucionesDto.logo.FileName);
-                string name = createInstitucionesDto.nombre.Replace(" ", "_").ToLower();
+                string extension = Path.GetExtension(createEmpresaDto.logo.FileName);
+                string name = createEmpresaDto.nombre.Replace(" ", "_").ToLower();
                 string filename = $"logo-{name}{extension}";
                 string routecomplete = Path.Combine(carpetaImagenes, filename);
                 Console.WriteLine($"{routecomplete}");
@@ -69,7 +69,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
                 using (var stream = new FileStream(routecomplete, FileMode.Create))
                 {
-                    await createInstitucionesDto.logo.CopyToAsync(stream);
+                    await createEmpresaDto.logo.CopyToAsync(stream);
                 }
 
                 dbroute = $"/imagenes/{filename}";
@@ -80,21 +80,21 @@ namespace SistemaDeInvestigacion.Server.Controllers
             var newEmpresa = new Empresas
             {
                 
-                Nombre = createInstitucionesDto.nombre,
-                Descripcion = createInstitucionesDto.descripcion,
+                Nombre = createEmpresaDto.nombre,
+                Descripcion = createEmpresaDto.descripcion,
                 Logo = dbroute,
-                SitioWeb = createInstitucionesDto.sitioWeb,
-                Telefono = createInstitucionesDto.telefono,
-                Direccion = createInstitucionesDto.direccion,
+                SitioWeb = createEmpresaDto.sitioWeb,
+                Telefono = createEmpresaDto.telefono,
+                Direccion = createEmpresaDto.direccion,
                 FechaCreacion = DateTime.UtcNow,
-                Email = createInstitucionesDto.email
+                Email = createEmpresaDto.email
             };
 
             _context.Empresas.Add(newEmpresa);
             await _context.SaveChangesAsync();
             return Ok(new
             {
-                message = "Institucion creada correctamente"
+                message = "Empresa creada correctamente"
             });
         
             

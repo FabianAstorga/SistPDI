@@ -76,9 +76,9 @@ namespace SistemaDeInvestigacion.Server.Controllers
             var userId = User.GetUserId();
 
             var listaSvg = await _context.AcuerdosUserTemplates
-                .Where(relacion => relacion.IdUsuario == userId) // 1. Primero buscas en la tabla intermedia tus filas
-                .Select(relacion => relacion.SvgTemplate)        // 2. De esas filas, extraes SOLAMENTE el objeto SvgTemplate real
-                .Where(svg => svg.Estado == false)                // 3. Filtras que el SVG esté activo
+                .Where(relacion => relacion.IdUsuario == userId) 
+                .Select(relacion => relacion.SvgTemplate)        
+                .Where(svg => svg.Estado == false)                
                 .ToListAsync();
 
             return Ok(listaSvg);

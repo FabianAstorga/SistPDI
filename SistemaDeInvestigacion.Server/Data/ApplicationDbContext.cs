@@ -45,8 +45,8 @@ namespace SistemaDeInvestigacion.Server.Data
             modelBuilder.Entity<Empresas>(entity =>
             {
                 entity.ToTable("empresas");
-                entity.HasKey(e => e.IdEmpresas);
-                entity.Property(e => e.IdEmpresas).UseIdentityColumn();
+                entity.HasKey(e => e.IdEmpresa);
+                entity.Property(e => e.IdEmpresa).UseIdentityColumn();
             });
 
             // 3. Configuración de CONTACTOS

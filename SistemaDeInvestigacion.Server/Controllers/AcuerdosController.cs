@@ -96,7 +96,9 @@ namespace SistemaDeInvestigacion.Server.Controllers
         [HttpGet()]
         public async Task<ActionResult<IEnumerable<Acuerdo>>> GetAcuerdos()
         {
-            return await _context.Acuerdos.ToListAsync();
+            return await _context.Acuerdos
+                .Where(acuerdos => acuerdos.Habilitado == true)
+                .ToListAsync();
         }
 
     }

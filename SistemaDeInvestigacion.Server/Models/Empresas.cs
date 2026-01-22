@@ -8,8 +8,8 @@ namespace SistemaDeInvestigacion.Server.Models
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        [Column("IdEmpresas")]
-        public int IdEmpresas { get; set; }
+        [Column("IdEmpresa")]
+        public int IdEmpresa { get; set; }
 
         [Column("Nombre")]
         public required string Nombre { get; set; }

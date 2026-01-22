@@ -40,7 +40,7 @@ function safeJsonParse(text: string) {
 
 function mapInstitucionFromApi(x: ApiInstitucion): InstitucionVM {
     return {
-        id: x?.idInstitucion ?? x?.id ?? x?.institucionId ?? x?.ID,
+        id: x?.idEmpresa ?? x?.id ?? x?.empresaID ?? x?.ID,
         nombre: x?.nombre ?? '',
         descripcion: x?.descripcion ?? '',
         sitioWeb: x?.sitioWeb ?? null,
@@ -106,7 +106,7 @@ function InstitucionList() {
         try {
             const token = localStorage.getItem('token');
 
-            const res = await fetch('http://localhost:5091/api/Instituciones', {
+            const res = await fetch('http://localhost:5091/api/Empresa', {
                 method: 'GET',
                 headers: {
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),

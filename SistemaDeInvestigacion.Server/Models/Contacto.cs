@@ -7,14 +7,15 @@ namespace SistemaDeInvestigacion.Server.Models
     public class Contacto
     {
         [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         [Column("idContacto")]
-        public  required int IdContacto { get; set; }
+        public int? IdContacto { get; set; }
 
         [Column("Nombre")]
         public required string Nombre { get; set; }
 
-        [Column("Rol")]
-        public string? Rol { get; set; }
+        [Column("Numero")]
+        public int? Numero { get; set; }
 
         [Column("Email")]
         public string? Email { get; set; }
