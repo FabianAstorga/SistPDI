@@ -1,17 +1,22 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using SistemaDeInvestigacion.Server.Data;
+using SistemaDeInvestigacion.Server.Servicios;
 using System.Text;
 using System.Text.Json.Serialization;
+using SistemaDeInvestigacion.Server.Servicios.Filtros;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
+
+const string MANUAL_SHARED_KEY = "XJP2-KEP8-3LNS-8A01-7DO1";
+builder.Services.AddSingleton<IPayloadEncryptedService>(_ => new PayloadCryptoService(MANUAL_SHARED_KEY));
 
 var jwtKey = builder.Configuration["Jwt:Key"];
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
@@ -22,8 +27,8 @@ builder.Services.AddAuthentication(options =>
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
-.AddJwtBearer(options => 
-{ 
+.AddJwtBearer(options =>
+{
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuerSigningKey = true,
@@ -41,13 +46,23 @@ builder.Services.AddAuthentication(options =>
 });
 
 
+// ===== OPCIÓN 3: SOLO ESTO =====
+builder.Services.AddScoped<DecryptSensitiveFieldsFilter>();
+builder.Services.AddScoped<EncryptSensitiveFieldsFilter>();
 
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-    });
+builder.Services.AddControllers(options =>
+{
+    options.Filters.AddService<DecryptSensitiveFieldsFilter>();
+    options.Filters.AddService<EncryptSensitiveFieldsFilter>();
+})
+.AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+    options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+});
+// ===============================
+
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -70,11 +85,6 @@ builder.Services.AddSwaggerGen(options =>
         }
     );
 });
-
-
-
-
-
 
 builder.Services.AddCors(options =>
 {
@@ -101,6 +111,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("AllowReactApp");
+
 var logosPath = Path.Combine(builder.Environment.ContentRootPath, "LogosMedia");
 if (!Directory.Exists(logosPath))
 {
@@ -113,8 +124,10 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = "/imagenes"
 });
 app.UseStaticFiles();
+
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 app.MapFallbackToFile("/index.html");
 app.Run();
