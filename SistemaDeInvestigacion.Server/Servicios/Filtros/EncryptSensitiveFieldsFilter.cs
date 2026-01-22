@@ -30,6 +30,7 @@ namespace SistemaDeInvestigacion.Server.Servicios.Filtros
             if (depth > 6) return;
             if (obj is string) return;
 
+            // Colecciones (List<DTO>, arrays, etc.)
             if (obj is IEnumerable enumerable)
             {
                 foreach (var item in enumerable)
@@ -46,7 +47,8 @@ namespace SistemaDeInvestigacion.Server.Servicios.Filtros
 
                 bool isSensitive = prop.GetCustomAttribute<SensitiveAttribute>() != null;
 
-                if (isSensitive && (prop.PropertyType == typeof(string) || prop.PropertyType == typeof(string?)))
+                // ✅ SOLO typeof(string)
+                if (isSensitive && prop.PropertyType == typeof(string))
                 {
                     var current = prop.GetValue(obj) as string;
                     if (string.IsNullOrEmpty(current)) continue;
@@ -60,6 +62,7 @@ namespace SistemaDeInvestigacion.Server.Servicios.Filtros
                     continue;
                 }
 
+                // Objetos anidados
                 if (prop.PropertyType.IsClass && prop.PropertyType != typeof(string))
                 {
                     var child = prop.GetValue(obj);

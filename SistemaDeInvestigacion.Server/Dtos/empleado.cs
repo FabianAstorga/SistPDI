@@ -13,7 +13,7 @@ namespace SistemaDeInvestigacion.Server.Dtos
         public required string Contrasena { get; set; }
         
         [Required]
-        [Sensitive] public required string Rut { get; set; }
+        public required string Rut { get; set; }
         
     }
 }

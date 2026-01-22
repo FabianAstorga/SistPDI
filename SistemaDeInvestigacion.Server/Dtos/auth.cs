@@ -1,8 +1,10 @@
-﻿namespace SistemaDeInvestigacion.Server.Dtos
+﻿using SistemaDeInvestigacion.Server.Servicios;
+
+namespace SistemaDeInvestigacion.Server.Dtos
 {
     public class LoginDto
     {
-        public required string Email { get; set; }
-        public required string Password { get; set; }
+         public required string Email { get; set; }
+         public required string Password { get; set; }
     }
 }

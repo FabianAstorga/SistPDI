@@ -27,10 +27,9 @@ namespace SistemaDeInvestigacion.Server.Servicios.Filtros
 
         private void DecryptObject(object obj, int depth)
         {
-            if (depth > 6) return;     // protección básica
+            if (depth > 6) return;
             if (obj is string) return;
 
-            // Si es una lista (List<DTO>, array, etc.)
             if (obj is IEnumerable enumerable)
             {
                 foreach (var item in enumerable)
@@ -47,8 +46,8 @@ namespace SistemaDeInvestigacion.Server.Servicios.Filtros
 
                 bool isSensitive = prop.GetCustomAttribute<SensitiveAttribute>() != null;
 
-                // Solo strings marcados como [Sensitive]
-                if (isSensitive && (prop.PropertyType == typeof(string) || prop.PropertyType == typeof(string?)))
+                // ✅ SOLO typeof(string)
+                if (isSensitive && prop.PropertyType == typeof(string))
                 {
                     var current = prop.GetValue(obj) as string;
                     if (string.IsNullOrEmpty(current)) continue;
@@ -62,7 +61,6 @@ namespace SistemaDeInvestigacion.Server.Servicios.Filtros
                     continue;
                 }
 
-                // Objetos anidados
                 if (prop.PropertyType.IsClass && prop.PropertyType != typeof(string))
                 {
                     var child = prop.GetValue(obj);
