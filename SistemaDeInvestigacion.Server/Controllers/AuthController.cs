@@ -25,9 +25,16 @@ namespace SistemaDeInvestigacion.Server.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto loginRequest)
         {
+
+            var Login = loginRequest;
+
+            Console.WriteLine(Login);
+
             var userAuth = await _context.Users
                 .Include(u => u.Empleado)
                 .FirstOrDefaultAsync(u => u.Empleado != null && u.Empleado.CorreoElectronico == loginRequest.Email);
+
+        
 
             if (userAuth == null)
             {

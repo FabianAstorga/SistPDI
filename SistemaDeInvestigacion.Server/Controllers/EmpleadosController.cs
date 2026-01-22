@@ -63,11 +63,11 @@ namespace SistemaDeInvestigacion.Server.Controllers
         [HttpPost("crear")]
         public async Task<ActionResult> crearUsuario(createEmpleadoDto createEmpleadoDto)
         {
-            var userID = User.GetUserId();
+            /*var userID = User.GetUserId();
             if (userID != 1)
             {
                 return BadRequest("Usuario no es SuperAdministrador");
-            }
+            }*/
             //Aqui falta la informaciòn de cifrado y comparacion con la otra base de datos
             var empleadoDto = createEmpleadoDto;
 

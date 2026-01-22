@@ -8,7 +8,7 @@ using SistemaDeInvestigacion.Server.Data;
 using SistemaDeInvestigacion.Server.Servicios;
 using System.Text;
 using System.Text.Json.Serialization;
-using SistemaDeInvestigacion.Server.Servicios.Filtros;
+
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -16,6 +16,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 const string MANUAL_SHARED_KEY = "XJP2-KEP8-3LNS-8A01-7DO1";
+
+
 builder.Services.AddSingleton<IPayloadEncryptedService>(_ => new PayloadCryptoService(MANUAL_SHARED_KEY));
 
 var jwtKey = builder.Configuration["Jwt:Key"];
@@ -47,13 +49,11 @@ builder.Services.AddAuthentication(options =>
 
 
 // ===== OPCIÓN 3: SOLO ESTO =====
-builder.Services.AddScoped<DecryptSensitiveFieldsFilter>();
-builder.Services.AddScoped<EncryptSensitiveFieldsFilter>();
+
 
 builder.Services.AddControllers(options =>
 {
-    options.Filters.AddService<DecryptSensitiveFieldsFilter>();
-    options.Filters.AddService<EncryptSensitiveFieldsFilter>();
+    
 })
 .AddJsonOptions(options =>
 {
