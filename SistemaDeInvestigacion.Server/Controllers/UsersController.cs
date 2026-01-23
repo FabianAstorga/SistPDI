@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Identity.Data;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SistemaDeInvestigacion.Server.Data;
 using SistemaDeInvestigacion.Server.Dtos;
 using SistemaDeInvestigacion.Server.Models;
-using Microsoft.EntityFrameworkCore;
 
 namespace SistemaDeInvestigacion.Server.Controllers
 {
@@ -23,12 +24,12 @@ namespace SistemaDeInvestigacion.Server.Controllers
         [HttpPost]
         public async Task<ActionResult<User>> CrearUsuario([FromForm] CreateUserDto createUserDto)
         {
-            /*var userId = User.GetUserId();
+            var userId = User.GetUserId();
 
             if (userId != 1)
             {
                 return BadRequest("Usuario no es SuperAdministrador");
-            }*/
+            }
 
             var user = createUserDto;
 
@@ -65,11 +66,41 @@ namespace SistemaDeInvestigacion.Server.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<User>>> GetEmpleados()
+        public async Task<ActionResult<IEnumerable<User>>> GetUser()
         {
             Console.WriteLine("ola");
             return await _context.Users.ToListAsync();
         }
 
+        [HttpPatch]
+        public async Task<ActionResult> UpdateUser(UpdateUserDto updateUserDto)
+        {
+            var DatosUser = await _context.Users.FindAsync(updateUserDto.IdPersona);            
+
+            var newDatos = updateUserDto;
+            if (updateUserDto.Rut == null)
+            {
+                newDatos.Rut = DatosUser.Rut;
+            }
+
+            if (newDatos.Rol == null)
+            {
+                newDatos.Rol = DatosUser.Rol;
+            }
+
+            bool passValida = BCrypt.Net.BCrypt.Verify(DatosUser.Contrasena, newDatos.Contrasena);
+            if (!passValida) {
+
+                newDatos.Contrasena = BCrypt.Net.BCrypt.HashPassword(newDatos.Contrasena);
+            
+            }
+
+
+
+
+            return Ok();
+            }
+
     }
 }
+

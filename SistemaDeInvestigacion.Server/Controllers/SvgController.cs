@@ -83,6 +83,16 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
             return Ok(listaSvg);
         }
+
+        [Authorize]
+        [HttpGet("devolverSvg")]
+        public async Task<ActionResult<IEnumerable<SvgTemplate>>> devolverSvg(int idSvg)
+        {
+            var listaSvg = await _context.SvgTemplates.FirstOrDefaultAsync(s => s.Id == idSvg);
+
+            return Ok(listaSvg.SvgEditado);
+        }
+
     }
 
 }

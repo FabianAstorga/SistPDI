@@ -38,7 +38,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
             if (userAuth == null)
             {
-                return Unauthorized(new { Message = "Datos ingresados incorrectos" });
+                return Unauthorized(new { Message = "Correo o contraseña incorrectos" });
             }
 
             bool passValida = BCrypt.Net.BCrypt.Verify(loginRequest.Password, userAuth.Contrasena);
@@ -51,9 +51,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
             var keyString = _configuration.GetSection("Jwt:Key").Value;
             var issuer = _configuration.GetSection("Jwt:Issuer").Value;
             var audience = _configuration.GetSection("Jwt:Audience").Value;
-
-            if (string.IsNullOrEmpty(keyString))
-                return StatusCode(500, "Clave JWT no configurada en appsettings.");
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyString));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

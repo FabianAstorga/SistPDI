@@ -5,7 +5,9 @@ using Microsoft.IdentityModel.Tokens;
 using SistemaDeInvestigacion.Server.Data;
 using SistemaDeInvestigacion.Server.Dtos;
 using SistemaDeInvestigacion.Server.Models;
-
+using SkiaSharp;
+using SkiaSharp.Extended.Svg; 
+using System.IO;
 namespace SistemaDeInvestigacion.Server.Controllers
 {
     [Route("api/[controller]")]
@@ -36,7 +38,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
             var userId = User.GetUserId();
             var acuerdos = AcuerdoDto;
 
-            //falta crear imagen a partir del svg
             var NewAcuerdo = new Acuerdo
             {
                 Titulo = acuerdos.titulo,
@@ -44,13 +45,46 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 DetallesDescripcion = acuerdos.detallesDescripcion,
                 FechaVencimiento = acuerdos.fechaVencimiento,
                 Estado = acuerdos.estado,
-                PDFUrl = acuerdos.pdfUrl,
-                ImagenUrl = acuerdos.imagenUrl,
                 Habilitado = acuerdos.habilitado,
                 FechaCreacion = DateTime.UtcNow
             };
 
             _context.Acuerdos.Add(NewAcuerdo);
+            await _context.SaveChangesAsync();
+
+            string folderRelativePath = Path.Combine("media", NewAcuerdo.IdAcuerdo.ToString());
+            string folderFullPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", folderRelativePath);
+
+            if (!Directory.Exists(folderFullPath))
+                Directory.CreateDirectory(folderFullPath);
+
+            string fileName = $"acuerdo_{Guid.NewGuid().ToString().Substring(0, 8)}.png";
+            string fileFullPath = Path.Combine(folderFullPath, fileName);
+
+            using (var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(acuerdos.svgEditado)))
+            {
+                var skSvg = new SkiaSharp.Extended.Svg.SKSvg();
+                skSvg.Load(stream);
+
+                int width = (int)skSvg.Picture.CullRect.Width;
+                int height = (int)skSvg.Picture.CullRect.Height;
+
+                using (var bitmap = new SKBitmap(width, height))
+                using (var canvas = new SKCanvas(bitmap))
+                {
+                    canvas.Clear(SKColors.Transparent);
+                    canvas.DrawPicture(skSvg.Picture);
+
+                    using (var image = SKImage.FromBitmap(bitmap))
+                    using (var data = image.Encode(SKEncodedImageFormat.Png, 100))
+                    using (var outputStream = System.IO.File.OpenWrite(fileFullPath))
+                    {
+                        data.SaveTo(outputStream);
+                    }
+                }
+            }
+
+            NewAcuerdo.ImagenUrl = $"/{folderRelativePath}/{fileName}".Replace("\\", "/");
             await _context.SaveChangesAsync();
 
             var acuerdoId = NewAcuerdo.IdAcuerdo;

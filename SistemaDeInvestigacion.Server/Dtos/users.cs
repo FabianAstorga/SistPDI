@@ -16,9 +16,10 @@ namespace SistemaDeInvestigacion.Server.Dtos
 
     public class UpdateUserDto
     {
-        public string? Nombre { get; set; }
-        [EmailAddress]
-        public string? Mail { get; set; }
+        public int IdPersona { get; set; }
         public string? Contrasena { get; set; }
+        public int? Rol { get; set; }
+        public string? Rut { get; set; }
+
     }
 }
