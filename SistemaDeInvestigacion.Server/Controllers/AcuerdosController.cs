@@ -1,26 +1,15 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using SistemaDeInvestigacion.Server.Data;
 using SistemaDeInvestigacion.Server.Dtos;
 using SistemaDeInvestigacion.Server.Models;
 using SkiaSharp;
-using SkiaSharp.Extended.Svg; 
+using Svg.Skia; // ✅ CAMBIO: antes era SkiaSharp.Extended.Svg
 using System.IO;
+
 namespace SistemaDeInvestigacion.Server.Controllers
 {
-
-    /*
-     * Cosas que hacer: permitir eliminar y editar un acuerdo (eliminacion con ocnfirmaciòn previa)
-     * Se debe de enviar un correo
-     * 
-     * 
-     * 
-     * 
-     * 
-     */
-
     [Route("api/[controller]")]
     [ApiController]
     public class AcuerdosController : Controller
@@ -50,9 +39,10 @@ namespace SistemaDeInvestigacion.Server.Controllers
             var acuerdos = AcuerdoDto;
 
             if (acuerdos.idEmpresa == null)
-            {
                 return BadRequest("Empresa no existente");
-            }
+
+            if (string.IsNullOrWhiteSpace(acuerdos.svgEditado))
+                return BadRequest("svgEditado es requerido.");
 
             var NewAcuerdo = new Acuerdo
             {
@@ -78,33 +68,59 @@ namespace SistemaDeInvestigacion.Server.Controllers
             string fileName = $"acuerdo_{Guid.NewGuid().ToString().Substring(0, 8)}.png";
             string fileFullPath = Path.Combine(folderFullPath, fileName);
 
-            using (var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(acuerdos.svgEditado)))
+            // =========================
+            // ✅ SVG -> PNG con Svg.Skia
+            // =========================
+            try
             {
-                var skSvg = new SkiaSharp.Extended.Svg.SKSvg();
-                skSvg.Load(stream);
+                var svgText = acuerdos.svgEditado.Trim();
 
-                int width = (int)skSvg.Picture.CullRect.Width;
-                int height = (int)skSvg.Picture.CullRect.Height;
+                using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(svgText));
 
-                using (var bitmap = new SKBitmap(width, height))
-                using (var canvas = new SKCanvas(bitmap))
+                // ✅ Namespace y tipo de Svg.Skia
+                var skSvg = new SKSvg();
+                var picture = skSvg.Load(stream);
+
+                if (picture == null)
+                    return BadRequest("No se pudo parsear el SVG (picture null). Revisa el contenido de svgEditado.");
+
+                // En algunos SVG el CullRect puede quedar 0x0 si viene raro.
+                var rect = picture.CullRect;
+                int width = Math.Max(1, (int)Math.Ceiling(rect.Width));
+                int height = Math.Max(1, (int)Math.Ceiling(rect.Height));
+
+                // Fallback “sano” si llega 1x1 por SVG sin dimensiones útiles
+                if (width <= 1 || height <= 1)
                 {
-                    canvas.Clear(SKColors.Transparent);
-                    canvas.DrawPicture(skSvg.Picture);
-
-                    using (var image = SKImage.FromBitmap(bitmap))
-                    using (var data = image.Encode(SKEncodedImageFormat.Png, 100))
-                    using (var outputStream = System.IO.File.OpenWrite(fileFullPath))
-                    {
-                        data.SaveTo(outputStream);
-                    }
+                    width = 1200;
+                    height = 800;
                 }
+
+                using var bitmap = new SKBitmap(width, height, SKColorType.Rgba8888, SKAlphaType.Premul);
+                using var canvas = new SKCanvas(bitmap);
+
+                canvas.Clear(SKColors.Transparent);
+
+                // Dibuja el SVG (picture) al canvas
+                canvas.DrawPicture(picture);
+                canvas.Flush();
+
+                using var image = SKImage.FromBitmap(bitmap);
+                using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+
+                await using var outputStream = System.IO.File.OpenWrite(fileFullPath);
+                data.SaveTo(outputStream);
+            }
+            catch (Exception ex)
+            {
+                // Si quieres, loguea el SVG completo con cuidado (puede ser gigante)
+                // Console.WriteLine(acuerdos.svgEditado);
+
+                return StatusCode(500, $"Error procesando SVG: {ex.GetType().Name} - {ex.Message}");
             }
 
             NewAcuerdo.ImagenUrl = $"/{folderRelativePath}/{fileName}".Replace("\\", "/");
             await _context.SaveChangesAsync();
-
-            var acuerdoId = NewAcuerdo.IdAcuerdo;
 
             var NewSvg = new SvgTemplate
             {
@@ -112,25 +128,20 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 SvgOriginal = acuerdos.svgOriginal,
                 Estado = true,
                 FechaCreacion = DateTime.UtcNow
-
             };
 
             _context.SvgTemplates.Add(NewSvg);
             await _context.SaveChangesAsync();
 
-            var SvgId = NewSvg.Id;
-
             var NewDatos = new AcuerdosUsersTemplates
             {
                 IdUsuario = userId,
                 IdAcuerdo = NewAcuerdo.IdAcuerdo,
-                IdSvg = SvgId
+                IdSvg = NewSvg.Id
             };
-
 
             _context.AcuerdosUserTemplates.Add(NewDatos);
             await _context.SaveChangesAsync();
-
 
             return Ok(new { Message = "Acuerdo Creado" });
         }
@@ -152,8 +163,5 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 .Where(acuerdos => acuerdos.Habilitado == true)
                 .ToListAsync();
         }
-
     }
-
-
 }

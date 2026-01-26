@@ -112,18 +112,30 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseCors("AllowReactApp");
 
+app.UseDefaultFiles();
+
+// wwwroot (acuerdos, png, svg, etc)
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(builder.Environment.ContentRootPath, "wwwroot")
+    ),
+    RequestPath = ""
+});
+
+// Logos externos
 var logosPath = Path.Combine(builder.Environment.ContentRootPath, "LogosMedia");
 if (!Directory.Exists(logosPath))
 {
     Directory.CreateDirectory(logosPath);
 }
-Console.WriteLine($"ola: {logosPath}");
+
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(logosPath),
     RequestPath = "/imagenes"
 });
-app.UseStaticFiles();
+
 
 app.UseAuthentication();
 app.UseAuthorization();
