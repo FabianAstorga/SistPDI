@@ -21,8 +21,6 @@ type TempAcuerdo = {
     descripcion: string;
     detallesDescripcion: string;
     fechaVencimiento: string; // ISO string
-    estado: 'Activo' | string;
-    habilitado: boolean;
 
     // solo UI
     idEmpresa: number | '';
@@ -60,7 +58,7 @@ export default function Acuerdos() {
     const [loadingEmpresas, setLoadingEmpresas] = useState(true);
 
     const [formData, setFormData] = useState<TempAcuerdo>(() => {
-        const tempStored = localStorage.getItem('temp_acuerdo'); // ✅ localStorage
+        const tempStored = localStorage.getItem('temp_acuerdo'); // ✅ localStorage (misma key)
         if (tempStored) {
             try {
                 const parsed = JSON.parse(tempStored);
@@ -69,8 +67,6 @@ export default function Acuerdos() {
                     descripcion: parsed?.descripcion ?? '',
                     detallesDescripcion: parsed?.detallesDescripcion ?? '',
                     fechaVencimiento: parsed?.fechaVencimiento ?? nowIso(),
-                    estado: 'Activo',
-                    habilitado: true,
                     idEmpresa:
                         parsed?.idEmpresa !== undefined && parsed?.idEmpresa !== null && parsed?.idEmpresa !== ''
                             ? Number(parsed.idEmpresa)
@@ -86,8 +82,6 @@ export default function Acuerdos() {
             descripcion: '',
             detallesDescripcion: '',
             fechaVencimiento: nowIso(),
-            estado: 'Activo',
-            habilitado: true,
             idEmpresa: '',
         };
     });
@@ -118,6 +112,7 @@ export default function Acuerdos() {
                     return;
                 }
 
+                // robusto ante text/plain con JSON
                 let list: Empresa[] = [];
                 try {
                     const data = await response.json();
@@ -135,6 +130,7 @@ export default function Acuerdos() {
 
                 setEmpresas(list);
 
+                // si no hay empresa seleccionada, setea la primera
                 setFormData((prev) => {
                     if (prev.idEmpresa !== '' && prev.idEmpresa !== null && prev.idEmpresa !== undefined) return prev;
                     if (list.length === 0) return prev;
@@ -169,21 +165,22 @@ export default function Acuerdos() {
                 ? 0
                 : Number(formData.idEmpresa);
 
-        if (!formData.titulo || !formData.fechaVencimiento || !idEmp) {
-            alert('Título, Fecha y Empresa son obligatorios');
+        if (!formData.titulo || !formData.descripcion || !formData.detallesDescripcion || !formData.fechaVencimiento || !idEmp) {
+            alert('Título, Descripción, Detalles, Fecha y Empresa son obligatorios');
             return;
         }
 
+        // ✅ payload según swagger: agrega idEmpresa, quita habilitado, estado fijo "ACTIVO", sin SVGs
         const payload = {
             titulo: formData.titulo,
             descripcion: formData.descripcion,
             detallesDescripcion: formData.detallesDescripcion,
-            fechaVencimiento: formData.fechaVencimiento,
-            estado: 'Activo',
-            habilitado: true,
+            fechaVencimiento: formData.fechaVencimiento, // ISO
+            estado: 'ACTIVO',
+            idEmpresa: idEmp,
         };
 
-        localStorage.setItem('temp_acuerdo', JSON.stringify(payload)); // ✅ localStorage
+        localStorage.setItem('temp_acuerdo', JSON.stringify(payload)); // ✅ guarda también idEmpresa
         navigate('/lienzo');
     };
 
@@ -203,9 +200,7 @@ export default function Acuerdos() {
                                 <div className="p-2 bg-gray-100 rounded-lg mr-3">
                                     <Settings2 size={24} className="text-black" />
                                 </div>
-                                <h6 className="text-black text-xl font-black uppercase tracking-tighter">
-                                    Configuración de Acuerdo
-                                </h6>
+                                <h6 className="text-black text-xl font-black uppercase tracking-tighter">Configuración de Acuerdo</h6>
                             </div>
 
                             <button

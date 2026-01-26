@@ -1,4 +1,4 @@
-﻿import { pick, safeJson, toBool, toInt } from './lienzo.storage';
+﻿import { pick, safeJson, toInt } from './lienzo.storage';
 
 export const readResponseBody = async (res: Response) => {
     const text = await res.text();
@@ -37,7 +37,7 @@ const sanitizeSvgString = (svgString: string): string => {
             n.removeAttribute('data-elid');
         });
 
-        // Serializa el svg limpio
+        // Serializa el svg limpio (solo <svg>...</svg>)
         return new XMLSerializer().serializeToString(svg);
     } catch {
         // si algo falla, devuelve el original
@@ -53,7 +53,7 @@ const getSvgStringFromDom = (): string | null => {
         const clone = svgEl.cloneNode(true) as SVGSVGElement;
         clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
 
-        // IMPORTANTE: aquí serializamos "raw", y sanitizamos después sí o sí
+        // Serializamos "raw", y sanitizamos después sí o sí
         return new XMLSerializer().serializeToString(clone);
     } catch {
         return null;
@@ -92,71 +92,86 @@ export const guardarAcuerdoFinal = async (params: {
         return;
     }
 
-    // 2) ✅ SIEMPRE limpiar el SVG aquí (a prueba de balas)
-    const svgString = sanitizeSvgString(rawSvgString);
+    // 2) ✅ SIEMPRE limpiar el SVG aquí
+    const svgEditado = sanitizeSvgString(rawSvgString);
 
-    // 🔎 DEBUG opcional: descomenta para confirmar que NO sale cursor/data-editor
-    // console.log('SVG limpio:', svgString);
+    // 3) ✅ Armar acuerdo según Swagger (y enviar TODO a /api/Acuerdos/crear)
+    const acuerdoFinalObj: any = {
+        // Swagger:
+        // titulo*, descripcion*, detallesDescripcion*, fechaVencimiento*, estado*, idEmpresa*, svgEditado*, svgOriginal (opcional)
+
+        titulo: String(pick(acuerdoBase, ['Titulo', 'titulo'], '') || '').trim(),
+        descripcion: String(pick(acuerdoBase, ['Descripcion', 'descripcion'], '') || '').trim(),
+        detallesDescripcion: String(pick(acuerdoBase, ['DetallesDescripcion', 'detallesDescripcion'], '') || '').trim(),
+        fechaVencimiento: (() => {
+            const raw = pick(acuerdoBase, ['FechaVencimiento', 'fechaVencimiento'], null);
+            return raw ? new Date(raw).toISOString() : new Date().toISOString();
+        })(),
+        estado: String(pick(acuerdoBase, ['Estado', 'estado'], 'ACTIVO') || 'ACTIVO'),
+
+        // ✅ idEmpresa (tu temp_acuerdo trae idEmpresa)
+        idEmpresa: toInt(pick(acuerdoBase, ['IdEmpresa', 'idEmpresa'], 0), 0),
+
+        // ✅ requerido: el <svg ...> completo
+        svgEditado: svgEditado,
+
+        // ✅ opcional: “Send empty value” => mandamos vacío
+        svgOriginal: ''
+    };
+
+    // Validaciones rápidas (para evitar pegarle al backend en vano)
+    if (!acuerdoFinalObj.titulo) {
+        console.warn('[guardarAcuerdoFinal] falta titulo:', acuerdoFinalObj);
+        alert('Error: Falta título.');
+        return;
+    }
+    if (!acuerdoFinalObj.descripcion) {
+        console.warn('[guardarAcuerdoFinal] falta descripcion:', acuerdoFinalObj);
+        alert('Error: Falta descripción.');
+        return;
+    }
+    if (!acuerdoFinalObj.detallesDescripcion) {
+        console.warn('[guardarAcuerdoFinal] falta detallesDescripcion:', acuerdoFinalObj);
+        alert('Error: Falta detallesDescripción.');
+        return;
+    }
+    if (!acuerdoFinalObj.idEmpresa) {
+        console.warn('[guardarAcuerdoFinal] acuerdoBase:', acuerdoBase);
+        alert('Error: No hay empresa seleccionada (idEmpresa). Vuelve al formulario y selecciona una.');
+        return;
+    }
+    if (!acuerdoFinalObj.svgEditado || String(acuerdoFinalObj.svgEditado).trim().length === 0) {
+        alert('Error: svgEditado viene vacío.');
+        return;
+    }
+
+    // ✅ LOGS ANTES DE ENVIAR (payload)
+    console.groupCollapsed('[guardarAcuerdoFinal] ✅ Payload a enviar (/api/Acuerdos/crear)');
+    console.log('acuerdoFinalObj:', acuerdoFinalObj);
+    console.log('svgEditado length:', svgEditado.length);
+    console.log('svgEditado preview:', svgEditado.slice(0, 300) + ` ... (len=${svgEditado.length})`);
+    console.groupEnd();
+
+    // 4) FormData (multipart/form-data)
+    const fd = new FormData();
+    Object.entries(acuerdoFinalObj).forEach(([k, v]) => {
+        if (v === undefined || v === null) return;
+        fd.append(k, String(v));
+    });
+
+    // ✅ LOG FormData real (clave)
+    console.groupCollapsed('[guardarAcuerdoFinal] ✅ FormData a enviar (/api/Acuerdos/crear)');
+    for (const [k, v] of fd.entries()) {
+        if (k === 'svgEditado') {
+            const s = String(v);
+            console.log(k, s.slice(0, 300) + ` ... (len=${s.length})`);
+        } else {
+            console.log(k, v);
+        }
+    }
+    console.groupEnd();
 
     try {
-        const svgPayload = { svg_original: svgString, svg_editado: svgString, estado: true };
-
-        const resSvg = await fetch('http://localhost:5091/api/Svg/crear', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`
-            },
-            body: JSON.stringify(svgPayload)
-        });
-
-        const svgBody = await readResponseBody(resSvg);
-
-        if (!resSvg.ok) {
-            console.error('Respuesta SVG:', svgBody.data);
-            alert('No se pudo guardar el diseño SVG. Revisa consola.');
-            return;
-        }
-
-        const svgData = (svgBody.kind === 'json' ? svgBody.data : null) as any;
-        const idGeneradoSvg = toInt(pick(svgData, ['id', 'Id'], 0), 0);
-
-        if (!idGeneradoSvg) {
-            console.error('SVG create response (sin id):', svgData);
-            alert('Error: el backend no devolvió el id del SVG. Revisa el return del SvgController.');
-            return;
-        }
-
-        const acuerdoFinalObj: any = {
-            idAcuerdo: 0,
-            titulo: String(pick(acuerdoBase, ['Titulo', 'titulo'], '') || '').trim(),
-            descripcion: String(pick(acuerdoBase, ['Descripcion', 'descripcion'], '') || '').trim(),
-            detallesDescripcion: String(pick(acuerdoBase, ['DetallesDescripcion', 'detallesDescripcion'], '') || '').trim(),
-            fechaVencimiento: (() => {
-                const raw = pick(acuerdoBase, ['FechaVencimiento', 'fechaVencimiento'], null);
-                return raw ? new Date(raw).toISOString() : new Date().toISOString();
-            })(),
-            estado: String(pick(acuerdoBase, ['Estado', 'estado'], 'Activo') || 'Activo'),
-            pdfUrl: String(pick(acuerdoBase, ['PdfUrl', 'pdfUrl'], '') || '').trim(),
-            imagenUrl: String(pick(acuerdoBase, ['ImagenUrl', 'imagenUrl'], '') || '').trim(),
-            habilitado: toBool(pick(acuerdoBase, ['Habilitado', 'habilitado'], true)),
-            idInstitucion: toInt(pick(acuerdoBase, ['IdInstitucion', 'idInstitucion'], 0), 0),
-
-            idSvgTemplate: idGeneradoSvg
-        };
-
-        if (!acuerdoFinalObj.idInstitucion) {
-            console.warn('acuerdoBase:', acuerdoBase);
-            alert('Error: No hay institución seleccionada. Vuelve al formulario y selecciona una.');
-            return;
-        }
-
-        const fd = new FormData();
-        Object.entries(acuerdoFinalObj).forEach(([k, v]) => {
-            if (v === undefined || v === null) return;
-            fd.append(k, typeof v === 'boolean' ? String(v) : String(v));
-        });
-
         const resAcuerdo = await fetch('http://localhost:5091/api/Acuerdos/crear', {
             method: 'POST',
             headers: { Authorization: `Bearer ${token}` },
@@ -169,12 +184,22 @@ export const guardarAcuerdoFinal = async (params: {
             alert('Acuerdo publicado exitosamente.');
             localStorage.removeItem('temp_acuerdo');
             navigate('/panel');
-        } else {
-            console.error('Fallo validacion:', acuerdoBody.data);
-            alert('No se pudo publicar el acuerdo. Revisa la consola para ver el detalle.');
+            return;
         }
+
+        // ✅ LOG completo del 400 / ModelState
+        console.group('[guardarAcuerdoFinal] ❌ Error en /api/Acuerdos/crear');
+        console.error('Status:', resAcuerdo.status, resAcuerdo.statusText);
+        console.log('Body.kind:', acuerdoBody.kind);
+        console.log('Body.data:', acuerdoBody.data);
+        console.log('Body.raw:', acuerdoBody.raw);
+        console.groupEnd();
+
+        alert('No se pudo publicar el acuerdo. Revisa la consola para ver el detalle.');
     } catch (error) {
-        console.error('Error:', error);
+        console.group('[guardarAcuerdoFinal] ❌ Error inesperado');
+        console.error(error);
+        console.groupEnd();
         alert('Error inesperado. Revisa consola.');
     }
 };
