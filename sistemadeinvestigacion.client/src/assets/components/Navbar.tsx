@@ -92,7 +92,7 @@ export const Navbar = () => {
 
                     <div className="flex flex-col items-end border-l border-white/10 pl-4 pr-2">
                         <span className="text-white font-black text-xs uppercase tracking-widest">
-                            {user?.name || 'Admin'}
+                            {user?.nombre || 'Admin'}
                         </span>
                     </div>
 

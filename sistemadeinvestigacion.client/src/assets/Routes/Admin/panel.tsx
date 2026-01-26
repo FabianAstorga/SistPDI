@@ -1,6 +1,6 @@
 ﻿import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Navbar } from '../../components/Navbar';
-import { Search, ArrowDown } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 type AcuerdoApi = {
     id: number;
@@ -8,6 +8,32 @@ type AcuerdoApi = {
     descripcion: string;
     imagenUrl?: string | null;
 };
+
+// ✅ Base del backend (para no apuntar a :5173 con rutas relativas)
+const API_BASE = 'http://localhost:5091';
+
+// ✅ Convierte "/uploads/a.png" o "uploads/a.png" => "http://localhost:5091/uploads/a.png"
+// ✅ Si ya es http(s), la deja tal cual
+function resolveBackendUrl(path?: string | null) {
+    if (!path) return null;
+    const s = String(path).trim();
+    if (!s) return null;
+
+    if (/^https?:\/\//i.test(s)) return s;
+
+    const normalized = s.startsWith('/') ? s : `/${s}`;
+    return `${API_BASE}${normalized}`;
+}
+
+// ✅ Normaliza el acuerdo para que la imagen siempre sea URL absoluta al backend
+function normalizeAcuerdo(a: any): AcuerdoApi {
+    return {
+        id: Number(a?.id ?? 0),
+        titulo: String(a?.titulo ?? ''),
+        descripcion: String(a?.descripcion ?? ''),
+        imagenUrl: resolveBackendUrl(a?.imagenUrl),
+    };
+}
 
 const BilliardCarousel = ({ acuerdos }: { acuerdos: AcuerdoApi[] }) => {
     const [items, setItems] = useState<number[]>([]);
@@ -198,12 +224,15 @@ function panel() {
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
             });
+
             if (!resMejores.ok) {
                 const t = await resMejores.text().catch(() => '');
                 throw new Error(t || `Error HTTP ${resMejores.status} en /mejores`);
             }
+
             const mejoresData = (await resMejores.json()) as any;
-            setMejores(Array.isArray(mejoresData) ? (mejoresData as AcuerdoApi[]) : []);
+            const mejoresNorm = Array.isArray(mejoresData) ? mejoresData.map(normalizeAcuerdo) : [];
+            setMejores(mejoresNorm);
 
             const resAll = await fetch('http://localhost:5091/api/Acuerdos', {
                 method: 'GET',
@@ -212,12 +241,15 @@ function panel() {
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
             });
+
             if (!resAll.ok) {
                 const t = await resAll.text().catch(() => '');
                 throw new Error(t || `Error HTTP ${resAll.status} en /Acuerdos`);
             }
+
             const allData = (await resAll.json()) as any;
-            setAcuerdos(Array.isArray(allData) ? (allData as AcuerdoApi[]) : []);
+            const allNorm = Array.isArray(allData) ? allData.map(normalizeAcuerdo) : [];
+            setAcuerdos(allNorm);
         } catch (e: any) {
             setLoadError(e?.message || 'Error al cargar acuerdos.');
         } finally {
@@ -277,28 +309,25 @@ function panel() {
                                 <div className="relative">
                                     <BilliardCarousel acuerdos={mejores.length ? mejores : acuerdos} />
 
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    goToList(); // baja a la sección
-                                                    
-                                                }}
-                                                className="
-        absolute left-1/2 -translate-x-1/2 -bottom-12
-        bg-gray-200 text-gray-700
-        hover:bg-gray-300
-        active:bg-gray-400
-        transition-colors
-        px-4 py-2 rounded-md
-        flex items-center gap-2
-        shadow-sm
-    "
-                                                aria-label="Ir al tope"
-                                            >
-                                                <span className="text-xs font-bold uppercase tracking-widest">Acuerdos</span>
-                                            </button>
-
-
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            goToList();
+                                        }}
+                                        className="
+                                            absolute left-1/2 -translate-x-1/2 -bottom-12
+                                            bg-gray-200 text-gray-700
+                                            hover:bg-gray-300
+                                            active:bg-gray-400
+                                            transition-colors
+                                            px-4 py-2 rounded-md
+                                            flex items-center gap-2
+                                            shadow-sm
+                                        "
+                                        aria-label="Ir al tope"
+                                    >
+                                        <span className="text-xs font-bold uppercase tracking-widest">Acuerdos</span>
+                                    </button>
                                 </div>
                             )}
                         </div>
@@ -340,7 +369,6 @@ function panel() {
                                 </div>
 
                                 <div className="bg-gray-50 px-6 lg:px-12 py-10 shadow-inner -mt-6">
-                                    {/* ✅ SOLO 3 ítems visibles: el scroll es interno */}
                                     <div
                                         className="w-full overflow-y-auto pr-1 rounded-2xl"
                                         style={{
