@@ -8,6 +8,7 @@ using SistemaDeInvestigacion.Server.Data;
 using SistemaDeInvestigacion.Server.Servicios;
 using System.Text;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.FileProviders;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -98,8 +99,11 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
 app.UseDefaultFiles();
+
 app.UseStaticFiles();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -112,22 +116,30 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseCors("AllowReactApp");
 
-app.UseDefaultFiles();
+var externalMediaPath = Path.Combine(builder.Environment.ContentRootPath, "media");
+if (!Directory.Exists(externalMediaPath))
+{
+    Directory.CreateDirectory(externalMediaPath);
+}
 
-// wwwroot (acuerdos, png, svg, etc)
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new PhysicalFileProvider(
-        Path.Combine(builder.Environment.ContentRootPath, "wwwroot")
-    ),
-    RequestPath = ""
+    FileProvider = new PhysicalFileProvider(externalMediaPath),
+    RequestPath = "/media"
 });
 
-// Logos externos
 var logosPath = Path.Combine(builder.Environment.ContentRootPath, "LogosMedia");
+var acuerdosPath = Path.Combine(builder.Environment.ContentRootPath, "media", "acuerdosmedia");
+
+Console.WriteLine(acuerdosPath);
 if (!Directory.Exists(logosPath))
 {
     Directory.CreateDirectory(logosPath);
+}
+
+if (!Directory.Exists(acuerdosPath))
+{
+    Directory.CreateDirectory(acuerdosPath);
 }
 
 app.UseStaticFiles(new StaticFileOptions
@@ -136,10 +148,16 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = "/imagenes"
 });
 
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(acuerdosPath),
+    RequestPath = "/media"
+});
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
 app.MapFallbackToFile("/index.html");
+
 app.Run();

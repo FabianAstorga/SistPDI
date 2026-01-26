@@ -5,7 +5,7 @@ using SistemaDeInvestigacion.Server.Data;
 using SistemaDeInvestigacion.Server.Dtos;
 using SistemaDeInvestigacion.Server.Models;
 using SkiaSharp;
-using Svg.Skia; // ✅ CAMBIO: antes era SkiaSharp.Extended.Svg
+using Svg.Skia;
 using System.IO;
 
 namespace SistemaDeInvestigacion.Server.Controllers
@@ -16,11 +16,13 @@ namespace SistemaDeInvestigacion.Server.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
+        private readonly IWebHostEnvironment _env;
 
-        public AcuerdosController(ApplicationDbContext context, IConfiguration configuration)
+        public AcuerdosController(ApplicationDbContext context, IConfiguration configuration, IWebHostEnvironment env)
         {
             _context = context;
             _configuration = configuration;
+            _env = env;
         }
 
         [HttpGet("{id}")]
@@ -59,37 +61,42 @@ namespace SistemaDeInvestigacion.Server.Controllers
             _context.Acuerdos.Add(NewAcuerdo);
             await _context.SaveChangesAsync();
 
-            string folderRelativePath = Path.Combine("media", NewAcuerdo.IdAcuerdo.ToString());
-            string folderFullPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", folderRelativePath);
+            // -----------------------------------------------------------------------
+            // 1. DEFINICIÓN DE RUTAS (FÍSICA vs URL)
+            // -----------------------------------------------------------------------
 
-            if (!Directory.Exists(folderFullPath))
-                Directory.CreateDirectory(folderFullPath);
-
+            // Nombre del archivo
             string fileName = $"acuerdo_{Guid.NewGuid().ToString().Substring(0, 8)}.png";
-            string fileFullPath = Path.Combine(folderFullPath, fileName);
 
-            // =========================
-            // ✅ SVG -> PNG con Svg.Skia
-            // =========================
+            // RUTA FÍSICA: Dónde se guarda en el servidor
+            // Estructura: RaizDelProyecto / media / acuerdosmedia / IdAcuerdo
+            string rutaCarpetaFisica = Path.Combine(_env.ContentRootPath, "media", "acuerdosmedia", NewAcuerdo.IdAcuerdo.ToString());
+
+            // Crear carpeta si no existe
+            if (!Directory.Exists(rutaCarpetaFisica))
+                Directory.CreateDirectory(rutaCarpetaFisica);
+
+            // Ruta completa del archivo para guardar
+            string rutaArchivoFisica = Path.Combine(rutaCarpetaFisica, fileName);
+
+
+            // -----------------------------------------------------------------------
+            // 2. PROCESAMIENTO DE IMAGEN (SkiaSharp)
+            // -----------------------------------------------------------------------
             try
             {
                 var svgText = acuerdos.svgEditado.Trim();
-
                 using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(svgText));
-
-                // ✅ Namespace y tipo de Svg.Skia
                 var skSvg = new SKSvg();
                 var picture = skSvg.Load(stream);
 
                 if (picture == null)
-                    return BadRequest("No se pudo parsear el SVG (picture null). Revisa el contenido de svgEditado.");
+                    return BadRequest("No se pudo parsear el SVG.");
 
-                // En algunos SVG el CullRect puede quedar 0x0 si viene raro.
                 var rect = picture.CullRect;
                 int width = Math.Max(1, (int)Math.Ceiling(rect.Width));
                 int height = Math.Max(1, (int)Math.Ceiling(rect.Height));
 
-                // Fallback “sano” si llega 1x1 por SVG sin dimensiones útiles
                 if (width <= 1 || height <= 1)
                 {
                     width = 1200;
@@ -98,29 +105,36 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
                 using var bitmap = new SKBitmap(width, height, SKColorType.Rgba8888, SKAlphaType.Premul);
                 using var canvas = new SKCanvas(bitmap);
-
                 canvas.Clear(SKColors.Transparent);
-
-                // Dibuja el SVG (picture) al canvas
                 canvas.DrawPicture(picture);
                 canvas.Flush();
 
                 using var image = SKImage.FromBitmap(bitmap);
                 using var data = image.Encode(SKEncodedImageFormat.Png, 100);
 
-                await using var outputStream = System.IO.File.OpenWrite(fileFullPath);
+                // Guardamos usando la ruta física
+                await using var outputStream = System.IO.File.OpenWrite(rutaArchivoFisica);
                 data.SaveTo(outputStream);
             }
             catch (Exception ex)
             {
-                // Si quieres, loguea el SVG completo con cuidado (puede ser gigante)
-                // Console.WriteLine(acuerdos.svgEditado);
-
-                return StatusCode(500, $"Error procesando SVG: {ex.GetType().Name} - {ex.Message}");
+                return StatusCode(500, $"Error procesando SVG: {ex.Message}");
             }
 
-            NewAcuerdo.ImagenUrl = $"/{folderRelativePath}/{fileName}".Replace("\\", "/");
+            // -----------------------------------------------------------------------
+            // 3. GENERACIÓN DE URL (Para la Base de Datos)
+            // -----------------------------------------------------------------------
+
+            // Como en Program.cs definiste que "Raiz/media" equivale a la URL "/media":
+            // La URL debe ser: /media/acuerdosmedia/{id}/{archivo}
+
+            NewAcuerdo.ImagenUrl = $"/media/acuerdosmedia/{NewAcuerdo.IdAcuerdo}/{fileName}";
+
             await _context.SaveChangesAsync();
+
+            // -----------------------------------------------------------------------
+            // 4. GUARDADO DE TEMPLATES Y RELACIONES
+            // -----------------------------------------------------------------------
 
             var NewSvg = new SvgTemplate
             {
@@ -143,7 +157,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             _context.AcuerdosUserTemplates.Add(NewDatos);
             await _context.SaveChangesAsync();
 
-            return Ok(new { Message = "Acuerdo Creado" });
+            return Ok(new { Message = "Acuerdo Creado", Url = NewAcuerdo.ImagenUrl });
         }
 
         [HttpGet("mejores")]
