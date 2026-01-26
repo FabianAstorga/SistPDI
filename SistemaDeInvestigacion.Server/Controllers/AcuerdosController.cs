@@ -40,9 +40,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
             var userId = User.GetUserId();
             var acuerdos = AcuerdoDto;
 
-            if (acuerdos.idEmpresa == null)
-                return BadRequest("Empresa no existente");
-
             if (string.IsNullOrWhiteSpace(acuerdos.svgEditado))
                 return BadRequest("svgEditado es requerido.");
 
@@ -165,5 +162,30 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 .ToListAsync();
             return Ok(acuerdoslista);
         }
+
+        [HttpGet("pendientes")]
+        public async Task<ActionResult<IEnumerable<Acuerdo>>> GetPendientes()
+        {
+            var acuerdosPendientes = await _context.Acuerdos
+                .Where(acuerdos => acuerdos.Habilitado == false)
+                .ToListAsync();
+            return Ok(acuerdosPendientes);
+        }
+
+
+
+
+
+        /*
+        [HttpPut("editar/{idAcuerdo}")]
+        public async Task<ActionResult<IEnumerable<Acuerdo>>> PutAcuerdo([FromForm] editAcuerdoDto editAcuerdoDto)
+        {
+
+            var datosAcuerdo = editAcuerdoDto;
+            var newDatos = await _context.Acuerdos.FindAsync(id);
+            await _context.Acuerdos.Update(datosAcuerdo);
+            return Ok();
+        }
+        */
     }
 }
