@@ -46,6 +46,14 @@ namespace SistemaDeInvestigacion.Server.Controllers
             if (string.IsNullOrWhiteSpace(acuerdos.svgEditado))
                 return BadRequest("svgEditado es requerido.");
 
+            var userRole = User.GetUserRole();
+            var habilitado = false;
+
+            if (userRole == 1)
+            {
+                habilitado = true;
+            }
+
             var NewAcuerdo = new Acuerdo
             {
                 Titulo = acuerdos.titulo,
@@ -53,7 +61,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 DetallesDescripcion = acuerdos.detallesDescripcion,
                 FechaVencimiento = acuerdos.fechaVencimiento,
                 Estado = acuerdos.estado,
-                Habilitado = false,
+                Habilitado = habilitado,
                 FechaCreacion = DateTime.UtcNow,
                 IdEmpresa = acuerdos.idEmpresa
             };
@@ -61,28 +69,15 @@ namespace SistemaDeInvestigacion.Server.Controllers
             _context.Acuerdos.Add(NewAcuerdo);
             await _context.SaveChangesAsync();
 
-            // -----------------------------------------------------------------------
-            // 1. DEFINICIÓN DE RUTAS (FÍSICA vs URL)
-            // -----------------------------------------------------------------------
-
-            // Nombre del archivo
             string fileName = $"acuerdo_{Guid.NewGuid().ToString().Substring(0, 8)}.png";
 
-            // RUTA FÍSICA: Dónde se guarda en el servidor
-            // Estructura: RaizDelProyecto / media / acuerdosmedia / IdAcuerdo
             string rutaCarpetaFisica = Path.Combine(_env.ContentRootPath, "media", "acuerdosmedia", NewAcuerdo.IdAcuerdo.ToString());
 
-            // Crear carpeta si no existe
             if (!Directory.Exists(rutaCarpetaFisica))
                 Directory.CreateDirectory(rutaCarpetaFisica);
 
-            // Ruta completa del archivo para guardar
             string rutaArchivoFisica = Path.Combine(rutaCarpetaFisica, fileName);
 
-
-            // -----------------------------------------------------------------------
-            // 2. PROCESAMIENTO DE IMAGEN (SkiaSharp)
-            // -----------------------------------------------------------------------
             try
             {
                 var svgText = acuerdos.svgEditado.Trim();
@@ -112,7 +107,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 using var image = SKImage.FromBitmap(bitmap);
                 using var data = image.Encode(SKEncodedImageFormat.Png, 100);
 
-                // Guardamos usando la ruta física
                 await using var outputStream = System.IO.File.OpenWrite(rutaArchivoFisica);
                 data.SaveTo(outputStream);
             }
@@ -121,20 +115,12 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 return StatusCode(500, $"Error procesando SVG: {ex.Message}");
             }
 
-            // -----------------------------------------------------------------------
-            // 3. GENERACIÓN DE URL (Para la Base de Datos)
-            // -----------------------------------------------------------------------
-
-            // Como en Program.cs definiste que "Raiz/media" equivale a la URL "/media":
-            // La URL debe ser: /media/acuerdosmedia/{id}/{archivo}
 
             NewAcuerdo.ImagenUrl = $"/media/acuerdosmedia/{NewAcuerdo.IdAcuerdo}/{fileName}";
 
             await _context.SaveChangesAsync();
 
-            // -----------------------------------------------------------------------
-            // 4. GUARDADO DE TEMPLATES Y RELACIONES
-            // -----------------------------------------------------------------------
+
 
             var NewSvg = new SvgTemplate
             {
@@ -173,9 +159,10 @@ namespace SistemaDeInvestigacion.Server.Controllers
         [HttpGet()]
         public async Task<ActionResult<IEnumerable<Acuerdo>>> GetAcuerdos()
         {
-            return await _context.Acuerdos
+            var acuerdoslista = await _context.Acuerdos
                 .Where(acuerdos => acuerdos.Habilitado == true)
                 .ToListAsync();
+            return Ok(acuerdoslista);
         }
     }
 }
