@@ -44,8 +44,14 @@ namespace SistemaDeInvestigacion.Server.Models
         [Column("IdEmpresa")]
         public int? IdEmpresa { get; set; }
 
+        [Column("IdCategoria")]
+        public int? IdCategoria { get; set; }
+
         [ForeignKey("IdEmpresa")]
         public virtual Empresas? Empresas { get; set; }
+
+        [ForeignKey("IdCategoria")]
+        public virtual Categoria? Categoria { get; set; }
 
         //[Column("idCreador")]
         //public long? IdCreador { get; set; }

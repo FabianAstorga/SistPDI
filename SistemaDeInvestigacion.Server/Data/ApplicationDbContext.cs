@@ -25,16 +25,15 @@ namespace SistemaDeInvestigacion.Server.Data
         public DbSet<Empleado> Empleados { get; set; } = null!;
         public DbSet<AcuerdoContacto> AcuerdoContactos { get; set; } = null!;
         public DbSet<AcuerdosUsersTemplates> AcuerdosUserTemplates { get; set; } = null!;
+        public DbSet<Categoria> Categoria { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // ✅ Converters
-            var enc = new EncryptedStringConverter(_crypto);                 // random
-            var encDet = new DeterministicEncryptedStringConverter(_crypto); // determinístico (PK/FK)
+            var enc = new EncryptedStringConverter(_crypto);
+            var encDet = new DeterministicEncryptedStringConverter(_crypto);
 
-            // 1. Configuración de ACUERDOS
             modelBuilder.Entity<Acuerdo>(entity =>
             {
                 entity.ToTable("acuerdos");
@@ -50,9 +49,15 @@ namespace SistemaDeInvestigacion.Server.Data
                     .HasForeignKey(d => d.IdEmpresa)
                     .OnDelete(DeleteBehavior.Restrict)
                     .HasConstraintName("FkEmpresa");
+
+                entity.HasOne(d => d.Categoria)
+                    .WithMany()
+                    .HasForeignKey(d => d.IdCategoria)
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .HasConstraintName("FkCategoria");
+
             });
 
-            // 2. Configuración de EMPRESAS
             modelBuilder.Entity<Empresas>(entity =>
             {
                 entity.ToTable("empresas");
@@ -60,36 +65,37 @@ namespace SistemaDeInvestigacion.Server.Data
                 entity.Property(e => e.IdEmpresa).UseIdentityColumn();
             });
 
-            // 3. Configuración de CONTACTOS
+            modelBuilder.Entity<Categoria>(entity =>
+            {
+                entity.ToTable("categoria");
+                entity.HasKey(e => e.IdCategoria);
+                entity.Property(e => e.IdCategoria).UseIdentityColumn();
+            });
+
             modelBuilder.Entity<Contacto>(entity =>
             {
                 entity.ToTable("contactos");
                 entity.HasKey(e => e.IdContacto);
             });
 
-            // 4. Configuración de EMPLEADOS + CIFRADO
             modelBuilder.Entity<Empleado>(entity =>
             {
                 entity.ToTable("empleados");
                 entity.HasKey(e => e.Rut);
 
-                // ✅ RUT (PK): determinístico
                 entity.Property(e => e.Rut)
                       .HasColumnName("rut")
                       .HasConversion(encDet);
 
-                // ✅ correo_electronico: random (nullable)
                 entity.Property(e => e.CorreoElectronico)
                       .HasColumnName("correo_electronico")
                       .HasConversion(encDet);
 
-                // ✅ nombre_completo: random (nullable)
                 entity.Property(e => e.NombreCompleto)
                       .HasColumnName("nombre_completo")
                       .HasConversion(enc);
             });
 
-            // 5. Configuración de USERS + CIFRADO (Rut FK)
             modelBuilder.Entity<User>(entity =>
             {
                 entity.ToTable("users");
@@ -98,7 +104,6 @@ namespace SistemaDeInvestigacion.Server.Data
                 entity.Property(e => e.FechaCreacion).HasDefaultValueSql("CURRENT_TIMESTAMP");
                 entity.Property(e => e.Rol).HasDefaultValue(1);
 
-                // ✅ Este Property solo compila si tu clase User tiene propiedad Rut
                 entity.Property(e => e.Rut)
                       .HasConversion(encDet);
 
@@ -109,7 +114,6 @@ namespace SistemaDeInvestigacion.Server.Data
                     .HasConstraintName("fk_persona");
             });
 
-            // 6. Configuración de SVG_TEMPLATES
             modelBuilder.Entity<SvgTemplate>(entity =>
             {
                 entity.ToTable("svg_templates");
@@ -122,7 +126,6 @@ namespace SistemaDeInvestigacion.Server.Data
                 entity.Property(e => e.FechaActualizacion).HasColumnName("fechaActualizacion");
             });
 
-            // 7. Configuración de ACUERDOS/CONTACTOS
             modelBuilder.Entity<AcuerdoContacto>(entity =>
             {
                 entity.ToTable("acuerdos/contactos");
@@ -144,7 +147,6 @@ namespace SistemaDeInvestigacion.Server.Data
                     .HasConstraintName("fk_contacto_id");
             });
 
-            // 8. Configuración de ACUERDOS/USERS/TEMPLATES
             modelBuilder.Entity<AcuerdosUsersTemplates>(entity =>
             {
                 entity.ToTable("acuerdos/users/templates");

@@ -10,6 +10,17 @@ using SkiaSharp.Extended.Svg;
 using System.IO;
 namespace SistemaDeInvestigacion.Server.Controllers
 {
+
+    /*
+     * Cosas que hacer: permitir eliminar y editar un acuerdo (eliminacion con ocnfirmaciòn previa)
+     * Se debe de enviar un correo
+     * 
+     * 
+     * 
+     * 
+     * 
+     */
+
     [Route("api/[controller]")]
     [ApiController]
     public class AcuerdosController : Controller
@@ -38,6 +49,11 @@ namespace SistemaDeInvestigacion.Server.Controllers
             var userId = User.GetUserId();
             var acuerdos = AcuerdoDto;
 
+            if (acuerdos.idEmpresa == null)
+            {
+                return BadRequest("Empresa no existente");
+            }
+
             var NewAcuerdo = new Acuerdo
             {
                 Titulo = acuerdos.titulo,
@@ -45,8 +61,9 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 DetallesDescripcion = acuerdos.detallesDescripcion,
                 FechaVencimiento = acuerdos.fechaVencimiento,
                 Estado = acuerdos.estado,
-                Habilitado = acuerdos.habilitado,
-                FechaCreacion = DateTime.UtcNow
+                Habilitado = false,
+                FechaCreacion = DateTime.UtcNow,
+                IdEmpresa = acuerdos.idEmpresa
             };
 
             _context.Acuerdos.Add(NewAcuerdo);
@@ -109,6 +126,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 IdAcuerdo = NewAcuerdo.IdAcuerdo,
                 IdSvg = SvgId
             };
+
 
             _context.AcuerdosUserTemplates.Add(NewDatos);
             await _context.SaveChangesAsync();
