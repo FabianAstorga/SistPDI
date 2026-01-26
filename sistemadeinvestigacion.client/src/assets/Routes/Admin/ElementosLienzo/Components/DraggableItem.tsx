@@ -28,7 +28,7 @@ export const DraggableItem: React.FC<Props> = ({
     const draggingRef = useRef(false);
     const lastRef = useRef<{ x: number; y: number } | null>(null);
 
-    // --- RESIZE (lo tuyo, igual)
+    // --- RESIZE
     const iniciarResize = (e: any, corner: string) => {
         e.stopPropagation();
         e.preventDefault();
@@ -80,7 +80,6 @@ export const DraggableItem: React.FC<Props> = ({
     // --- DRAG SVG nativo
     const onMouseDownDrag = (e: React.MouseEvent<SVGGElement>) => {
         if (!puedeInteractuar) return;
-        // si clickeas en un handle de resize, no inicia drag (porque hace stopPropagation igual)
         e.stopPropagation();
 
         alSeleccionarCanvas(el.id);
@@ -126,9 +125,11 @@ export const DraggableItem: React.FC<Props> = ({
             onMouseDown={onMouseDownDrag}
             style={{ cursor: puedeInteractuar ? 'move' : 'default' }}
         >
+            {/* ✅ Editor-only UI (NO debe exportarse) */}
             {estaSeleccionado && el.type !== 'lapiz' && (
-                <>
+                <g data-editor="1">
                     <rect
+                        data-editor="1"
                         x={-6}
                         y={-6}
                         width={w + 12}
@@ -140,6 +141,7 @@ export const DraggableItem: React.FC<Props> = ({
                     />
                     {['nw', 'ne', 'sw', 'se'].map((corner) => (
                         <circle
+                            data-editor="1"
                             key={corner}
                             cx={corner.includes('e') ? w : 0}
                             cy={corner.includes('s') ? h : 0}
@@ -151,7 +153,7 @@ export const DraggableItem: React.FC<Props> = ({
                             onMouseDown={(e) => iniciarResize(e, corner)}
                         />
                     ))}
-                </>
+                </g>
             )}
 
             <g

@@ -1,4 +1,4 @@
-﻿import React from 'react';
+﻿import React, { useMemo } from 'react';
 import { ChevronDown, ChevronUp, ChevronsDown, ChevronsUp, Trash2, Layers } from 'lucide-react';
 
 type Props = {
@@ -11,6 +11,31 @@ type Props = {
     controlLabel: string;
 };
 
+const getElColor = (el: any) => {
+    // Para trazos usa stroke; para figuras usa fill
+    return el?.stroke || el?.fill || '#000000';
+};
+
+const getElLabel = (el: any) => {
+    const t = String(el?.type || '').toLowerCase();
+    const map: Record<string, string> = {
+        rectangulo: 'Rectángulo',
+        circulo: 'Círculo',
+        triangulo: 'Triángulo',
+        rombo: 'Rombo',
+        hexagono: 'Hexágono',
+        octagono: 'Octágono',
+        estrella: 'Estrella',
+        texto: 'Texto',
+        imagen: 'Imagen',
+        lapiz: 'Lápiz',
+        linea: 'Línea',
+        flecha: 'Flecha',
+        curva: 'Curva'
+    };
+    return map[t] || t || 'Elemento';
+};
+
 export const LayersPanel: React.FC<Props> = ({
     elementos,
     seleccionadosIds,
@@ -20,85 +45,121 @@ export const LayersPanel: React.FC<Props> = ({
     eliminarElemento,
     controlLabel
 }) => {
+    // Índices del arreglo real (NO invertido)
+    const indexById = useMemo(() => {
+        const m = new Map<number, number>();
+        elementos.forEach((el, i) => m.set(Number(el.id), i));
+        return m;
+    }, [elementos]);
+
     return (
         <div className="pt-6 border-t border-gray-100">
             <label className={`${controlLabel} flex items-center text-blue-600`}>
                 <Layers size={12} className="mr-2" /> Capas
             </label>
 
-            <div className="space-y-1 mt-2 max-h-60 overflow-y-auto pr-1">
-                {[...elementos].reverse().map((el) => (
-                    <div
-                        key={el.id}
-                        onClick={() => onSelectFromLayers(el.id)}
-                        className={`group p-2.5 rounded-lg flex items-center justify-between cursor-pointer border transition-all ${seleccionadosIds.includes(el.id)
-                                ? 'bg-blue-50 border-blue-200 shadow-sm'
-                                : 'bg-white border-transparent hover:bg-gray-50'
-                            }`}
-                    >
-                        <div className="flex items-center space-x-2 truncate">
-                            <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: el.fill || '#000000' }} />
-                            <span className="text-[10px] font-bold text-gray-600 uppercase truncate pr-2">{el.type}</span>
+            {/* ✅ Mostramos “arriba” primero con CSS, sin invertir el arreglo */}
+            <div className="mt-2 max-h-60 overflow-y-auto pr-1 flex flex-col-reverse space-y-1 space-y-reverse">
+                {elementos.map((el) => {
+                    const id = Number(el.id);
+                    const idx = indexById.get(id) ?? -1;
+                    const isSelected = seleccionadosIds.includes(id);
+
+                    // En el arreglo real: idx=0 es “fondo”, idx=last es “tope”
+                    const isBottom = idx <= 0;
+                    const isTop = idx >= elementos.length - 1;
+
+                    return (
+                        <div
+                            key={id}
+                            onClick={() => onSelectFromLayers(id)}
+                            className={[
+                                'group p-2.5 rounded-lg flex items-center justify-between cursor-pointer border transition-all',
+                                isSelected ? 'bg-blue-50 border-blue-200 shadow-sm' : 'bg-white border-transparent hover:bg-gray-50'
+                            ].join(' ')}
+                        >
+                            <div className="flex items-center space-x-2 truncate">
+                                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: getElColor(el) }} />
+                                <span className="text-[10px] font-bold text-gray-600 uppercase truncate pr-2">
+                                    {getElLabel(el)}
+                                </span>
+                            </div>
+
+                            <div className="flex items-center space-x-1">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        moverCapaExtremo(id, 'top');
+                                    }}
+                                    disabled={isTop}
+                                    className={[
+                                        'p-1 rounded-md transition-all',
+                                        isTop ? 'text-gray-200 cursor-not-allowed' : 'text-gray-300 hover:text-gray-700 hover:bg-gray-100'
+                                    ].join(' ')}
+                                    title="Llevar al Tope"
+                                >
+                                    <ChevronsUp size={14} />
+                                </button>
+
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        moverCapa(id, 'up');
+                                    }}
+                                    disabled={isTop}
+                                    className={[
+                                        'p-1 rounded-md transition-all',
+                                        isTop ? 'text-gray-200 cursor-not-allowed' : 'text-gray-300 hover:text-gray-700 hover:bg-gray-100'
+                                    ].join(' ')}
+                                    title="Subir Capa"
+                                >
+                                    <ChevronUp size={14} />
+                                </button>
+
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        moverCapa(id, 'down');
+                                    }}
+                                    disabled={isBottom}
+                                    className={[
+                                        'p-1 rounded-md transition-all',
+                                        isBottom ? 'text-gray-200 cursor-not-allowed' : 'text-gray-300 hover:text-gray-700 hover:bg-gray-100'
+                                    ].join(' ')}
+                                    title="Bajar Capa"
+                                >
+                                    <ChevronDown size={14} />
+                                </button>
+
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        moverCapaExtremo(id, 'bottom');
+                                    }}
+                                    disabled={isBottom}
+                                    className={[
+                                        'p-1 rounded-md transition-all',
+                                        isBottom ? 'text-gray-200 cursor-not-allowed' : 'text-gray-300 hover:text-gray-700 hover:bg-gray-100'
+                                    ].join(' ')}
+                                    title="Bajar al Fondo"
+                                >
+                                    <ChevronsDown size={14} />
+                                </button>
+
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        eliminarElemento(id);
+                                    }}
+                                    className="p-1 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-md transition-all"
+                                    title="Eliminar"
+                                >
+                                    <Trash2 size={14} />
+                                </button>
+                            </div>
                         </div>
-
-                        <div className="flex items-center space-x-1">
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    moverCapaExtremo(el.id, 'top');
-                                }}
-                                className="p-1 text-gray-300 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-all"
-                                title="Llevar al Tope"
-                            >
-                                <ChevronsUp size={14} />
-                            </button>
-
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    moverCapa(el.id, 'up');
-                                }}
-                                className="p-1 text-gray-300 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-all"
-                                title="Subir Capa"
-                            >
-                                <ChevronUp size={14} />
-                            </button>
-
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    moverCapa(el.id, 'down');
-                                }}
-                                className="p-1 text-gray-300 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-all"
-                                title="Bajar Capa"
-                            >
-                                <ChevronDown size={14} />
-                            </button>
-
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    moverCapaExtremo(el.id, 'bottom');
-                                }}
-                                className="p-1 text-gray-300 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-all"
-                                title="Bajar al Fondo"
-                            >
-                                <ChevronsDown size={14} />
-                            </button>
-
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    eliminarElemento(el.id);
-                                }}
-                                className="p-1 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-md transition-all"
-                                title="Eliminar"
-                            >
-                                <Trash2 size={14} />
-                            </button>
-                        </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
         </div>
     );

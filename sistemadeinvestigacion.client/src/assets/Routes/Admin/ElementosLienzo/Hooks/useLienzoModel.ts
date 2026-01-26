@@ -312,9 +312,7 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
             const { x, y, w, h, ptsLocal } = normalizePtsToLocal(ptsWorld);
 
             setElementos((prev) =>
-                prev.map((item) =>
-                    item.id === id ? { ...item, x, y, width: w, height: h, pointsArr: ptsLocal } : item
-                )
+                prev.map((item) => (item.id === id ? { ...item, x, y, width: w, height: h, pointsArr: ptsLocal } : item))
             );
             return;
         }
@@ -328,9 +326,7 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
 
         const nextPoint = `L ${x} ${y}`;
         setElementos((prev) =>
-            prev.map((el) =>
-                el.id === idCapaDibujoActual.current ? { ...el, points: (el.points || '') + ' ' + nextPoint } : el
-            )
+            prev.map((el) => (el.id === idCapaDibujoActual.current ? { ...el, points: (el.points || '') + ' ' + nextPoint } : el))
         );
     };
 
@@ -380,9 +376,7 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
             return;
         }
 
-        setElementos((prev) =>
-            prev.map((el) => (el.id === id ? { ...el, x: (el.x || 0) + dx, y: (el.y || 0) + dy } : el))
-        );
+        setElementos((prev) => prev.map((el) => (el.id === id ? { ...el, x: (el.x || 0) + dx, y: (el.y || 0) + dy } : el)));
     };
 
     const moverCapa = (id: number, direction: 'up' | 'down') => {
@@ -416,23 +410,85 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
         });
     };
 
+    // ============================
+    // ✅ NUEVO: sanitizar al exportar
+    // ============================
+    const sanitizeSvgString = (svgString: string): string => {
+        try {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(svgString, 'image/svg+xml');
+
+            const svg = doc.querySelector('svg');
+            if (!svg) return svgString;
+
+            // Asegura standalone
+            svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+            // Quita clases del editor
+            svg.removeAttribute('class');
+
+            // Quita TODO lo editor-only (si lo usas en overlays/handles)
+            doc.querySelectorAll('[data-editor="1"]').forEach((n) => n.remove());
+
+            // Quita estilos inline (aquí se va tu cursor: move)
+            doc.querySelectorAll('[style]').forEach((n) => {
+                n.removeAttribute('style');
+            });
+
+            // Quita data-elid (si no quieres que quede en el export)
+            doc.querySelectorAll('[data-elid]').forEach((n) => {
+                n.removeAttribute('data-elid');
+            });
+
+            // Opción: elimina data-* comunes del editor
+            doc.querySelectorAll('[data-testid],[data-rbd-draggable-id],[data-draggable]').forEach((n) => {
+                n.removeAttribute('data-testid');
+                n.removeAttribute('data-rbd-draggable-id');
+                n.removeAttribute('data-draggable');
+            });
+
+            return new XMLSerializer().serializeToString(svg);
+        } catch {
+            return svgString;
+        }
+    };
+
     const descargarSVG = () => {
-        const svgElement = document.querySelector('svg');
-        if (!svgElement) return;
-        const svgString = new XMLSerializer().serializeToString(svgElement);
-        const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+        const svgElement = document.querySelector('svg#lienzo-svg') as SVGSVGElement | null;
+        if (!svgElement) {
+            alert("No se encontró el SVG del lienzo (id='lienzo-svg').");
+            return;
+        }
+
+        const clone = svgElement.cloneNode(true) as SVGSVGElement;
+
+        const w = canvasSize?.w ?? 800;
+        const h = canvasSize?.h ?? 600;
+
+        clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        clone.setAttribute('width', String(w));
+        clone.setAttribute('height', String(h));
+        clone.setAttribute('viewBox', `0 0 ${w} ${h}`);
+
+        // 1) serializa
+        const raw = new XMLSerializer().serializeToString(clone);
+        // 2) ✅ sanitiza SIEMPRE
+        const clean = sanitizeSvgString(raw);
+
+        const blob = new Blob([clean], { type: 'image/svg+xml;charset=utf-8' });
         const url = URL.createObjectURL(blob);
+
         const a = document.createElement('a');
         a.href = url;
         a.download = `lienzo_${Date.now()}.svg`;
         document.body.appendChild(a);
         a.click();
         a.remove();
+
         URL.revokeObjectURL(url);
     };
 
     const manejarGuardadoFinal = async () => {
-
         await guardarAcuerdoFinal({
             elementos,
             canvasSize,
@@ -551,7 +607,10 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
         { id: 'octagono', label: 'Octágono' }
     ] as const;
 
-    const tiposConSaturacion = useMemo(() => new Set(['rectangulo', 'circulo', 'triangulo', 'estrella', 'rombo', 'hexagono', 'octagono', 'imagen']), []);
+    const tiposConSaturacion = useMemo(
+        () => new Set(['rectangulo', 'circulo', 'triangulo', 'estrella', 'rombo', 'hexagono', 'octagono', 'imagen']),
+        []
+    );
     const canEditPoints = useMemo(() => {
         if (!seleccionado) return false;
         return isEditablePolygon(seleccionado.type) || (Array.isArray(seleccionado.pointsArr) && seleccionado.pointsArr.length >= 2);
@@ -566,7 +625,8 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
         }`;
 
     const controlLabel = 'text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 block';
-    const inputStyle = 'w-full bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2';
+    const inputStyle =
+        'w-full bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2';
 
     return {
         elementos,

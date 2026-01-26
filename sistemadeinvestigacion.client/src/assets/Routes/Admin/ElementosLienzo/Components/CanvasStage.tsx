@@ -12,7 +12,7 @@ import {
 
 type Props = {
     model: any;
-    svgId?: string; 
+    svgId?: string;
 };
 
 export const CanvasStage: React.FC<Props> = ({ model, svgId = 'lienzo-svg' }) => {
@@ -65,10 +65,11 @@ export const CanvasStage: React.FC<Props> = ({ model, svgId = 'lienzo-svg' }) =>
                     onClick={(e) => e.stopPropagation()}
                 >
                     <svg
-                        id={svgId}        
+                        id={svgId}
                         ref={svgRef}
                         width="100%"
                         height="100%"
+                        viewBox={`0 0 ${canvasSize.w} ${canvasSize.h}`}
                         onClick={manejarClickLienzo}
                         onMouseDown={iniciarDibujo}
                         onMouseMove={onSvgMouseMove}
@@ -77,7 +78,6 @@ export const CanvasStage: React.FC<Props> = ({ model, svgId = 'lienzo-svg' }) =>
                         className={herramientaActiva ? 'cursor-crosshair' : 'cursor-default'}
                     >
                         <defs>
-                            
                             {elementos
                                 .filter((el: any) => {
                                     const sat = Number(el.saturation);
@@ -119,8 +119,7 @@ export const CanvasStage: React.FC<Props> = ({ model, svgId = 'lienzo-svg' }) =>
                                         ? getBasePolygonPoints(el.type, el.width || 120, el.height || 120)
                                         : [];
 
-                            const strokePts: Pt[] =
-                                Array.isArray(el.pointsArr) && el.pointsArr.length >= 2 ? el.pointsArr : [];
+                            const strokePts: Pt[] = Array.isArray(el.pointsArr) && el.pointsArr.length >= 2 ? el.pointsArr : [];
 
                             return (
                                 <DraggableItem
@@ -133,7 +132,6 @@ export const CanvasStage: React.FC<Props> = ({ model, svgId = 'lienzo-svg' }) =>
                                     alRedimensionar={(id: number, width: number, height: number) => redimensionarElemento(id, width, height)}
                                     puedeInteractuar={modoSeleccionActivo}
                                 >
-                                   
                                     {isEditablePolygon(el.type) && polygonPts.length >= 3 && (
                                         <>
                                             <polygon
@@ -144,9 +142,10 @@ export const CanvasStage: React.FC<Props> = ({ model, svgId = 'lienzo-svg' }) =>
                                             />
 
                                             {modoPuntos && seleccionadoId === el.id && (
-                                                <g>
+                                                // ✅ editor-only overlay (se borra al exportar)
+                                                <g data-editor="1">
                                                     {(Array.isArray(el.pointsArr) ? el.pointsArr : polygonPts).map((p: Pt, idx: number) => (
-                                                        <g key={`${el.id}-h-${idx}`}>
+                                                        <g key={`${el.id}-h-${idx}`} data-editor="1">
                                                             <circle
                                                                 cx={p.x}
                                                                 cy={p.y}
@@ -154,7 +153,7 @@ export const CanvasStage: React.FC<Props> = ({ model, svgId = 'lienzo-svg' }) =>
                                                                 fill="white"
                                                                 stroke="#2563eb"
                                                                 strokeWidth={2}
-                                                                style={{ cursor: 'grab' }}
+                                                                className="cursor-grab"
                                                                 onMouseDown={(ev) => startDragPoint(ev, el.id, idx)}
                                                             />
                                                             <circle cx={p.x} cy={p.y} r={3} fill="#2563eb" pointerEvents="none" />
@@ -203,9 +202,10 @@ export const CanvasStage: React.FC<Props> = ({ model, svgId = 'lienzo-svg' }) =>
                                             />
 
                                             {modoPuntos && seleccionadoId === el.id && strokePts.length >= 2 && (
-                                                <g>
+                                                // ✅ editor-only overlay (se borra al exportar)
+                                                <g data-editor="1">
                                                     {strokePts.map((p: Pt, idx: number) => (
-                                                        <g key={`${el.id}-s-${idx}`}>
+                                                        <g key={`${el.id}-s-${idx}`} data-editor="1">
                                                             <circle
                                                                 cx={p.x}
                                                                 cy={p.y}
@@ -213,7 +213,7 @@ export const CanvasStage: React.FC<Props> = ({ model, svgId = 'lienzo-svg' }) =>
                                                                 fill="white"
                                                                 stroke="#2563eb"
                                                                 strokeWidth={2}
-                                                                style={{ cursor: 'grab' }}
+                                                                className="cursor-grab"
                                                                 onMouseDown={(ev) => startDragPoint(ev, el.id, idx)}
                                                             />
                                                             <circle cx={p.x} cy={p.y} r={3} fill="#2563eb" pointerEvents="none" />
@@ -224,7 +224,6 @@ export const CanvasStage: React.FC<Props> = ({ model, svgId = 'lienzo-svg' }) =>
                                         </>
                                     )}
 
-                                   
                                     {el.type === 'imagen' && (
                                         <image
                                             data-elid={el.id}

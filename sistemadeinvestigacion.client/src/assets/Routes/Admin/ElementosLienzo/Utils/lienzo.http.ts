@@ -9,13 +9,52 @@ export const readResponseBody = async (res: Response) => {
     }
 };
 
+// ✅ Limpia el SVG para export (sin UI del editor)
+const sanitizeSvgString = (svgString: string): string => {
+    try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(svgString, 'image/svg+xml');
+
+        const svg = doc.querySelector('svg');
+        if (!svg) return svgString;
+
+        // Asegura standalone
+        svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+        // Quita clases del editor
+        svg.removeAttribute('class');
+
+        // Quita TODO lo editor-only
+        doc.querySelectorAll('[data-editor="1"]').forEach((n) => n.remove());
+
+        // Quita cursores y estilos del editor
+        doc.querySelectorAll('[style]').forEach((n) => {
+            n.removeAttribute('style');
+        });
+
+        // Si quieres, quita data-elid también
+        doc.querySelectorAll('[data-elid]').forEach((n) => {
+            n.removeAttribute('data-elid');
+        });
+
+        // Serializa el svg limpio
+        return new XMLSerializer().serializeToString(svg);
+    } catch {
+        // si algo falla, devuelve el original
+        return svgString;
+    }
+};
+
 const getSvgStringFromDom = (): string | null => {
     try {
-        const byId = document.querySelector('svg#lienzo-svg') as SVGElement | null;
-        const svgEl = byId ?? (document.querySelector('svg') as SVGElement | null);
+        const svgEl = document.querySelector('svg#lienzo-svg') as SVGSVGElement | null;
         if (!svgEl) return null;
 
-        return new XMLSerializer().serializeToString(svgEl);
+        const clone = svgEl.cloneNode(true) as SVGSVGElement;
+        clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+        // IMPORTANTE: aquí serializamos "raw", y sanitizamos después sí o sí
+        return new XMLSerializer().serializeToString(clone);
     } catch {
         return null;
     }
@@ -41,19 +80,25 @@ export const guardarAcuerdoFinal = async (params: {
         return;
     }
 
+    // 1) Obtén SVG (de getSvgString o del DOM)
     const maybeFn = params.getSvgString;
-    const svgString =
+    const rawSvgString =
         typeof maybeFn === 'function'
             ? (maybeFn as () => string | null)()
             : getSvgStringFromDom();
 
-    if (!svgString) {
-        alert("Error: No se encontró el SVG del lienzo. (Idealmente pon id='lienzo-svg' al <svg>).");
+    if (!rawSvgString) {
+        alert("Error: No se encontró el SVG del lienzo (id='lienzo-svg').");
         return;
     }
 
-    try {
+    // 2) ✅ SIEMPRE limpiar el SVG aquí (a prueba de balas)
+    const svgString = sanitizeSvgString(rawSvgString);
 
+    // 🔎 DEBUG opcional: descomenta para confirmar que NO sale cursor/data-editor
+    // console.log('SVG limpio:', svgString);
+
+    try {
         const svgPayload = { svg_original: svgString, svg_editado: svgString, estado: true };
 
         const resSvg = await fetch('http://localhost:5091/api/Svg/crear', {
