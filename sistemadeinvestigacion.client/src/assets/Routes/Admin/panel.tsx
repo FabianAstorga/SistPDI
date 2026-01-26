@@ -138,11 +138,16 @@ const BilliardCarousel = ({ acuerdos }: { acuerdos: AcuerdoApi[] }) => {
                                     pointerEvents: isActive ? 'auto' : 'none',
                                 }}
                             >
-                                <div className="h-80 w-full bg-gray-50 flex items-center justify-center overflow-hidden">
+                                {/* ✅ FIX: no forzar 800x600 dentro de un card más chico.
+                                    Forzamos relación 4:3 (equivalente a 800x600) y dejamos que el card mande. */}
+                                <div className="w-full aspect-[4/3] bg-gray-50 flex items-center justify-center overflow-hidden">
                                     <img
-                                        src={acuerdo?.imagenUrl || 'https://via.placeholder.com/800x400?text=Acuerdo'}
+                                        src={acuerdo?.imagenUrl || 'https://via.placeholder.com/800x600?text=Acuerdo'}
                                         alt={acuerdo?.titulo || 'Acuerdo'}
+                                        width={800}
+                                        height={600}
                                         className="w-full h-full object-contain"
+                                        draggable={false}
                                     />
                                 </div>
 
@@ -406,14 +411,15 @@ function panel() {
                                                             className="w-full text-left bg-white rounded-2xl p-7 border border-gray-200 hover:shadow-lg hover:border-[#003385]/30 transition-all active:scale-[0.99]"
                                                         >
                                                             <div className="flex items-start gap-5">
-                                                                <div className="rounded-2xl w-28 h-20 bg-gray-50 border border-gray-100 shadow shrink-0 overflow-hidden flex items-center justify-center">
+                                                                {/* ✅ Thumbnail con relación 4:3 (tipo 800x600) */}
+                                                                <div className="rounded-2xl w-28 aspect-[4/3] bg-gray-50 border border-gray-100 shadow shrink-0 overflow-hidden flex items-center justify-center">
                                                                     <img
-                                                                        src={
-                                                                            a.imagenUrl ||
-                                                                            'https://via.placeholder.com/800x400?text=Acuerdo'
-                                                                        }
+                                                                        src={a.imagenUrl || 'https://via.placeholder.com/800x600?text=Acuerdo'}
                                                                         alt={a.titulo}
+                                                                        width={800}
+                                                                        height={600}
                                                                         className="w-full h-full object-contain"
+                                                                        draggable={false}
                                                                     />
                                                                 </div>
 
