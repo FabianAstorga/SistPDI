@@ -150,6 +150,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
         public async Task<ActionResult<IEnumerable<Acuerdo>>> GetMejores()
         {
             var acuerdos = await _context.Acuerdos
+                .Where(acuerdos => acuerdos.Habilitado == true)
                 .OrderByDescending(x => x.FechaCreacion)
                 .Take(10)
                 .ToListAsync();
