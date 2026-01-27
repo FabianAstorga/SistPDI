@@ -70,7 +70,7 @@ function Institucion() {
 
             if (logoFile) fd.append('logo', logoFile);
 
-            const res = await fetch('http://localhost:5091/api/Instituciones/crear', {
+            const res = await fetch('http://localhost:5091/api/Empresa/crear', {
                 method: 'POST',
                 headers: {
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -274,7 +274,7 @@ function Institucion() {
                                             <input
                                                 type="url"
                                                 className={`${inputStyle} pl-10`}
-                                                placeholder="https://www.institucion.com"
+                                                placeholder="https://www.empresa.com"
                                                 value={sitioWeb}
                                                 onChange={(e) => setSitioWeb(e.target.value)}
                                             />
