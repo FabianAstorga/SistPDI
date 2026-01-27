@@ -38,8 +38,8 @@ namespace SistemaDeInvestigacion.Server.Controllers
                         u.Rut,
                         u.FechaCreacion,
 
-                        Correo = u.Empleado.CorreoElectronico,
-                        Nombre = u.Empleado.NombreCompleto
+                        Correo = u.Funcionarios.CorreoElectronico,
+                        Nombre = u.Funcionarios.NombreCompleto
                     })
                     .FirstOrDefaultAsync();
 
@@ -66,25 +66,28 @@ namespace SistemaDeInvestigacion.Server.Controllers
             var empleadoDto = createEmpleadoDto;
 
 
-            var newEmpleado = new Empleado
+            var newEmpleado = new Funcionarios
             {
                 CorreoElectronico = empleadoDto.CorreoElectronico,
                 Rut = empleadoDto.rut,
-                NombreCompleto = empleadoDto.NombreCompleto
+                NombreCompleto = empleadoDto.NombreCompleto,
+
+                //esto es momentaneo
+                idUnidad = 1
             };
 
-            _context.Empleados.Add(newEmpleado);
+            _context.Funcionarios.Add(newEmpleado);
             await _context.SaveChangesAsync();
             return Ok("Empleado creado Exitosamente");
         }
 
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Empleado>>> GetEmpleados()
+        public async Task<ActionResult<IEnumerable<Funcionarios>>> GetEmpleados()
         {
             
             Console.WriteLine("ola");
-            return await _context.Empleados.ToListAsync();
+            return await _context.Funcionarios.ToListAsync();
         }
 
     }

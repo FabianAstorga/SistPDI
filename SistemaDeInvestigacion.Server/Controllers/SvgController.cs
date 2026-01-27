@@ -30,7 +30,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             var svgNuevo = new SvgTemplate
             {
                 SvgOriginal = createSvgDto.svg_original,
-                Estado = createSvgDto.estado,
+                IdEstado = 1,
                 SvgEditado = null,
                 FechaCreacion = DateTime.UtcNow,
                 FechaActualizacion = null
@@ -64,7 +64,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
         public async Task<ActionResult<IEnumerable<SvgTemplate>>> ObtenerTemplates()
         {
             var listaSvg = await _context.SvgTemplates
-                .Where(s => s.Estado == true)
+                .Where(s => s.IdEstado == 1)
                 .ToListAsync();
             return Ok(listaSvg);
         }
@@ -78,7 +78,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             var listaSvg = await _context.AcuerdosUserTemplates
                 .Where(relacion => relacion.IdUsuario == userId) 
                 .Select(relacion => relacion.SvgTemplate)        
-                .Where(svg => svg.Estado == false)                
+                .Where(svg => svg.IdEstado == 2)                
                 .ToListAsync();
 
             return Ok(listaSvg);

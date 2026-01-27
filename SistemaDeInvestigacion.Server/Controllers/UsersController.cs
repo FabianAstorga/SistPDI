@@ -34,7 +34,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
             var user = createUserDto;
 
-            bool rutExiste = await _context.Empleados.AnyAsync(x => x.Rut == user.Rut);
+            bool rutExiste = await _context.Funcionarios.AnyAsync(x => x.Rut == user.Rut);
 
             if (!rutExiste)
             {
@@ -46,6 +46,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 FechaCreacion = DateTime.UtcNow,
                 Rut = user.Rut,
                 Rol = user.Rol,
+                idEstado = 1,
                 Contrasena = BCrypt.Net.BCrypt.HashPassword(user.Contrasena),
             };
             Console.WriteLine("OLA LLEGUE ACA");

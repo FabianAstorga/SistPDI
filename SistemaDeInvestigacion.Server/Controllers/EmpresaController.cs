@@ -87,7 +87,8 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 Telefono = createEmpresaDto.telefono,
                 Direccion = createEmpresaDto.direccion,
                 FechaCreacion = DateTime.UtcNow,
-                Email = createEmpresaDto.email
+                Email = createEmpresaDto.email,
+                IdEstado = 1
             };
 
             _context.Empresas.Add(newEmpresa);

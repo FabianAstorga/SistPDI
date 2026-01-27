@@ -14,6 +14,11 @@ namespace SistemaDeInvestigacion.Server.Models
 
         [Column("TipoCategoria")]
         public required string TipoCategoria { get; set; }
+        
+        [Column("IdEstado")]
+        public required int IdEstado { get; set; }
 
+        [ForeignKey("IdEstado")]
+        public virtual Estados? Estados { get; set; }
     }
 }

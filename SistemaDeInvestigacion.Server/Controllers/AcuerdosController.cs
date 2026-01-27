@@ -57,8 +57,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 Descripcion = acuerdos.descripcion,
                 DetallesDescripcion = acuerdos.detallesDescripcion,
                 FechaVencimiento = acuerdos.fechaVencimiento,
-                Estado = acuerdos.estado,
-                Habilitado = habilitado,
+                IdEstado = 1,
                 FechaCreacion = DateTime.UtcNow,
                 IdEmpresa = acuerdos.idEmpresa
             };
@@ -123,7 +122,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             {
                 SvgEditado = acuerdos.svgEditado,
                 SvgOriginal = acuerdos.svgOriginal,
-                Estado = true,
+                IdEstado = 1,
                 FechaCreacion = DateTime.UtcNow
             };
 
@@ -147,7 +146,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
         public async Task<ActionResult<IEnumerable<Acuerdo>>> GetMejores()
         {
             var acuerdos = await _context.Acuerdos
-                .Where(acuerdos => acuerdos.Habilitado == true)
+                .Where(acuerdos => acuerdos.IdEstado == 1)
                 .OrderByDescending(x => x.FechaCreacion)
                 .Take(10)
                 .ToListAsync();
@@ -158,7 +157,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
         public async Task<ActionResult<IEnumerable<Acuerdo>>> GetAcuerdos()
         {
             var acuerdoslista = await _context.Acuerdos
-                .Where(acuerdos => acuerdos.Habilitado == true)
+                .Where(acuerdos => acuerdos.IdEstado == 1)
                 .ToListAsync();
             return Ok(acuerdoslista);
         }
@@ -167,7 +166,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
         public async Task<ActionResult<IEnumerable<Acuerdo>>> GetPendientes()
         {
             var acuerdosPendientes = await _context.Acuerdos
-                .Where(acuerdos => acuerdos.Habilitado == false)
+                .Where(acuerdos => acuerdos.IdEstado == 1)
                 .ToListAsync();
             return Ok(acuerdosPendientes);
         }

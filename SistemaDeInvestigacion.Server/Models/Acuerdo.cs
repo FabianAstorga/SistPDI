@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
-    using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SistemaDeInvestigacion.Server.Models
 {
@@ -23,17 +23,14 @@ namespace SistemaDeInvestigacion.Server.Models
         [Column("FechaVencimiento")]
         public DateTime? FechaVencimiento { get; set; }
 
-        [Column("Estado")]
-        public string? Estado { get; set; }
+        [Column("IdEstado")]
+        public required string IdEstado { get; set; }
 
         [Column("PDFUrl")]
         public string? PDFUrl { get; set; }
 
         [Column("ImagenUrl")]
         public string? ImagenUrl { get; set; }
-
-        [Column("Habilitado")]
-        public bool? Habilitado { get; set; }
 
         [Column("FechaCreacion")]
         public DateTime? FechaCreacion { get; set; }
@@ -52,6 +49,9 @@ namespace SistemaDeInvestigacion.Server.Models
 
         [ForeignKey("IdCategoria")]
         public virtual Categoria? Categoria { get; set; }
+
+        [ForeignKey("idEstado")]
+        public virtual Estados? Estados { get; set; }
 
         //[Column("idCreador")]
         //public long? IdCreador { get; set; }

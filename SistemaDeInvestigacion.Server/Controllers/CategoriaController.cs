@@ -37,8 +37,9 @@ namespace SistemaDeInvestigacion.Server.Controllers
         [HttpPost]
         public async Task<ActionResult<Categoria>> CreateCategoria([FromForm] CreateCategoriaDto createCategoriaDto)
         {
-            var NewCategoria = new Categoria { 
-                TipoCategoria = createCategoriaDto.DetalleCategoria
+            var NewCategoria = new Categoria {
+                TipoCategoria = createCategoriaDto.DetalleCategoria,
+                IdEstado = 1
             };
 
             _context.Categoria.Add(NewCategoria);

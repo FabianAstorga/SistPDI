@@ -1,5 +1,4 @@
-﻿using BCrypt.Net;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SistemaDeInvestigacion.Server.Models;
 using SistemaDeInvestigacion.Server.Servicios;
 
@@ -22,10 +21,13 @@ namespace SistemaDeInvestigacion.Server.Data
         public DbSet<Empresas> Empresas { get; set; } = null!;
         public DbSet<SvgTemplate> SvgTemplates { get; set; } = null!;
         public DbSet<Contacto> Contactos { get; set; } = null!;
-        public DbSet<Empleado> Empleados { get; set; } = null!;
+        public DbSet<Funcionarios> Funcionarios { get; set; } = null!;
         public DbSet<AcuerdoContacto> AcuerdoContactos { get; set; } = null!;
         public DbSet<AcuerdosUsersTemplates> AcuerdosUserTemplates { get; set; } = null!;
         public DbSet<Categoria> Categoria { get; set; } = null!;
+        public DbSet<Estados> Estados { get; set; } = null!;
+        public DbSet<Unidad> Unidades { get; set; } = null!;
+        public DbSet<Comentarios> Comentarios { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -37,51 +39,134 @@ namespace SistemaDeInvestigacion.Server.Data
             modelBuilder.Entity<Acuerdo>(entity =>
             {
                 entity.ToTable("acuerdos");
-                entity.HasKey(e => e.IdAcuerdo);
+                entity.HasKey(e => e.IdAcuerdo).HasName("convenios_pkey");
 
-                entity.Property(e => e.IdAcuerdo).UseIdentityColumn();
-                entity.Property(e => e.Habilitado).HasDefaultValue(false);
-                entity.Property(e => e.FechaCreacion).HasDefaultValueSql("CURRENT_TIMESTAMP");
-                entity.Property(e => e.FechaActualizacion).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.IdAcuerdo)
+                      .HasColumnName("IdAcuerdo")
+                      .UseIdentityColumn();
+
+                entity.Property(e => e.Titulo)
+                      .HasColumnName("Titulo")
+                      .HasMaxLength(255)
+                      .IsRequired();
+
+                entity.Property(e => e.Descripcion).HasColumnName("Descripcion");
+                entity.Property(e => e.DetallesDescripcion).HasColumnName("DetallesDescripcion");
+
+                entity.Property(e => e.FechaVencimiento)
+                      .HasColumnName("FechaVencimiento")
+                      .HasColumnType("date");
+
+                entity.Property(e => e.PDFUrl)
+                      .HasColumnName("PDFUrl")
+                      .HasMaxLength(255);
+
+                entity.Property(e => e.ImagenUrl)
+                      .HasColumnName("ImagenUrl")
+                      .HasMaxLength(255);
+
+                entity.Property(e => e.IdEstado).HasColumnName("idEstado");
+                entity.Property(e => e.IdEmpresa).HasColumnName("IdEmpresa");
+                entity.Property(e => e.IdCategoria).HasColumnName("IdCategoria");
+
+                entity.Property(e => e.FechaCreacion)
+                      .HasColumnName("FechaCreacion")
+                      .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.Property(e => e.FechaActualizacion)
+                      .HasColumnName("FechaActualizacion")
+                      .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                 entity.HasOne(d => d.Empresas)
-                    .WithMany()
-                    .HasForeignKey(d => d.IdEmpresa)
-                    .OnDelete(DeleteBehavior.Restrict)
-                    .HasConstraintName("FkEmpresa");
+                      .WithMany()
+                      .HasForeignKey(d => d.IdEmpresa)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FkEmpresa");
 
                 entity.HasOne(d => d.Categoria)
-                    .WithMany()
-                    .HasForeignKey(d => d.IdCategoria)
-                    .OnDelete(DeleteBehavior.Restrict)
-                    .HasConstraintName("FkCategoria");
+                      .WithMany()
+                      .HasForeignKey(d => d.IdCategoria)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FkCategoria");
 
+                entity.HasOne(d => d.Estado)
+                      .WithMany()
+                      .HasForeignKey(d => d.IdEstado)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("fk_acuerdos_estados");
             });
 
             modelBuilder.Entity<Empresas>(entity =>
             {
                 entity.ToTable("empresas");
-                entity.HasKey(e => e.IdEmpresa);
-                entity.Property(e => e.IdEmpresa).UseIdentityColumn();
+                entity.HasKey(e => e.IdEmpresa).HasName("instituciones_pkey");
+
+                entity.Property(e => e.IdEmpresa)
+                      .HasColumnName("IdEmpresa")
+                      .UseIdentityColumn();
+
+                entity.Property(e => e.Nombre)
+                      .HasColumnName("Nombre")
+                      .HasMaxLength(255)
+                      .IsRequired();
+
+                entity.Property(e => e.Descripcion).HasColumnName("Descripcion");
+                entity.Property(e => e.Logo).HasColumnName("Logo").HasMaxLength(255);
+                entity.Property(e => e.SitioWeb).HasColumnName("SitioWeb").HasMaxLength(255);
+                entity.Property(e => e.Email).HasColumnName("Email").HasMaxLength(255);
+                entity.Property(e => e.Telefono).HasColumnName("Telefono");
+                entity.Property(e => e.Direccion).HasColumnName("Direccion").HasMaxLength(255);
+
+                entity.Property(e => e.FechaCreacion).HasColumnName("FechaCreacion");
+                entity.Property(e => e.FechaActualizacion).HasColumnName("FechaActualizacion");
+                entity.Property(e => e.IdEstado).HasColumnName("idEstado");
+
+                entity.HasOne(d => d.Estado)
+                      .WithMany()
+                      .HasForeignKey(d => d.IdEstado)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("fk_empresas_estado");
             });
 
             modelBuilder.Entity<Categoria>(entity =>
             {
                 entity.ToTable("categoria");
-                entity.HasKey(e => e.IdCategoria);
-                entity.Property(e => e.IdCategoria).UseIdentityColumn();
+                entity.HasKey(e => e.IdCategoria).HasName("categoria_pkey");
+
+                entity.Property(e => e.IdCategoria).HasColumnName("idCategoria");
+                entity.Property(e => e.TipoCategoria).HasColumnName("TipoCategoria").HasMaxLength(255);
+                entity.Property(e => e.IdEstado).HasColumnName("idEstado");
+
+                entity.HasOne(d => d.Estado)
+                      .WithMany()
+                      .HasForeignKey(d => d.IdEstado)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("fk_categoria_estado");
             });
 
-            modelBuilder.Entity<Contacto>(entity =>
+
+            modelBuilder.Entity<Estado>(entity =>
             {
-                entity.ToTable("contactos");
-                entity.HasKey(e => e.IdContacto);
+                entity.ToTable("estados");
+                entity.HasKey(e => e.IdEstado).HasName("estados_pkey");
+
+                entity.Property(e => e.IdEstado).HasColumnName("IdEstado");
+                entity.Property(e => e.Descripcion).HasColumnName("Descripcion").HasMaxLength(255);
             });
 
-            modelBuilder.Entity<Empleado>(entity =>
+            modelBuilder.Entity<Unidad>(entity =>
             {
-                entity.ToTable("empleados");
-                entity.HasKey(e => e.Rut);
+                entity.ToTable("unidad");
+                entity.HasKey(e => e.IdUnidad).HasName("unidad_pkey");
+
+                entity.Property(e => e.IdUnidad).HasColumnName("idUnidad");
+                entity.Property(e => e.Nombre).HasColumnName("Nombre").HasMaxLength(255);
+            });
+
+            modelBuilder.Entity<funcionarios>(entity =>
+            {
+                entity.ToTable("funcionarios");
+                entity.HasKey(e => e.Rut).HasName("empleados_pkey");
 
                 entity.Property(e => e.Rut)
                       .HasColumnName("rut")
@@ -94,36 +179,118 @@ namespace SistemaDeInvestigacion.Server.Data
                 entity.Property(e => e.NombreCompleto)
                       .HasColumnName("nombre_completo")
                       .HasConversion(enc);
+
+                entity.Property(e => e.IdUnidad).HasColumnName("idUnidad");
+
+                entity.HasOne(d => d.Unidad)
+                      .WithMany()
+                      .HasForeignKey(d => d.IdUnidad)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("fk_funcionario_unidad");
             });
 
             modelBuilder.Entity<User>(entity =>
             {
                 entity.ToTable("users");
-                entity.HasKey(e => e.IdPersona);
+                entity.HasKey(e => e.IdPersona).HasName("users_pkey");
 
-                entity.Property(e => e.FechaCreacion).HasDefaultValueSql("CURRENT_TIMESTAMP");
-                entity.Property(e => e.Rol).HasDefaultValue(1);
+                entity.Property(e => e.IdPersona)
+                      .HasColumnName("IdPersona")
+                      .UseIdentityColumn();
+
+                entity.Property(e => e.FechaCreacion)
+                      .HasColumnName("FechaCreacion")
+                      .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.Property(e => e.Contrasena)
+                      .HasColumnName("Contrasena")
+                      .HasMaxLength(255)
+                      .IsRequired();
+
+                entity.Property(e => e.Rol)
+                      .HasColumnName("Rol")
+                      .HasDefaultValue((short)1);
 
                 entity.Property(e => e.Rut)
-                      .HasConversion(encDet);
+                      .HasColumnName("Rut")
+                      .HasConversion(encDet)
+                      .IsRequired();
+
+                entity.Property(e => e.IdEstado).HasColumnName("idEstado");
 
                 entity.HasOne(d => d.Empleado)
-                    .WithMany()
-                    .HasForeignKey(d => d.Rut)
-                    .OnDelete(DeleteBehavior.Cascade)
-                    .HasConstraintName("fk_persona");
+                      .WithMany()
+                      .HasForeignKey(d => d.Rut)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("fk_persona");
+
+                entity.HasOne(d => d.Estado)
+                      .WithMany()
+                      .HasForeignKey(d => d.IdEstado)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("fk_users_estado");
             });
+
+
+            modelBuilder.Entity<Contacto>(entity =>
+            {
+                entity.ToTable("contactos");
+                entity.HasKey(e => e.IdContacto).HasName("contactos_pkey");
+
+                entity.Property(e => e.IdContacto)
+                      .HasColumnName("idContacto")
+                      .UseIdentityColumn();
+
+                entity.Property(e => e.Nombre)
+                      .HasColumnName("Nombre")
+                      .HasMaxLength(255)
+                      .IsRequired();
+
+                entity.Property(e => e.Email).HasColumnName("Email").HasMaxLength(255);
+                entity.Property(e => e.Numero).HasColumnName("Numero");
+            });
+
+            modelBuilder.Entity<Comentarios>(entity =>
+            {
+                entity.ToTable("comentarios");
+                entity.HasKey(e => e.IdComentario).HasName("comentarios_pkey");
+
+                entity.Property(e => e.IdComentario).HasColumnName("IdComentario");
+                entity.Property(e => e.IdAcuerdo).HasColumnName("IdAcuerdo");
+                entity.Property(e => e.Comentario).HasColumnName("Comentario");
+                entity.Property(e => e.IdPersona).HasColumnName("IdPersona");
+
+                entity.HasOne(d => d.Acuerdo)
+                      .WithMany()
+                      .HasForeignKey(d => d.IdAcuerdo)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("fk_comentario_acuerdo");
+
+                entity.HasOne(d => d.User)
+                      .WithMany()
+                      .HasForeignKey(d => d.IdPersona)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("fk_comentario_usuario");
+            });
+
 
             modelBuilder.Entity<SvgTemplate>(entity =>
             {
                 entity.ToTable("svg_templates");
-                entity.HasKey(e => e.Id);
+                entity.HasKey(e => e.Id).HasName("svg_templates_pkey1");
+
                 entity.Property(e => e.Id).HasColumnName("id").UseIdentityColumn();
                 entity.Property(e => e.SvgOriginal).HasColumnName("svg_original");
                 entity.Property(e => e.SvgEditado).HasColumnName("svg_editado");
-                entity.Property(e => e.Estado).HasColumnName("estado");
+                entity.Property(e => e.IdEstado).HasColumnName("idEstado");
                 entity.Property(e => e.FechaCreacion).HasColumnName("fechaCreacion");
                 entity.Property(e => e.FechaActualizacion).HasColumnName("fechaActualizacion");
+
+                entity.HasOne(d => d.Estado)
+                      .WithMany()
+                      .HasForeignKey(d => d.IdEstado)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("fk_svg_templates_estados_1");
             });
 
             modelBuilder.Entity<AcuerdoContacto>(entity =>
@@ -135,45 +302,45 @@ namespace SistemaDeInvestigacion.Server.Data
                 entity.Property(e => e.IdContacto).HasColumnName("idContacto");
 
                 entity.HasOne(d => d.Empresas)
-                    .WithMany()
-                    .HasForeignKey(d => d.IdEmpresa)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("fk_empresa_id");
+                      .WithMany()
+                      .HasForeignKey(d => d.IdEmpresa)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("fk_empresa_id");
 
                 entity.HasOne(d => d.Contacto)
-                    .WithMany()
-                    .HasForeignKey(d => d.IdContacto)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("fk_contacto_id");
+                      .WithMany()
+                      .HasForeignKey(d => d.IdContacto)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("fk_contacto_id");
             });
 
             modelBuilder.Entity<AcuerdosUsersTemplates>(entity =>
             {
                 entity.ToTable("acuerdos/users/templates");
-                entity.HasKey(e => new { e.IdUsuario, e.IdSvg });
+                entity.HasKey(e => e.IdBorrador).HasName("acuerdos/users/templates_pkey");
 
+                entity.Property(e => e.IdBorrador).HasColumnName("idBorrador");
                 entity.Property(e => e.IdUsuario).HasColumnName("idUsuario");
                 entity.Property(e => e.IdSvg).HasColumnName("idSvg");
                 entity.Property(e => e.IdAcuerdo).HasColumnName("idAcuerdo");
 
                 entity.HasOne(d => d.Acuerdo)
-                    .WithMany()
-                    .HasForeignKey(d => d.IdAcuerdo)
-                    .OnDelete(DeleteBehavior.Cascade)
-                    .HasConstraintName("fk_acuerdo")
-                    .IsRequired(false);
+                      .WithMany()
+                      .HasForeignKey(d => d.IdAcuerdo)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("fk_acuerdo");
 
                 entity.HasOne(d => d.User)
-                    .WithMany()
-                    .HasForeignKey(d => d.IdUsuario)
-                    .OnDelete(DeleteBehavior.Cascade)
-                    .HasConstraintName("fk_creador2");
+                      .WithMany()
+                      .HasForeignKey(d => d.IdUsuario)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("fk_creador");
 
                 entity.HasOne(d => d.SvgTemplate)
-                    .WithMany()
-                    .HasForeignKey(d => d.IdSvg)
-                    .OnDelete(DeleteBehavior.Cascade)
-                    .HasConstraintName("fk_svg");
+                      .WithMany()
+                      .HasForeignKey(d => d.IdSvg)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("fk_svg");
             });
         }
     }

@@ -17,13 +17,15 @@ namespace SistemaDeInvestigacion.Server.Models
         [Column("svg_editado")]
         public string? SvgEditado { get; set; }
 
-        [Column("estado")]
-        public bool? Estado { get; set; }
+        [Column("idEstado")]
+        public int IdEstado { get; set; }
 
         [Column("fechaCreacion")]
         public DateTime? FechaCreacion { get; set; }
 
         [Column("fechaActualizacion")]
         public DateTime? FechaActualizacion { get; set; }
+        [ForeignKey("idEstado")]
+        public virtual Estados Estados { get; set; }
     }
 }

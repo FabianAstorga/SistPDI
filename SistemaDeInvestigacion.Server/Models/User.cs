@@ -20,13 +20,18 @@ namespace SistemaDeInvestigacion.Server.Models
 
         [Column("Rol")]
         public required int Rol { get; set; }
+        
+        [Column("idEstado")]
+        public required int idEstado { get; set; }
 
         [Column("Rut")]
         public required string Rut { get; set; }
 
         [ForeignKey("Rut")]
-        public virtual Empleado? Empleado { get; set; }
+        public virtual Funcionarios? Funcionarios { get; set; }
 
+        [ForeignKey("idEstado")]
+        public virtual Estados Estados { get; set; } = null!;
 
 
     }

@@ -31,8 +31,8 @@ namespace SistemaDeInvestigacion.Server.Controllers
             Console.WriteLine(Login);
 
             var userAuth = await _context.Users
-                .Include(u => u.Empleado)
-                .FirstOrDefaultAsync(u => u.Empleado != null && u.Empleado.CorreoElectronico == loginRequest.Email);
+                .Include(u => u.Funcionarios)
+                .FirstOrDefaultAsync(u => u.Funcionarios != null && u.Funcionarios.CorreoElectronico == loginRequest.Email);
 
         
 
@@ -59,8 +59,8 @@ namespace SistemaDeInvestigacion.Server.Controllers
             {
                 new Claim(ClaimTypes.NameIdentifier, userAuth.IdPersona.ToString()),
                 new Claim(ClaimTypes.Role, userAuth.Rol.ToString()),
-                new Claim(ClaimTypes.Name, userAuth.Empleado?.NombreCompleto ?? "Sin Nombre"),
-                new Claim(ClaimTypes.Email, userAuth.Empleado?.CorreoElectronico ?? ""),
+                new Claim(ClaimTypes.Name, userAuth.Funcionarios?.NombreCompleto ?? "Sin Nombre"),
+                new Claim(ClaimTypes.Email, userAuth.Funcionarios?.CorreoElectronico ?? ""),
             };
 
             var token = new JwtSecurityToken(
@@ -78,8 +78,8 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 token = jwtToken,
                 user = new
                 {
-                    nombre = userAuth.Empleado?.NombreCompleto,
-                    email = userAuth.Empleado?.CorreoElectronico,
+                    nombre = userAuth.Funcionarios?.NombreCompleto,
+                    email = userAuth.Funcionarios?.CorreoElectronico,
                     rol = userAuth.Rol
                 }
             });

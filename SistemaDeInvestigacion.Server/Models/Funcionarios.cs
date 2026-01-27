@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace SistemaDeInvestigacion.Server.Models
 {
     [Table("empleados")]
-    public class Empleado
+    public class Funcionarios
     {
         [Key]
         [Column("rut")]
@@ -15,8 +15,12 @@ namespace SistemaDeInvestigacion.Server.Models
 
         [Column("nombre_completo")]
         public required string NombreCompleto { get; set; }
-
-
+        
+        [Column("idUnidad")]
+        public required int idUnidad { get; set; }
+        
+        [ForeignKey("idUnidad")]
+        public virtual Unidad? Unidad { get; set; }
 
     }
 }
