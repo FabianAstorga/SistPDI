@@ -57,6 +57,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
         {
             var userID = User.GetUserId();
             var userRole = User.GetUserRole();
+
             if (userRole != 1)
             {
                 return BadRequest("Usuario no es SuperAdministrador");
@@ -79,10 +80,11 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<User>>> GetEmpleados()
+        public async Task<ActionResult<IEnumerable<Empleado>>> GetEmpleados()
         {
+            
             Console.WriteLine("ola");
-            return await _context.Users.ToListAsync();
+            return await _context.Empleados.ToListAsync();
         }
 
     }
