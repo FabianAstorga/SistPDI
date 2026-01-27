@@ -1,0 +1,36 @@
+﻿Tareas 3ra presentacion
+Base de datos:
+Agregar UNIDAD como tabla aparte a empleados
+cambiar empleados a funcionarios
+Crear una tabla ESTADOS
+-Agregarle habilitado a empresas
+-Agregarle habilitado a categoria
+-Normalizar Estado en acuerdos
+-Normalizar Estado en SVG
+-Agregar ESTADO a USERS
+Agregar una tabla COMENTARIOS para acuerdos
+Crear una base de datos para las claves de cifrado
+
+Back-end
+Cifrado Dimanico
+Hacer las peticiones para modificar segun el rol
+configurar el HABILITADO para darle ciertas funciones a un usuario adentro del sistema
+cambiar el cifrado de estatico a dinamico
+Ingreso por Active-Directory
+
+Front-end
+Abstraer los datos de acuerdo al svg
+Crear vista de los 2 roles
+Crear vista de funcionario fuera del sistema ("E-comerce")
+Crear funcion para importar usuarios por excel
+Actualizar vista de acuerdos para poder crear una empresa y sus contactos
+mantener el svg como archivo temporal dentro de la sesion
+
+
+Realizar vista de plantilla:
+Crear una plantilla como superadmin
+Habilitar o deshabilitar una plantilla como superadmin
+Crear una plantilla sobre un acuerdo ya creado
+
+
+
