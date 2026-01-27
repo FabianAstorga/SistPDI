@@ -97,7 +97,7 @@ function InstitucionList() {
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [page, setPage] = useState(1);
 
-    const headerTitle = 'Listado de Instituciones';
+    const headerTitle = 'Listado de Empresas';
 
     const fetchInstituciones = async () => {
         setLoading(true);
@@ -191,7 +191,7 @@ function InstitucionList() {
                                 className="bg-[#003385] hover:bg-[#002a66] text-white font-bold uppercase text-xs px-8 py-3 rounded-xl shadow-lg transition-all active:scale-95 flex items-center"
                             >
                                 <Save size={16} className="mr-2" />
-                                Crear Institución
+                                Nueva Empresa
                             </button>
 
                         </div>

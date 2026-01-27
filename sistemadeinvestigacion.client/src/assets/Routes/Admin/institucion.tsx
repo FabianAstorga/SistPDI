@@ -113,7 +113,7 @@ function Institucion() {
                                     <Building size={24} className="text-black" />
                                 </div>
                                 <h6 className="text-black text-xl font-black uppercase tracking-tighter">
-                                    Ingresar Nueva Institución
+                                    Ingresar Nueva Empresa
                                 </h6>
                             </div>
 
@@ -125,7 +125,7 @@ function Institucion() {
                                     
                                 >
                                     <List size={16} className="mr-2" />
-                                    Listado Instituciones
+                                    Listado Empresas
                                 </button>
 
 
@@ -139,7 +139,7 @@ function Institucion() {
                                     disabled={!canSubmit || saving}
                                 >
                                     <Save size={16} className="mr-2" />
-                                    {saving ? 'Guardando...' : 'Guardar Institución'}
+                                    {saving ? 'Guardando...' : 'Guardar Empresa'}
                                 </button>
                             </div>
                         </div>
@@ -175,7 +175,7 @@ function Institucion() {
 
                                     <div className="space-y-4">
                                         <div>
-                                            <label className={controlLabel}>Nombre de la Institución *</label>
+                                            <label className={controlLabel}>Nombre de la Empresa *</label>
                                             <input
                                                 type="text"
                                                 className={inputStyle}
@@ -239,7 +239,7 @@ function Institucion() {
                                     </div>
 
                                     <div className="bg-white p-6 rounded-xl border border-gray-300 shadow-sm space-y-4">
-                                        <label className={controlLabel}>Logo Institucional *</label>
+                                        <label className={controlLabel}>Logo Empresarial *</label>
                                         <input
                                             type="file"
                                             accept="image/*"
