@@ -9,7 +9,7 @@ using SistemaDeInvestigacion.Server.Servicios;
 using System.Text;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.FileProviders;
-
+using SistemaDeInvestigacion.Server.Servicios;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -86,7 +86,7 @@ builder.Services.AddSwaggerGen(options =>
         }
     );
 });
-
+builder.Services.AddScoped<SvgRenderService>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>

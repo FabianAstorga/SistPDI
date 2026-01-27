@@ -1,6 +1,7 @@
 ﻿import React from 'react';
 import { Maximize2 } from 'lucide-react';
 import { DraggableItem } from './DraggableItem';
+import { SvgTextBox } from './SvgTextBox'; // ✅ NUEVO
 import type { Pt } from '../types/lienzo.types';
 import {
     getBasePolygonPoints,
@@ -247,22 +248,8 @@ export const CanvasStage: React.FC<Props> = ({ model, svgId = 'lienzo-svg' }) =>
                                         />
                                     )}
 
-                                    {el.type === 'texto' && (
-                                        <foreignObject data-elid={el.id} width={el.width || 100} height={el.height || 100}>
-                                            <div
-                                                xmlns="http://www.w3.org/1999/xhtml"
-                                                style={{
-                                                    color: el.fill || '#000',
-                                                    font: `bold ${el.fontSize || 16}px ${el.fontFamily || 'Arial'}`,
-                                                    padding: '2px',
-                                                    pointerEvents: 'none',
-                                                    wordBreak: 'break-word'
-                                                }}
-                                            >
-                                                {el.text || ''}
-                                            </div>
-                                        </foreignObject>
-                                    )}
+                                    {/* ✅ CAMBIO: foreignObject -> SvgTextBox */}
+                                    {el.type === 'texto' && <SvgTextBox el={el} svgId={svgId} />}
                                 </DraggableItem>
                             );
                         })}

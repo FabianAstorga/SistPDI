@@ -1,5 +1,4 @@
-﻿// Admin/ElementosLienzo/Components/DraggableItem.tsx
-import React, { useRef, useEffect } from 'react';
+﻿import React, { useRef, useEffect } from 'react';
 
 type Props = {
     el: any;
