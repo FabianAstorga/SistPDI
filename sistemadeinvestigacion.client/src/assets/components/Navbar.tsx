@@ -75,7 +75,7 @@ export const Navbar = () => {
                         </button>
 
                         <button onClick={() => navigate('/institucionList')} className={getBtnClass('/institucionList')}>
-                            <Building size={16} className="mr-2" /> Instituciones
+                            <Building size={16} className="mr-2" /> Empresas
                         </button>
                         <button onClick={() => navigate('/empleado')} className={getBtnClass('/empleado')}>
                             <Users size={16} className="mr-2" /> Empelados

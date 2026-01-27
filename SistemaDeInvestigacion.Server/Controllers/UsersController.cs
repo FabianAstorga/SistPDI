@@ -25,8 +25,9 @@ namespace SistemaDeInvestigacion.Server.Controllers
         public async Task<ActionResult<User>> CrearUsuario([FromForm] CreateUserDto createUserDto)
         {
             var userId = User.GetUserId();
+            var userRole = User.GetUserRole();
 
-            if (userId != 1)
+            if (userRole != 1)
             {
                 return BadRequest("Usuario no es SuperAdministrador");
             }
