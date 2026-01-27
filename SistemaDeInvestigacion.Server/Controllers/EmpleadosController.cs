@@ -23,8 +23,9 @@ namespace SistemaDeInvestigacion.Server.Controllers
         public async Task<ActionResult> TenerUsuario(int idPersona)
         {
             var userID = User.GetUserId();
+            var userRole = User.GetUserRole();
 
-            if (userID != 1) {
+            if (userRole != 1) {
                 return BadRequest("Usuario no es Super-Administrador");
             }
 
@@ -55,7 +56,9 @@ namespace SistemaDeInvestigacion.Server.Controllers
         public async Task<ActionResult> crearUsuario(createEmpleadoDto createEmpleadoDto)
         {
             var userID = User.GetUserId();
-            if (userID != 1)
+            var userRole = User.GetUserRole();
+
+            if (userRole != 1)
             {
                 return BadRequest("Usuario no es SuperAdministrador");
             }
@@ -77,10 +80,11 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<User>>> GetEmpleados()
+        public async Task<ActionResult<IEnumerable<Empleado>>> GetEmpleados()
         {
+            
             Console.WriteLine("ola");
-            return await _context.Users.ToListAsync();
+            return await _context.Empleados.ToListAsync();
         }
 
     }
