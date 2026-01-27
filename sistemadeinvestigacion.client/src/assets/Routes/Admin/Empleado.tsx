@@ -3,19 +3,36 @@ import { Navbar } from '../../components/Navbar';
 import { Save } from 'lucide-react';
 import { Users, Search, User, Phone, IdCard, Briefcase, Mail } from 'lucide-react';
 
-type EmpleadoApi = {
-    id: number;
-    nombre: string;
-    rut: string;
-    brigada: string;
-    cargo: string;
-    telefono: number | string;
+type EmpleadoApiRaw = {
+    // ✅ Formato que tú mostraste
+    rut?: string;
+    correoElectronico?: string;
+    nombreCompleto?: string;
+
+    // ✅ Posibles variantes si tu backend a veces devuelve otros nombres
+    id?: number;
+    nombre?: string;
     mail?: string | null;
-    idCreador?: number | null;
+    brigada?: string;
+    cargo?: string;
+    telefono?: number | string;
+};
+
+type EmpleadoUi = {
+    key: string; // para React key aunque no exista id
+    id?: number;
+    rut: string;
+    correo: string;
+    nombre: string;
+
+    // opcionales por si existen en otros endpoints
+    brigada?: string;
+    cargo?: string;
+    telefono?: number | string;
 };
 
 function Empleado() {
-    const [empleados, setEmpleados] = useState<EmpleadoApi[]>([]);
+    const [empleados, setEmpleados] = useState<EmpleadoUi[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -29,6 +46,7 @@ function Empleado() {
 
     const [modalOpen, setModalOpen] = useState(false);
 
+    // ---- FORM (lo dejo como lo tenías; no impacta el listado) ----
     const [nombre, setNombre] = useState('');
     const [rut, setRut] = useState('');
     const [brigada, setBrigada] = useState('');
@@ -79,17 +97,25 @@ function Empleado() {
         return dv === calcDv(body);
     };
 
-    const canSubmit = useMemo(() => {
-        return (
-            nombre.trim().length > 0 &&
-            rut.trim().length > 0 &&
-            brigada.trim().length > 0 &&
-            cargo.trim().length > 0 &&
-            telefono.trim().length > 0 &&
-            mail.trim().length > 0 &&
-            isRutValid(rut)
-        );
-    }, [nombre, rut, brigada, cargo, telefono, mail]);
+    // ✅ normaliza lo que venga del backend al formato UI que necesitamos mostrar
+    const normalizeEmpleado = (raw: EmpleadoApiRaw, index: number): EmpleadoUi => {
+        const nombreUi = (raw.nombreCompleto ?? raw.nombre ?? '').trim();
+        const rutUi = (raw.rut ?? '').trim();
+        const correoUi = (raw.correoElectronico ?? raw.mail ?? '').trim();
+
+        const id = typeof raw.id === 'number' ? raw.id : undefined;
+
+        return {
+            key: id != null ? String(id) : `${rutUi || 'no-rut'}-${index}`,
+            id,
+            nombre: nombreUi || '(sin nombre)',
+            rut: rutUi || '(sin RUT)',
+            correo: correoUi || '(sin correo)',
+            brigada: raw.brigada,
+            cargo: raw.cargo,
+            telefono: raw.telefono,
+        };
+    };
 
     const resetForm = () => {
         setNombre('');
@@ -108,9 +134,7 @@ function Empleado() {
         setModalOpen(true);
     };
 
-    const closeModal = () => {
-        setModalOpen(false);
-    };
+    const closeModal = () => setModalOpen(false);
 
     const handleRutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setRut(formatRut(e.target.value));
@@ -139,12 +163,13 @@ function Empleado() {
             }
 
             const data = (await res.json().catch(() => null)) as any;
+
             if (!Array.isArray(data)) {
-                // si tu backend devolviera {data:[...]} o similar, ajusta acá
                 throw new Error('Respuesta inesperada del servidor (no es una lista).');
             }
 
-            setEmpleados(data as EmpleadoApi[]);
+            const normalized = (data as EmpleadoApiRaw[]).map((x, i) => normalizeEmpleado(x, i));
+            setEmpleados(normalized);
         } catch (err: any) {
             setLoadError(err?.message || 'Error al cargar empleados.');
         } finally {
@@ -156,6 +181,18 @@ function Empleado() {
         fetchEmpleados();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    const canSubmit = useMemo(() => {
+        return (
+            nombre.trim().length > 0 &&
+            rut.trim().length > 0 &&
+            brigada.trim().length > 0 &&
+            cargo.trim().length > 0 &&
+            telefono.trim().length > 0 &&
+            mail.trim().length > 0 &&
+            isRutValid(rut)
+        );
+    }, [nombre, rut, brigada, cargo, telefono, mail]);
 
     const handleSubmit = async () => {
         setErrorMsg(null);
@@ -175,10 +212,9 @@ function Empleado() {
 
             const token = localStorage.getItem('token');
 
-            // ✅ NUEVO ENDPOINT: multipart/form-data (según tu swagger/curl)
             const fd = new FormData();
             fd.append('Nombre', nombre.trim());
-            fd.append('Rut', formatRut(rut).toUpperCase()); // backend espera "Rut=string" con guion
+            fd.append('Rut', formatRut(rut).toUpperCase());
             fd.append('Mail', mail.trim());
             fd.append('brigada', brigada.trim());
             fd.append('cargo', cargo.trim());
@@ -191,7 +227,6 @@ function Empleado() {
                 headers: {
                     accept: 'text/plain',
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                    // OJO: NO poner Content-Type aquí (el browser lo setea con boundary)
                 },
                 body: fd,
             });
@@ -202,11 +237,8 @@ function Empleado() {
             }
 
             setOkMsg('Empleado creado correctamente.');
-
-            // refresca lista
             await fetchEmpleados();
 
-            // limpia form
             setNombre('');
             setRut('');
             setBrigada('');
@@ -285,11 +317,12 @@ function Empleado() {
                                 ) : (
                                     <ul className="space-y-2">
                                         {searchResult.map((emp) => (
-                                            <li key={emp.id}>
+                                            <li key={emp.key}>
                                                 <button
                                                     type="button"
                                                     onClick={async () => {
-                                                        // ✅ ejemplo: obtener 1 empleado usando GET /api/Empleados/{id}
+                                                        // ✅ Si tienes endpoint /api/Empleados/{id}, solo lo llamamos si hay id real
+                                                        if (!emp.id) return;
                                                         try {
                                                             const token = localStorage.getItem('token');
                                                             const res = await fetch(`http://localhost:5091/api/Empleados/${emp.id}`, {
@@ -314,12 +347,21 @@ function Empleado() {
                                                         </div>
 
                                                         <div className="flex-1 min-w-0">
+                                                            {/* ✅ nombreCompleto (normalizado) */}
                                                             <h2 className="text-base font-black text-gray-900 truncate">{emp.nombre}</h2>
-                                                            <p className="text-sm text-gray-600 truncate">
-                                                                {emp.brigada} · {emp.cargo}
-                                                            </p>
-                                                            <p className="text-xs text-gray-500 truncate">
-                                                                {emp.rut} · {emp.mail || 'sin mail'} · {String(emp.telefono ?? '')}
+
+                                                            {/* ✅ Si existen brigada/cargo, los mostramos; si no, ocultamos esa línea */}
+                                                            {(emp.brigada || emp.cargo) && (
+                                                                <p className="text-sm text-gray-600 truncate">
+                                                                    {emp.brigada || ''}{emp.brigada && emp.cargo ? ' · ' : ''}{emp.cargo || ''}
+                                                                </p>
+                                                            )}
+
+                                                            {/* ✅ rut + correoElectronico */}
+                                                            <p className="text-xs text-gray-600 truncate mt-1">
+                                                                <span className="font-semibold">{emp.rut}</span>
+                                                                <span className="mx-2 text-gray-300">|</span>
+                                                                <span>{emp.correo}</span>
                                                             </p>
                                                         </div>
                                                     </div>
@@ -334,6 +376,7 @@ function Empleado() {
                 </section>
             </main>
 
+            {/* ---- MODAL: lo dejo como lo tenías ---- */}
             {modalOpen && (
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center" aria-modal="true" role="dialog">
                     <button
