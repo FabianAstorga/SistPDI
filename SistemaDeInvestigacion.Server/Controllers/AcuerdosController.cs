@@ -136,6 +136,8 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 IdSvg = NewSvg.Id
             };
 
+            Console.WriteLine(NewSvg.Id);
+          
             _context.AcuerdosUserTemplates.Add(NewDatos);
             await _context.SaveChangesAsync();
 

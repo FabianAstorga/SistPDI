@@ -32,10 +32,16 @@ namespace SistemaDeInvestigacion.Server.Models
         [Column("Direccion")]
         public string? Direccion { get; set; }
 
+        [Column("IdEstado")]
+        public int? IdEstado { get; set; }
+
         [Column("FechaCreacion")]
         public DateTime? FechaCreacion { get; set; }
 
         [Column("FechaActualizacion")]
         public DateTime? FechaActualizacion { get; set; }
+
+        [ForeignKey("IdEstado")]
+        public virtual Estados? Estados { get; set; }
     }
 }

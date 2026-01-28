@@ -21,7 +21,7 @@ namespace SistemaDeInvestigacion.Server.Models
 
         [Required]
         [Column("IdPersona")]
-        public required string IdPersona { get; set; }
+        public required int IdPersona { get; set; }
         
         [ForeignKey("IdPersona")]
         public virtual User? User { get; set; }

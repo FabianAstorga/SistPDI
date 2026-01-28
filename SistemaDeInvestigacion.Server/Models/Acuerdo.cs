@@ -24,7 +24,7 @@ namespace SistemaDeInvestigacion.Server.Models
         public DateTime? FechaVencimiento { get; set; }
 
         [Column("IdEstado")]
-        public required string IdEstado { get; set; }
+        public required int IdEstado { get; set; }
 
         [Column("PDFUrl")]
         public string? PDFUrl { get; set; }
@@ -50,7 +50,7 @@ namespace SistemaDeInvestigacion.Server.Models
         [ForeignKey("IdCategoria")]
         public virtual Categoria? Categoria { get; set; }
 
-        [ForeignKey("idEstado")]
+        [ForeignKey("IdEstado")]
         public virtual Estados? Estados { get; set; }
 
         //[Column("idCreador")]

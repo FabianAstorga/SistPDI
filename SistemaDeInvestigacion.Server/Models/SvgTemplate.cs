@@ -17,7 +17,7 @@ namespace SistemaDeInvestigacion.Server.Models
         [Column("svg_editado")]
         public string? SvgEditado { get; set; }
 
-        [Column("idEstado")]
+        [Column("IdEstado")]
         public int IdEstado { get; set; }
 
         [Column("fechaCreacion")]
@@ -25,7 +25,7 @@ namespace SistemaDeInvestigacion.Server.Models
 
         [Column("fechaActualizacion")]
         public DateTime? FechaActualizacion { get; set; }
-        [ForeignKey("idEstado")]
+        [ForeignKey("IdEstado")]
         public virtual Estados Estados { get; set; }
     }
 }

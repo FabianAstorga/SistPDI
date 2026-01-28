@@ -89,7 +89,7 @@ namespace SistemaDeInvestigacion.Server.Data
                       .OnDelete(DeleteBehavior.Restrict)
                       .HasConstraintName("FkCategoria");
 
-                entity.HasOne(d => d.Estado)
+                entity.HasOne(d => d.Estados)
                       .WithMany()
                       .HasForeignKey(d => d.IdEstado)
                       .OnDelete(DeleteBehavior.Restrict)
@@ -121,7 +121,7 @@ namespace SistemaDeInvestigacion.Server.Data
                 entity.Property(e => e.FechaActualizacion).HasColumnName("FechaActualizacion");
                 entity.Property(e => e.IdEstado).HasColumnName("idEstado");
 
-                entity.HasOne(d => d.Estado)
+                entity.HasOne(d => d.Estados)
                       .WithMany()
                       .HasForeignKey(d => d.IdEstado)
                       .OnDelete(DeleteBehavior.Restrict)
@@ -137,7 +137,7 @@ namespace SistemaDeInvestigacion.Server.Data
                 entity.Property(e => e.TipoCategoria).HasColumnName("TipoCategoria").HasMaxLength(255);
                 entity.Property(e => e.IdEstado).HasColumnName("idEstado");
 
-                entity.HasOne(d => d.Estado)
+                entity.HasOne(d => d.Estados)
                       .WithMany()
                       .HasForeignKey(d => d.IdEstado)
                       .OnDelete(DeleteBehavior.Restrict)
@@ -145,7 +145,7 @@ namespace SistemaDeInvestigacion.Server.Data
             });
 
 
-            modelBuilder.Entity<Estado>(entity =>
+            modelBuilder.Entity<Estados>(entity =>
             {
                 entity.ToTable("estados");
                 entity.HasKey(e => e.IdEstado).HasName("estados_pkey");
@@ -157,13 +157,13 @@ namespace SistemaDeInvestigacion.Server.Data
             modelBuilder.Entity<Unidad>(entity =>
             {
                 entity.ToTable("unidad");
-                entity.HasKey(e => e.IdUnidad).HasName("unidad_pkey");
+                entity.HasKey(e => e.idUnidad).HasName("unidad_pkey");
 
-                entity.Property(e => e.IdUnidad).HasColumnName("idUnidad");
+                entity.Property(e => e.idUnidad).HasColumnName("idUnidad");
                 entity.Property(e => e.Nombre).HasColumnName("Nombre").HasMaxLength(255);
             });
 
-            modelBuilder.Entity<funcionarios>(entity =>
+            modelBuilder.Entity<Funcionarios>(entity =>
             {
                 entity.ToTable("funcionarios");
                 entity.HasKey(e => e.Rut).HasName("empleados_pkey");
@@ -180,11 +180,11 @@ namespace SistemaDeInvestigacion.Server.Data
                       .HasColumnName("nombre_completo")
                       .HasConversion(enc);
 
-                entity.Property(e => e.IdUnidad).HasColumnName("idUnidad");
+                entity.Property(e => e.idUnidad).HasColumnName("idUnidad");
 
                 entity.HasOne(d => d.Unidad)
                       .WithMany()
-                      .HasForeignKey(d => d.IdUnidad)
+                      .HasForeignKey(d => d.idUnidad)
                       .OnDelete(DeleteBehavior.Restrict)
                       .HasConstraintName("fk_funcionario_unidad");
             });
@@ -216,17 +216,17 @@ namespace SistemaDeInvestigacion.Server.Data
                       .HasConversion(encDet)
                       .IsRequired();
 
-                entity.Property(e => e.IdEstado).HasColumnName("idEstado");
+                entity.Property(e => e.idEstado).HasColumnName("idEstado");
 
-                entity.HasOne(d => d.Empleado)
+                entity.HasOne(d => d.Funcionarios)
                       .WithMany()
                       .HasForeignKey(d => d.Rut)
                       .OnDelete(DeleteBehavior.Restrict)
                       .HasConstraintName("fk_persona");
 
-                entity.HasOne(d => d.Estado)
+                entity.HasOne(d => d.Estados)
                       .WithMany()
-                      .HasForeignKey(d => d.IdEstado)
+                      .HasForeignKey(d => d.idEstado)
                       .OnDelete(DeleteBehavior.Restrict)
                       .HasConstraintName("fk_users_estado");
             });
@@ -286,7 +286,7 @@ namespace SistemaDeInvestigacion.Server.Data
                 entity.Property(e => e.FechaCreacion).HasColumnName("fechaCreacion");
                 entity.Property(e => e.FechaActualizacion).HasColumnName("fechaActualizacion");
 
-                entity.HasOne(d => d.Estado)
+                entity.HasOne(d => d.Estados)
                       .WithMany()
                       .HasForeignKey(d => d.IdEstado)
                       .OnDelete(DeleteBehavior.Restrict)

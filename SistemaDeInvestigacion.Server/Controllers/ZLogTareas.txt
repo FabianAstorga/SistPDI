@@ -1,14 +1,14 @@
 ﻿Tareas 3ra presentacion
 Base de datos:
-Agregar UNIDAD como tabla aparte a empleados
-cambiar empleados a funcionarios
-Crear una tabla ESTADOS
--Agregarle habilitado a empresas
--Agregarle habilitado a categoria
--Normalizar Estado en acuerdos
--Normalizar Estado en SVG
--Agregar ESTADO a USERS
-Agregar una tabla COMENTARIOS para acuerdos
+// Agregar UNIDAD como tabla aparte a empleados 
+// cambiar empleados a funcionarios
+// Crear una tabla ESTADOS
+// -Agregarle habilitado a empresas
+// -Agregarle habilitado a categoria
+// -Normalizar Estado en acuerdos
+// -Normalizar Estado en SVG
+// -Agregar ESTADO a USERS
+// Agregar una tabla COMENTARIOS para acuerdos
 Crear una base de datos para las claves de cifrado
 
 Back-end
