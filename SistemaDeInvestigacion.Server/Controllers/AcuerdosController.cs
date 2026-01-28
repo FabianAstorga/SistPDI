@@ -173,20 +173,50 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return Ok(acuerdosPendientes);
         }
 
-
-
-
-
-        /*
         [HttpPut("editar/{idAcuerdo}")]
-        public async Task<ActionResult<IEnumerable<Acuerdo>>> PutAcuerdo([FromForm] editAcuerdoDto editAcuerdoDto)
+        public async Task<IActionResult> PutAcuerdo(int idAcuerdo, [FromForm] editAcuerdoDto editAcuerdoDto)
         {
+            var user = User.GetUserId();
+            Console.WriteLine("Llege hasta aca");
 
-            var datosAcuerdo = editAcuerdoDto;
-            var newDatos = await _context.Acuerdos.FindAsync(id);
-            await _context.Acuerdos.Update(datosAcuerdo);
-            return Ok();
+            var template = await _context.AcuerdosUserTemplates
+                    .FirstOrDefaultAsync(t => t.IdUsuario == user && t.IdAcuerdo == idAcuerdo);
+
+            if (template.IdSvg == null) {
+                return BadRequest("test: null");
+            }
+
+            Console.WriteLine(template.IdSvg);
+
+            var acuerdo = await _context.Acuerdos.FindAsync(idAcuerdo);
+
+            if (!string.IsNullOrEmpty(editAcuerdoDto.titulo)) 
+                acuerdo.Titulo = editAcuerdoDto.titulo;
+            
+            if (!string.IsNullOrEmpty(editAcuerdoDto.descripcion)) 
+                acuerdo.Descripcion = editAcuerdoDto.descripcion;
+            
+            if (!string.IsNullOrEmpty(editAcuerdoDto.detallesDescripcion)) 
+                acuerdo.DetallesDescripcion = editAcuerdoDto.detallesDescripcion;
+
+            if (editAcuerdoDto.idCategoria.HasValue) acuerdo.IdCategoria = editAcuerdoDto.idCategoria;
+            
+            if (editAcuerdoDto.fechaVencimiento.HasValue) acuerdo.FechaVencimiento = editAcuerdoDto.fechaVencimiento;
+
+            acuerdo.FechaActualizacion = DateTime.Now;
+
+            var svgFuente = await _context.SvgTemplates.FindAsync(template.IdSvg);
+            Console.Write(svgFuente.SvgEditado);
+               
+            /*
+            _context.Acuerdos.Update(acuerdo);
+            await _context.SaveChangesAsync();
+            */
+
+
+
+            return NoContent();
+        
         }
-        */
     }
 }
