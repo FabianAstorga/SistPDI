@@ -4,20 +4,22 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { authService } from '../Services/authService';
 import { X, Mail, Lock, ArrowRight } from 'lucide-react';
 
+// Interfaz actualizada con el nuevo callback
 interface LoginDrawerProps {
     isOpen: boolean;
     onClose: () => void;
+    onLoginSuccess: () => void;
 }
 
-export const LoginDrawer = ({ isOpen, onClose }: LoginDrawerProps) => {
+export const LoginDrawer = ({ isOpen, onClose, onLoginSuccess }: LoginDrawerProps) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
 
     const navigate = useNavigate();
-    const logoPDI = "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Policia_de_Investigaciones_de_Chile.svg/1200px-Policia_de_Investigaciones_de_Chile.svg.png";
-
+    
+    // Función handleSubmit actualizada
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
@@ -25,9 +27,9 @@ export const LoginDrawer = ({ isOpen, onClose }: LoginDrawerProps) => {
 
         try {
             await authService.login(email, password);
-            // Al loguear, simplemente cerramos y refrescamos el estado del Panel
+            // EN LUGAR DE RELOAD, EJECUTAMOS LOS CALLBACKS
+            onLoginSuccess();
             onClose();
-            window.location.reload();
         } catch (err: any) {
             setError(err.message || 'Error al iniciar sesión');
         } finally {
@@ -63,9 +65,9 @@ export const LoginDrawer = ({ isOpen, onClose }: LoginDrawerProps) => {
                         </div>
 
                         <div className="flex-1">
-                            <img src={logoPDI} alt="PDI" className="h-16 mb-6 mx-auto" />
+                            
                             <h2 className="text-2xl font-black text-[#002855] text-center uppercase tracking-tighter mb-2">Acceso Funcionarios</h2>
-                            <p className="text-slate-500 text-sm text-center mb-10 font-medium">Ingrese sus credenciales institucionales</p>
+                            <p className="text-slate-500 text-sm text-center mb-10 font-medium">Ingrese sus credenciales de Active Directorys</p>
 
                             {error && (
                                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-xs font-bold rounded-r-lg uppercase">
@@ -80,6 +82,7 @@ export const LoginDrawer = ({ isOpen, onClose }: LoginDrawerProps) => {
                                         <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
                                         <input
                                             type="email"
+                                            autoComplete="username"
                                             className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#003385] outline-none transition-all text-slate-800"
                                             placeholder="nombre@investigaciones.cl"
                                             value={email}
@@ -95,6 +98,7 @@ export const LoginDrawer = ({ isOpen, onClose }: LoginDrawerProps) => {
                                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
                                         <input
                                             type="password"
+                                            autoComplete="current-password"
                                             className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#003385] outline-none transition-all text-slate-800"
                                             placeholder="••••••••"
                                             value={password}
