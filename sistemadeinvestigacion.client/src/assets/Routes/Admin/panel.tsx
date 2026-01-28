@@ -114,7 +114,23 @@ function panel() {
                                         options={{ loop: true, align: 'center' }}
                                     />
 
-                                    
+                                    <button
+                                        type="button"
+                                        onClick={goToList}
+                                        className="
+                                            absolute left-1/2 -translate-x-1/2 -bottom-12
+                                            bg-gray-200 text-gray-700
+                                            hover:bg-gray-300
+                                            active:bg-gray-400
+                                            transition-colors
+                                            px-4 py-2 rounded-md
+                                            flex items-center gap-2
+                                            shadow-sm
+                                        "
+                                        aria-label="Ir a acuerdos"
+                                    >
+                                        <span className="text-xs font-bold uppercase tracking-widest">Acuerdos</span>
+                                    </button>
                                 </div>
                             )}
                         </div>

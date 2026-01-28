@@ -9,6 +9,7 @@ import Configuracion from './assets/Routes/Admin/configuracion';
 import Acuerdos from './assets/Routes/Admin/acuerdos';
 import Institucion from './assets/Routes/Admin/institucion';
 import Empleado from './assets/Routes/Admin/Empleado';
+import Landing from './assets/Routes/landing/Landing';
 import InstitucionList from './assets/Routes/Admin/institucionList';
 import { RouteGuard } from './assets/Routes/Admin/RouteGuard'
 
@@ -17,8 +18,9 @@ import { RouteGuard } from './assets/Routes/Admin/RouteGuard'
 function App() {
     return (
         <Routes>
-            <Route path="/" element={<Login />} />
+            <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />}></Route>
+            <Route path="/landing" element={<Landing />}></Route>
             <Route element={<RouteGuard />}>
                 <Route path="/panel" element={<Panel />} />
                 <Route path="/lienzo" element={<Lienzo />} />
