@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 /**
  * Landing.tsx - PDI Intranet: Plana Mayor 2026
- * Versión: Información en párrafos y solo centro clickeable.
+ * Versión: Información en párrafos, solo centro clickeable y fix scrollSnapList.
  */
 
 const API_BASE = 'http://localhost:5091';
@@ -48,6 +48,7 @@ export default function Landing() {
     const carouselRef = useRef<HTMLElement | null>(null);
     const listSectionRef = useRef<HTMLElement | null>(null);
 
+    // Configuración de Embla
     const [emblaRef, emblaApi] = useEmblaCarousel(
         { loop: true, align: "center", skipSnaps: false },
         [Autoplay({ delay: 4000, stopOnInteraction: false })]
@@ -56,15 +57,18 @@ export default function Landing() {
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
 
+    // Función para manejar la selección
     const onSelect = useCallback((api: EmblaCarouselType) => {
         setSelectedIndex(api.selectedScrollSnap());
     }, []);
 
+    // Efecto para inicializar la API de Embla y los puntos (dots)
     useEffect(() => {
         if (!emblaApi) return;
-        setScrollSnaps(api => api.scrollSnapList());
+
+        setScrollSnaps(emblaApi.scrollSnapList());
         emblaApi.on("select", onSelect);
-        emblaApi.on("reInit", onSelect);
+        emblaApi.on("reInit", (api) => setScrollSnaps(api.scrollSnapList()));
     }, [emblaApi, onSelect]);
 
     const filtered = useMemo(() => {
@@ -74,19 +78,29 @@ export default function Landing() {
     const quickTransition = { duration: 0.2, ease: "easeOut" };
 
     return (
-        <div className="w-full bg-white font-sans text-slate-900 selection:bg-[#002855] selection:text-white">
+        <div className="w-full overflow-x-hidden bg-white font-sans text-slate-900 selection:bg-[#002855] selection:text-white">
 
             {/* SECCIÓN 1: HERO */}
             <section className="w-screen h-screen flex flex-col items-center justify-center px-6 relative overflow-hidden bg-[#002855]">
                 <div className="absolute inset-0 z-0 bg-cover bg-center opacity-40" style={{ backgroundImage: `url(${HERO_BG})` }} />
                 <div className="absolute inset-0 z-1 bg-gradient-to-b from-[#002855]/90 via-[#002855]/60 to-[#002855]" />
-                <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: -50 }} transition={quickTransition} className="max-w-4xl mx-auto text-center z-10">
+                <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: -50 }}
+                    transition={quickTransition}
+                    className="max-w-4xl mx-auto text-center z-10"
+                >
                     <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-4 text-white uppercase leading-none">Plana mayor 2026</h1>
                     <div className="space-y-1 mb-10 text-white">
-                        <p className="text-lg md:text-xl font-bold uppercase tracking-[0.2em]">Listado de acuerdos institucionales</p>
+                        <p className="text-lg md:text-xl font-bold uppercase tracking-widest">Listado de acuerdos institucionales</p>
                         <p className="text-blue-200/60 font-medium italic">Periodo: Primer Semestre</p>
                     </div>
-                    <button onClick={() => carouselRef.current?.scrollIntoView({ behavior: 'smooth' })} className="px-10 py-4 bg-white text-[#002855] rounded-full font-black text-lg hover:shadow-2xl transition-all active:scale-95">Ingreso funcionarios</button>
+                    <button
+                        onClick={() => carouselRef.current?.scrollIntoView({ behavior: 'smooth' })}
+                        className="px-10 py-4 bg-white text-[#002855] rounded-full font-black text-lg hover:shadow-2xl transition-all active:scale-95"
+                    >
+                        Ingreso funcionarios
+                    </button>
                 </motion.div>
             </section>
 
@@ -105,7 +119,7 @@ export default function Landing() {
                                 return (
                                     <div key={a.id} className="embla__slide flex-[0_0_85%] md:flex-[0_0_45%] lg:flex-[0_0_35%] px-4">
                                         <motion.div
-                                            // ✅ SOLO LA CENTRAL ES CLICKEABLE
+                                            // Solo el centro es clickeable
                                             onClick={() => isActive && setModalData(a)}
                                             animate={{ scale: isActive ? 1 : 0.9, opacity: isActive ? 1 : 0.6 }}
                                             whileHover={isActive ? { scale: 1.05 } : {}}
@@ -128,8 +142,8 @@ export default function Landing() {
                                                 />
                                             </div>
 
-                                            {/* INFO EN PÁRRAFOS (Sin Pills) */}
-                                            <div className="absolute inset-x-0 bottom-0 p-6 bg-white/95 backdrop-blur-sm border-t border-slate-100">
+                                            {/* Información en párrafo: Categoría - Título */}
+                                            <div className="absolute inset-x-0 bottom-0 p-6 bg-white/95 backdrop-blur-sm border-t border-slate-100 text-slate-900">
                                                 <h3 className="text-xl md:text-2xl font-black text-[#002855] leading-tight mb-1 uppercase tracking-tighter truncate">
                                                     {a.categoria} - {a.titulo}
                                                 </h3>
@@ -145,7 +159,11 @@ export default function Landing() {
 
                 <div className="flex justify-center gap-2 mt-12">
                     {scrollSnaps.map((_, i) => (
-                        <button key={i} onClick={() => emblaApi?.scrollTo(i)} className={`h-1.5 transition-all rounded-full ${i === selectedIndex ? 'w-8 bg-[#002855]' : 'w-2 bg-slate-300'}`} />
+                        <button
+                            key={i}
+                            onClick={() => emblaApi?.scrollTo(i)}
+                            className={`h-1.5 transition-all rounded-full ${i === selectedIndex ? 'w-8 bg-[#002855]' : 'w-2 bg-slate-300'}`}
+                        />
                     ))}
                 </div>
             </section>
@@ -155,12 +173,25 @@ export default function Landing() {
                 <div className="max-w-4xl mx-auto w-full flex flex-col h-[75vh]">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 shrink-0">
                         <h2 className="text-4xl font-black uppercase tracking-tighter">Catálogo</h2>
-                        <input type="text" placeholder="Filtrar por nombre..." value={inputSearch} onChange={(e) => setInputSearch(e.target.value)} className="bg-white text-[#002855] px-6 py-3 rounded-xl outline-none font-bold placeholder:text-slate-400 w-full md:w-56 text-sm shadow-xl" />
+                        <input
+                            type="text"
+                            placeholder="Filtrar por nombre..."
+                            value={inputSearch}
+                            onChange={(e) => setInputSearch(e.target.value)}
+                            className="bg-white text-[#002855] px-6 py-3 rounded-xl outline-none font-bold placeholder:text-slate-400 w-full md:w-56 text-sm shadow-xl"
+                        />
                     </div>
                     <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-list-scroll">
                         <AnimatePresence mode="popLayout">
                             {filtered.map((a) => (
-                                <motion.div key={a.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={() => setModalData(a)} className="group flex items-center gap-5 bg-white p-4 rounded-2xl cursor-pointer hover:bg-slate-50 transition-colors w-full shadow-lg text-slate-900">
+                                <motion.div
+                                    key={a.id}
+                                    layout
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    onClick={() => setModalData(a)}
+                                    className="group flex items-center gap-5 bg-white p-4 rounded-2xl cursor-pointer hover:bg-slate-50 transition-colors w-full shadow-lg text-slate-900"
+                                >
                                     <div className="w-16 h-16 bg-slate-100 rounded-xl overflow-hidden shrink-0 flex items-center justify-center p-2">
                                         <img src={resolveBackendUrl(a.imagenUrl) || PDI_LOGO_URL} className="max-h-full object-contain" alt="Logo" />
                                     </div>
@@ -183,7 +214,11 @@ export default function Landing() {
                 {modalData && (
                     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setModalData(null)} className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
-                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} transition={quickTransition} className="bg-white w-full max-w-xl rounded-[40px] overflow-hidden relative z-10 shadow-2xl">
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+                            transition={quickTransition}
+                            className="bg-white w-full max-w-xl rounded-[40px] overflow-hidden relative z-10 shadow-2xl"
+                        >
                             <div className="h-48 bg-slate-50 flex items-center justify-center p-12 border-b">
                                 <img src={resolveBackendUrl(modalData.imagenUrl) || PDI_LOGO_URL} className="max-h-full object-contain" alt="Logo" />
                             </div>
@@ -194,7 +229,12 @@ export default function Landing() {
                                 <p className="text-base text-slate-600 leading-relaxed mb-8 text-center">
                                     {modalData.detallesDescripcion || modalData.descripcion}
                                 </p>
-                                <button onClick={() => setModalData(null)} className="w-full py-4 bg-[#002855] text-white rounded-2xl font-bold hover:bg-blue-900 transition-colors uppercase tracking-widest shadow-lg">Cerrar</button>
+                                <button
+                                    onClick={() => setModalData(null)}
+                                    className="w-full py-4 bg-[#002855] text-white rounded-2xl font-bold hover:bg-blue-900 transition-colors uppercase tracking-widest shadow-lg"
+                                >
+                                    Cerrar
+                                </button>
                             </div>
                         </motion.div>
                     </div>
@@ -203,8 +243,8 @@ export default function Landing() {
 
             <style>{`
                 .custom-list-scroll::-webkit-scrollbar { width: 4px; }
-                .custom-list-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
-                .custom-list-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+                .custom-list-scroll::-webkit-scrollbar-thumb { background: rgba(0, 40, 85, 0.2); border-radius: 10px; }
+                .custom-list-scroll::-webkit-scrollbar-thumb:hover { background: rgba(0, 40, 85, 0.4); }
             `}</style>
         </div>
     );
