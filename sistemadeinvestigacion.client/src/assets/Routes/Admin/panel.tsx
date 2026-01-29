@@ -6,15 +6,14 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Navbar } from "../../components/Navbar";
 import { LoginDrawer } from "./LoginDrawer";
 
-/** * PANEL UNIFICADO V4.5 OPTIMIZADO - PDI Intranet 2026
- * Fix: Memory Leak prevention, AbortController, and Stable References.
+/** * PANEL UNIFICADO V4.8 - PDI Intranet 2026
+ * Optimizaciones: Memoización de cierres (onClose), indicadores estables y limpieza de basura en Modal.
  */
 
 const API_BASE = 'http://localhost:5091';
 const PDI_LOGO_URL = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQF7ZHFE9xX50BEWjSmAriqYIdJwxiPAMD1cA&s";
 const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
 
-// 1. Funciones de utilidad estáticas fuera del componente para evitar closures en el heap
 const resolveBackendUrl = (path?: string | null) => {
     if (!path) return null;
     const s = String(path).trim();
@@ -57,27 +56,28 @@ export default function Panel() {
     const [inputSearch, setInputSearch] = useState("");
     const currentYear = useMemo(() => new Date().getFullYear(), []);
 
-    // 2. FetchData con AbortController para evitar leaks de promesas
+    // 1. Memoización de funciones de cierre para evitar basura en el Heap
+    const handleCloseModal = useCallback(() => setModalData(null), []);
+    const handleOpenModal = useCallback((item: any) => setModalData(item), []);
+
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => { document.body.style.overflow = 'unset'; };
+    }, []);
+
     const fetchData = useCallback(async () => {
         if (abortControllerRef.current) abortControllerRef.current.abort();
         abortControllerRef.current = new AbortController();
-
         try {
             setLoading(true);
             const token = localStorage.getItem('token');
-            const headers = {
-                'accept': 'application/json',
-                ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            };
-
+            const headers = { 'accept': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
             const [resMejores, resAll] = await Promise.all([
                 fetch(`${API_BASE}/api/Acuerdos/mejores`, { headers, signal: abortControllerRef.current.signal }),
                 fetch(`${API_BASE}/api/Acuerdos`, { headers, signal: abortControllerRef.current.signal })
             ]);
-
             const mejoresData = resMejores.ok ? await resMejores.json() : [];
             const allData = resAll.ok ? await resAll.json() : [];
-
             setMejores(Array.isArray(mejoresData) ? mejoresData.map(normalizeAcuerdo) : []);
             setAcuerdos(Array.isArray(allData) ? allData.map(normalizeAcuerdo) : []);
         } catch (e: any) {
@@ -90,7 +90,6 @@ export default function Panel() {
     const checkSession = useCallback(() => {
         const token = localStorage.getItem('token');
         const userJson = localStorage.getItem('user');
-
         if (token && userJson) {
             setIsLoggedIn(true);
             try {
@@ -107,12 +106,10 @@ export default function Panel() {
 
     useEffect(() => {
         checkSession();
-        return () => {
-            abortControllerRef.current?.abort(); // Limpieza al desmontar
-        };
+        return () => { abortControllerRef.current?.abort(); };
     }, [checkSession]);
 
-    // 3. Configuración de Carrusel con Limpieza de Eventos
+    // 2. Configuración de Carrusel con funciones estables
     const [emblaRef, emblaApi] = useEmblaCarousel(
         { loop: true, align: "center", duration: 25 },
         [Autoplay({ delay: 5000, stopOnInteraction: false })]
@@ -121,22 +118,25 @@ export default function Panel() {
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
 
+    const onSelect = useCallback(() => {
+        if (!emblaApi) return;
+        setSelectedIndex(emblaApi.selectedScrollSnap());
+    }, [emblaApi]);
+
+    const scrollTo = useCallback((index: number) => {
+        if (emblaApi) emblaApi.scrollTo(index);
+    }, [emblaApi]);
+
     useEffect(() => {
         if (!emblaApi) return;
-
-        const onSelect = () => setSelectedIndex(emblaApi.selectedScrollSnap());
+        onSelect();
         setScrollSnaps(emblaApi.scrollSnapList());
-
-        emblaApi.on("select", onSelect);
-        emblaApi.on("reInit", onSelect);
+        emblaApi.on("select", onSelect).on("reInit", onSelect);
         if (mejores.length > 0) emblaApi.reInit();
-
-        // Cleanup: Previene la acumulación de listeners en el Heap
         return () => {
-            emblaApi.off("select", onSelect);
-            emblaApi.off("reInit", onSelect);
+            emblaApi.off("select", onSelect).off("reInit", onSelect);
         };
-    }, [emblaApi, mejores]);
+    }, [emblaApi, mejores, onSelect]);
 
     const filtered = useMemo(() => {
         const q = inputSearch.toLowerCase();
@@ -145,7 +145,6 @@ export default function Panel() {
 
     return (
         <div className="fixed inset-0 overflow-hidden bg-white font-sans text-slate-900 selection:bg-[#002855] selection:text-white">
-
             <AnimatePresence>
                 {isLoggedIn && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="z-[100] relative">
@@ -155,7 +154,6 @@ export default function Panel() {
             </AnimatePresence>
 
             <div className="h-full overflow-y-auto snap-y snap-mandatory scroll-smooth overflow-x-hidden custom-list-scroll">
-
                 {/* SECCIÓN 1: HERO */}
                 <section className={`snap-start w-full h-screen flex flex-col items-center justify-center px-6 relative bg-[#002855] transition-all duration-700 ${isLoggedIn ? 'pt-16' : ''}`}>
                     <div className="absolute inset-0 bg-cover bg-center opacity-40 animate-pulse-slow pointer-events-none" style={{ backgroundImage: `url(${HERO_BG})` }} />
@@ -174,19 +172,12 @@ export default function Panel() {
                                 </p>
                             </motion.div>
                         </AnimatePresence>
-
                         <div className="flex flex-col md:flex-row gap-4 justify-center">
-                            <button onClick={() => carouselRef.current?.scrollIntoView({ behavior: 'smooth' })} className="px-10 py-5 bg-white text-[#002855] rounded-xl font-black text-lg hover:shadow-2xl transition-all active:scale-95 uppercase">
-                                Ver Destacados
-                            </button>
+                            <button onClick={() => carouselRef.current?.scrollIntoView({ behavior: 'smooth' })} className="px-10 py-5 bg-white text-[#002855] rounded-xl font-black text-lg hover:shadow-2xl transition-all active:scale-95 uppercase">Ver Destacados</button>
                             {isLoggedIn ? (
-                                <button onClick={() => listSectionRef.current?.scrollIntoView({ behavior: 'smooth' })} className="px-10 py-5 bg-transparent border-2 border-white/20 text-white rounded-xl font-black text-lg hover:bg-white/10 transition-all uppercase">
-                                    Catálogo Completo
-                                </button>
+                                <button onClick={() => listSectionRef.current?.scrollIntoView({ behavior: 'smooth' })} className="px-10 py-5 bg-transparent border-2 border-white/20 text-white rounded-xl font-black text-lg hover:bg-white/10 transition-all uppercase">Catálogo Completo</button>
                             ) : (
-                                <button onClick={() => setIsLoginOpen(true)} className="px-10 py-5 bg-blue-600 text-white rounded-xl font-black text-lg hover:bg-blue-700 transition-all shadow-xl uppercase">
-                                    Ingreso Funcionarios
-                                </button>
+                                <button onClick={() => setIsLoginOpen(true)} className="px-10 py-5 bg-blue-600 text-white rounded-xl font-black text-lg hover:bg-blue-700 transition-all shadow-xl uppercase">Ingreso Funcionarios</button>
                             )}
                         </div>
                     </div>
@@ -197,27 +188,17 @@ export default function Panel() {
                     <div className="max-w-7xl mx-auto w-full px-6 mb-6 text-center">
                         <h2 className="text-3xl md:text-4xl font-black text-[#002855] uppercase tracking-tighter">Acuerdos Destacados</h2>
                     </div>
-
                     <div className="w-full relative px-4 overflow-visible">
                         <div className="embla overflow-visible" ref={emblaRef}>
                             <div className="embla__container flex items-center">
                                 {(mejores.length > 0 ? mejores : acuerdos.slice(0, 6)).map((a, idx) => (
-                                    <CarouselItem
-                                        key={`${a.id}-${idx}`}
-                                        item={a}
-                                        isActive={idx === selectedIndex}
-                                        onClick={() => setModalData(a)}
-                                    />
+                                    <CarouselItem key={`car-${a.id}`} item={a} isActive={idx === selectedIndex} onClick={() => handleOpenModal(a)} />
                                 ))}
                             </div>
                         </div>
                     </div>
-
-                    <div className="flex justify-center gap-3 mt-8">
-                        {scrollSnaps.map((_, i) => (
-                            <button key={i} onClick={() => emblaApi?.scrollTo(i)} className={`h-2 rounded-full transition-all ${i === selectedIndex ? 'w-10 bg-[#002855]' : 'w-2 bg-slate-300'}`} />
-                        ))}
-                    </div>
+                    {/* Indicadores memoizados */}
+                    <CarouselDots snaps={scrollSnaps} selectedIndex={selectedIndex} onDotClick={scrollTo} />
                 </section>
 
                 {/* SECCIÓN 3: LISTADO */}
@@ -238,58 +219,23 @@ export default function Panel() {
                             {loading ? (
                                 <div className="text-center py-20 animate-spin text-blue-300 font-black uppercase text-xs">Cargando...</div>
                             ) : filtered.map((a) => (
-                                <div key={a.id} onClick={() => setModalData(a)} className="group flex items-center gap-6 bg-white p-4 rounded-xl cursor-pointer shadow-xl text-slate-900 hover:translate-x-2 transition-transform">
-                                    <div className="w-20 h-20 bg-slate-100 rounded-lg overflow-hidden shrink-0 border border-slate-200">
-                                        <img src={resolveBackendUrl(a.imagenUrl) || PDI_LOGO_URL} className="w-full h-full object-cover" alt="" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <span className="text-[9px] font-black bg-blue-600 text-white px-2 py-0.5 rounded uppercase mb-1 inline-block">{a.categoria}</span>
-                                        <h4 className="text-lg md:text-xl font-black text-[#002855] uppercase leading-tight">{a.titulo}</h4>
-                                        <p className="text-slate-500 text-xs italic line-clamp-1">{a.descripcion}</p>
-                                    </div>
-                                    <div className="bg-[#002855] text-white p-3 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" /></svg>
-                                    </div>
-                                </div>
+                                <ListItem key={`list-${a.id}`} item={a} onOpen={() => handleOpenModal(a)} />
                             ))}
                         </div>
                     </div>
                 </section>
             </div>
 
-            {/* MODAL DETALLE */}
-            <AnimatePresence>
+            {/* MODAL DETALLE CON CIERRE MEMOIZADO */}
+            <AnimatePresence onExitComplete={() => window.scrollTo(0, window.scrollY)}>
                 {modalData && (
-                    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setModalData(null)} className="absolute inset-0 bg-black/85 backdrop-blur-md" />
-                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white w-full max-w-5xl rounded-3xl overflow-hidden relative z-10 shadow-2xl flex flex-col md:grid md:grid-cols-2 md:grid-rows-2 h-[90vh] md:h-[75vh]">
-                            <div className="bg-slate-100 border-b border-r border-slate-200 relative aspect-[16/9] md:aspect-auto">
-                                <img src={resolveBackendUrl(modalData.imagenUrl) || PDI_LOGO_URL} className="absolute inset-0 w-full h-full object-cover" alt="" />
-                            </div>
-                            <div className="p-8 md:p-10 bg-slate-50/50 border-b border-slate-200 flex flex-col justify-center">
-                                <div className="space-y-4">
-                                    <div><p className="text-[10px] font-black text-slate-400 uppercase">Categoría</p><p className="text-lg font-bold text-[#002855] uppercase">{modalData.categoria}</p></div>
-                                    <div><p className="text-[10px] font-black text-slate-400 uppercase">Estado</p><p className="text-lg font-bold text-green-600 uppercase">{modalData.estado || 'Activo'}</p></div>
-                                    {modalData.fechaVencimiento && (<div><p className="text-[10px] font-black text-slate-400 uppercase">Vencimiento</p><p className="text-lg font-bold text-[#002855] uppercase">{new Date(modalData.fechaVencimiento).toLocaleDateString()}</p></div>)}
-                                </div>
-                            </div>
-                            <div className="p-8 md:p-10 flex flex-col justify-center border-r border-slate-200 bg-white">
-                                <h3 className="text-2xl md:text-3xl font-black text-[#002855] uppercase leading-none mb-3 truncate">{modalData.titulo}</h3>
-                                <p className="text-base md:text-lg text-slate-500 font-medium italic line-clamp-3">"{modalData.descripcion}"</p>
-                            </div>
-                            <div className="p-8 md:p-10 flex flex-col justify-between bg-white overflow-y-auto">
-                                <div><p className="text-[10px] font-black text-slate-400 uppercase mb-3">Detalles</p><p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{modalData.detallesDescripcion || "No hay detalles."}</p></div>
-                                <button onClick={() => setModalData(null)} className="mt-6 py-4 bg-[#002855] text-white rounded-xl font-black uppercase shadow-lg">Cerrar</button>
-                            </div>
-                        </motion.div>
-                    </div>
+                    <ModalDetalle data={modalData} onClose={handleCloseModal} />
                 )}
             </AnimatePresence>
 
             <LoginDrawer isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} onLoginSuccess={checkSession} />
 
             <style>{`
-                body { overflow: hidden; }
                 .custom-list-scroll::-webkit-scrollbar { width: 5px; }
                 .custom-list-scroll::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.1); border-radius: 10px; }
                 @keyframes pulse-slow { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
@@ -299,7 +245,62 @@ export default function Panel() {
     );
 }
 
-// Sub-componente memoizado para el Carrusel (Evita Memory Leak de nodos SVG/Motion)
+// --- SUBCOMPONENTES MEMOIZADOS (Prevención de Memory Leaks) ---
+
+const CarouselDots = React.memo(({ snaps, selectedIndex, onDotClick }: any) => (
+    <div className="flex justify-center gap-3 mt-8">
+        {snaps.map((_: any, i: number) => (
+            <button
+                key={i}
+                onClick={() => onDotClick(i)}
+                className={`h-2 rounded-full transition-all ${i === selectedIndex ? 'w-10 bg-[#002855]' : 'w-2 bg-slate-300'}`}
+            />
+        ))}
+    </div>
+));
+
+const ListItem = React.memo(({ item, onOpen }: any) => (
+    <div onClick={onOpen} className="group flex items-center gap-6 bg-white p-4 rounded-xl cursor-pointer shadow-xl text-slate-900 hover:translate-x-2 transition-transform">
+        <div className="w-20 h-20 bg-slate-100 rounded-lg overflow-hidden shrink-0 border border-slate-200">
+            <img loading="lazy" src={resolveBackendUrl(item.imagenUrl) || PDI_LOGO_URL} className="w-full h-full object-cover" alt="" />
+        </div>
+        <div className="flex-1">
+            <span className="text-[9px] font-black bg-blue-600 text-white px-2 py-0.5 rounded uppercase mb-1 inline-block">{item.categoria}</span>
+            <h4 className="text-lg md:text-xl font-black text-[#002855] uppercase leading-tight">{item.titulo}</h4>
+            <p className="text-slate-500 text-xs italic line-clamp-1">{item.descripcion}</p>
+        </div>
+        <div className="bg-[#002855] text-white p-3 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" /></svg>
+        </div>
+    </div>
+));
+
+const ModalDetalle = React.memo(({ data, onClose }: any) => (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-black/85 backdrop-blur-md" />
+        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white w-full max-w-5xl rounded-3xl overflow-hidden relative z-10 shadow-2xl flex flex-col md:grid md:grid-cols-2 md:grid-rows-2 h-[90vh] md:h-[75vh]">
+            <div className="bg-slate-100 border-b border-r border-slate-200 relative aspect-[16/9] md:aspect-auto">
+                <img src={resolveBackendUrl(data.imagenUrl) || PDI_LOGO_URL} className="absolute inset-0 w-full h-full object-cover" alt="" />
+            </div>
+            <div className="p-8 md:p-10 bg-slate-50/50 border-b border-slate-200 flex flex-col justify-center">
+                <div className="space-y-4">
+                    <div><p className="text-[10px] font-black text-slate-400 uppercase">Categoría</p><p className="text-lg font-bold text-[#002855] uppercase">{data.categoria}</p></div>
+                    <div><p className="text-[10px] font-black text-slate-400 uppercase">Estado</p><p className="text-lg font-bold text-green-600 uppercase">{data.estado || 'Activo'}</p></div>
+                    {data.fechaVencimiento && (<div><p className="text-[10px] font-black text-slate-400 uppercase">Vencimiento</p><p className="text-lg font-bold text-[#002855] uppercase">{new Date(data.fechaVencimiento).toLocaleDateString()}</p></div>)}
+                </div>
+            </div>
+            <div className="p-8 md:p-10 flex flex-col justify-center border-r border-slate-200 bg-white">
+                <h3 className="text-2xl md:text-3xl font-black text-[#002855] uppercase leading-none mb-3 truncate">{data.titulo}</h3>
+                <p className="text-base md:text-lg text-slate-500 font-medium italic line-clamp-3">"{data.descripcion}"</p>
+            </div>
+            <div className="p-8 md:p-10 flex flex-col justify-between bg-white overflow-y-auto">
+                <div><p className="text-[10px] font-black text-slate-400 uppercase mb-3">Detalles</p><p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{data.detallesDescripcion || "No hay detalles."}</p></div>
+                <button onClick={onClose} className="mt-6 py-4 bg-[#002855] text-white rounded-xl font-black uppercase shadow-lg">Cerrar</button>
+            </div>
+        </motion.div>
+    </div>
+));
+
 const CarouselItem = React.memo(({ item, isActive, onClick }: any) => (
     <div className="embla__slide flex-[0_0_90%] md:flex-[0_0_42%] px-3">
         <motion.div
