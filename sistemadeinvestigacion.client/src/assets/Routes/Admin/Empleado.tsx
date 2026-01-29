@@ -1,227 +1,181 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
-import { motion, AnimatePresence } from "framer-motion";
+﻿import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import { motion } from "framer-motion";
 import { Navbar } from '../../components/Navbar';
 import {
-    Users,
     Search,
     User,
-    Phone,
-    IdCard,
-    Mail,
-    Briefcase,
-    Shield,
-    ChevronRight
+    Key,
+    ShieldCheck,
+    Fingerprint,
+    UserPlus,
+    RefreshCw,
+    AlertCircle,
 } from 'lucide-react';
 
 const API_BASE = 'http://localhost:5091';
 const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
 
-type EmpleadoApiRaw = {
-    rut?: string;
-    correoElectronico?: string;
-    nombreCompleto?: string;
-    id?: number;
-    nombre?: string;
-    mail?: string | null;
-    brigada?: string;
-    cargo?: string;
-    telefono?: number | string;
-};
+// Función de limpieza fuera del componente para evitar recreación
+const cleanRut = (r: string) => String(r).replace(/[^0-9kK]/g, '').toLowerCase();
 
-type EmpleadoUi = {
-    key: string;
-    id?: number;
-    rut: string;
-    correo: string;
-    nombre: string;
-    brigada?: string;
-    cargo?: string;
-    telefono?: number | string;
-};
-
-export default function Empleado() {
-    const [empleados, setEmpleados] = useState<EmpleadoUi[]>([]);
+export default function AdministracionIdentidad() {
+    const [funcionarios, setFuncionarios] = useState<any[]>([]);
+    const [usuarios, setUsuarios] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [loadError, setLoadError] = useState<string | null>(null);
-    const [inputSearch, setInputSearch] = useState('');
+    const [error, setError] = useState<string | null>(null);
+    const [search, setSearch] = useState("");
 
-    const searchResult = useMemo(() => {
-        const q = inputSearch.trim().toLowerCase();
-        if (!q) return empleados;
-        return empleados.filter((e) =>
-            e.nombre.toLowerCase().includes(q) ||
-            e.rut.toLowerCase().includes(q)
-        );
-    }, [empleados, inputSearch]);
+    // AbortController para limpiar peticiones pendientes
+    const abortControllerRef = useRef<AbortController | null>(null);
 
-    const normalizeEmpleado = (raw: EmpleadoApiRaw, index: number): EmpleadoUi => {
-        const nombreUi = (raw.nombreCompleto ?? raw.nombre ?? '').trim();
-        const rutUi = (raw.rut ?? '').trim();
-        const correoUi = (raw.correoElectronico ?? raw.mail ?? '').trim();
-        const id = typeof raw.id === 'number' ? raw.id : undefined;
+    const fetchData = useCallback(async () => {
+        if (abortControllerRef.current) abortControllerRef.current.abort();
+        abortControllerRef.current = new AbortController();
 
-        return {
-            key: id != null ? String(id) : `${rutUi || 'no-rut'}-${index}`,
-            id,
-            nombre: nombreUi || '(SIN NOMBRE)',
-            rut: rutUi || '(SIN RUT)',
-            correo: correoUi || '(SIN CORREO)',
-            brigada: raw.brigada || 'N/A',
-            cargo: raw.cargo || 'FUNCIONARIO',
-            telefono: raw.telefono || 'S/N',
-        };
-    };
-
-    const fetchEmpleados = async () => {
+        setLoading(true);
+        setError(null);
         try {
-            setLoading(true);
             const token = localStorage.getItem('token');
-            const res = await fetch(`${API_BASE}/api/Empleados`, {
-                headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-            });
-            if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
-            const data = await res.json();
-            if (!Array.isArray(data)) throw new Error('Formato de datos inválido');
-            setEmpleados(data.map((x, i) => normalizeEmpleado(x, i)));
-        } catch (err: any) {
-            setLoadError(err.message);
+            const headers = {
+                'Accept': 'application/json',
+                ...(token ? { Authorization: `Bearer ${token}` } : {})
+            };
+
+            const [resEmp, resUsr] = await Promise.all([
+                fetch(`${API_BASE}/api/Empleados`, { headers, signal: abortControllerRef.current.signal }),
+                fetch(`${API_BASE}/api/Users`, { headers, signal: abortControllerRef.current.signal })
+            ]);
+
+            if (!resEmp.ok || !resUsr.ok) throw new Error("Error en servidor");
+
+            const dataEmp = await resEmp.json();
+            const dataUsr = await resUsr.json();
+
+            // Ordenamiento optimizado
+            const sortFn = (a: any, b: any) => cleanRut(a.rut).localeCompare(cleanRut(b.rut));
+
+            setFuncionarios((Array.isArray(dataEmp) ? dataEmp : []).sort(sortFn));
+            setUsuarios((Array.isArray(dataUsr) ? dataUsr : []).sort(sortFn));
+        } catch (e: any) {
+            if (e.name !== 'AbortError') {
+                setError("No se pudo sincronizar con el servidor.");
+            }
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    useEffect(() => { fetchEmpleados(); }, []);
+    useEffect(() => {
+        fetchData();
+        return () => abortControllerRef.current?.abort(); // Cleanup al desmontar
+    }, [fetchData]);
+
+    // Filter function estable
+    const filterFn = useCallback((item: any) => {
+        const val = search.toLowerCase();
+        if (!val) return true;
+        return (
+            item.rut.toLowerCase().includes(val) ||
+            (item.nombreCompleto && item.nombreCompleto.toLowerCase().includes(val))
+        );
+    }, [search]);
+
+    const filteredFunc = useMemo(() => funcionarios.filter(filterFn), [funcionarios, filterFn]);
+    const filteredUsers = useMemo(() => usuarios.filter(filterFn), [usuarios, filterFn]);
+
+    // Mapeo de Ruts de usuarios para búsqueda O(1) en lugar de O(N) dentro del render
+    const userRutsMap = useMemo(() => {
+        const set = new Set();
+        usuarios.forEach(u => set.add(cleanRut(u.rut)));
+        return set;
+    }, [usuarios]);
 
     return (
         <div className="h-screen w-full bg-[#002855] font-sans text-white overflow-hidden flex flex-col">
             <Navbar />
-
-            {/* Background Layer */}
-            <div className="fixed inset-0 z-0">
+            <div className="fixed inset-0 z-0 pointer-events-none">
                 <div className="absolute inset-0 bg-cover bg-center opacity-5" style={{ backgroundImage: `url(${HERO_BG})` }} />
                 <div className="absolute inset-0 bg-gradient-to-b from-[#002855] via-transparent to-[#002855]" />
             </div>
 
-            {/* Ajuste: pt-28 para alejar de la Navbar y mb-4 para acercar al piso */}
-            <main className="relative z-10 flex-1 flex items-start justify-center p-4 pt-28 mb-4">
+            <main className="relative z-10 flex-1 p-4 pt-28 mb-4 flex justify-center overflow-hidden">
                 <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                    className="w-full max-w-7xl h-full max-h-[82vh] flex flex-col shadow-[0_40px_100px_rgba(0,0,0,0.6)] overflow-hidden rounded-sm border border-white/5"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="w-full max-w-[1600px] h-full grid grid-cols-2 grid-rows-[auto_1fr] gap-3 overflow-hidden"
                 >
-                    {/* DIV 1: CABECERA AZUL (SUPERIOR) */}
-                    <div className="bg-[#002855] p-6 border-b border-white/10 flex flex-col md:flex-row justify-between items-end md:items-center gap-6">
-                        <div className="flex items-center gap-5">
-                            <div className="w-14 h-14 bg-blue-600 flex items-center justify-center shadow-lg border border-white/10">
-                                <Users className="text-white" size={28} />
+                    {/* Header bar */}
+                    <div className="col-span-2 bg-[#002855]/80 backdrop-blur-md px-8 py-4 border border-white/10 rounded-sm flex justify-between items-center shadow-2xl">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-blue-600 flex items-center justify-center border border-white/10 shrink-0">
+                                <ShieldCheck size={20} />
                             </div>
                             <div>
-                                <h2 className="text-3xl font-black leading-none uppercase tracking-tighter">
-                                    Funcionarios en sistema <br />
-                                </h2>
-                                <p className="text-blue-200/40 text-[10px] font-black uppercase tracking-[0.2em] mt-2">
-                                    {searchResult.length} Registros identificados
-                                </p>
+                                <h2 className="text-xl font-black uppercase tracking-tighter">Consola de <span className="text-blue-400">Administración</span></h2>
+                                <p className="text-blue-200/40 text-[9px] font-black uppercase tracking-[0.2em]">{loading ? 'Sincronizando...' : 'Sistemas en línea'}</p>
                             </div>
                         </div>
-
-                        {/* BUSCADOR INTEGRADO EN EL ÁREA AZUL */}
-                        <div className="w-full md:w-96 relative group">
-                            <label className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-2 block opacity-60">Filtrar por Nombre o RUT</label>
-                            <div className="relative">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400/50" size={16} />
+                        <div className="flex items-center gap-4">
+                            {error && <div className="text-red-400 text-[10px] font-black uppercase flex items-center gap-2 animate-pulse"><AlertCircle size={14} /> {error}</div>}
+                            <div className="relative w-72">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400/50" size={14} />
                                 <input
-                                    type="text"
-                                    value={inputSearch}
-                                    onChange={(e) => setInputSearch(e.target.value)}
-                                    placeholder="BUSCAR FUNCIONARIO..."
-                                    className="w-full bg-white/5 border border-white/10 text-white pl-12 pr-4 py-3 outline-none focus:bg-white/10 focus:border-blue-400 transition-all font-bold text-xs uppercase tracking-widest"
+                                    type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+                                    placeholder="FILTRAR POR RUT O NOMBRE..."
+                                    className="w-full bg-white/5 border border-white/10 text-white pl-10 pr-4 py-2 outline-none focus:border-blue-400 font-bold text-[10px] tracking-widest uppercase"
                                 />
                             </div>
+                            <button onClick={fetchData} className="p-2 hover:bg-white/10 rounded-full transition-all text-blue-400">
+                                <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
+                            </button>
                         </div>
                     </div>
 
-                    {/* DIV 2: LISTADO BLANCO (INFERIOR) */}
-                    <div className="flex-1 bg-white flex flex-col overflow-hidden">
-                        <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-list-scroll bg-slate-50/30">
-                            {loading ? (
-                                <div className="h-full flex flex-col items-center justify-center gap-4">
-                                    <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                                    <span className="text-[#002855] font-black text-[10px] uppercase tracking-[0.3em]">Sincronizando Sistema...</span>
+                    {/* Lista Funcionarios */}
+                    <div className="flex flex-col bg-white rounded-sm overflow-hidden border border-white/10 shadow-xl">
+                        <div className="bg-slate-100 px-6 py-3 border-b border-slate-200 flex justify-between">
+                            <span className="text-[10px] font-black text-[#002855] uppercase flex items-center gap-2"><User size={14} /> Registro de Funcionarios</span>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-slate-50/50 custom-list-scroll">
+                            {filteredFunc.map((f) => (
+                                <div key={f.rut} className="bg-white border border-slate-200 p-3 flex items-center gap-4 group hover:border-blue-400 transition-all shadow-sm">
+                                    <div className={`w-1.5 h-8 rounded-full ${userRutsMap.has(cleanRut(f.rut)) ? 'bg-emerald-500' : 'bg-slate-200 opacity-50'}`} />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs font-black text-[#002855] uppercase truncate">{f.nombreCompleto}</p>
+                                        <span className="text-[9px] font-bold text-slate-500 tracking-widest">{f.rut}</span>
+                                    </div>
+                                    {!userRutsMap.has(cleanRut(f.rut)) && (
+                                        <button className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all rounded-sm border border-blue-100">
+                                            <UserPlus size={14} />
+                                        </button>
+                                    )}
                                 </div>
-                            ) : loadError ? (
-                                <div className="h-full flex items-center justify-center text-red-500 font-black uppercase text-xs tracking-widest">{loadError}</div>
-                            ) : (
-                                <div className="space-y-3">
-                                    <AnimatePresence mode='popLayout'>
-                                        {searchResult.map((emp, idx) => (
-                                            <motion.div
-                                                key={emp.key}
-                                                initial={{ opacity: 0, x: -10 }}
-                                                animate={{ opacity: 1, x: 0 }}
-                                                transition={{ delay: idx * 0.03, ease: [0.16, 1, 0.3, 1] }}
-                                                whileHover={{ x: 10 }}
-                                                className="group bg-white border border-slate-200 p-4 flex items-center gap-8 relative cursor-pointer hover:shadow-xl hover:shadow-blue-900/5 transition-all"
-                                            >
-                                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 scale-y-0 group-hover:scale-y-100 transition-transform origin-top" />
+                            ))}
+                        </div>
+                    </div>
 
-                                                <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200 group-hover:bg-blue-600 group-hover:border-blue-600 transition-colors">
-                                                    <User size={20} className="text-slate-400 group-hover:text-white transition-colors" />
-                                                </div>
-
-                                                <div className="w-72 shrink-0">
-                                                    <h3 className="text-sm font-black text-[#002855] uppercase tracking-tighter truncate">{emp.nombre}</h3>
-                                                    <div className="flex items-center gap-2 mt-1">
-                                                        <IdCard size={12} className="text-slate-300" />
-                                                        <span className="text-[10px] font-bold text-slate-500 tracking-widest">{emp.rut}</span>
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex-1 hidden lg:grid grid-cols-2 gap-4 border-l border-slate-100 pl-8">
-                                                    <div className="flex items-center gap-3">
-                                                        <Shield size={14} className="text-blue-500/40" />
-                                                        <div>
-                                                            <span className="block text-[8px] font-black text-slate-400 uppercase tracking-tighter">Brigada / Unidad</span>
-                                                            <span className="text-[10px] font-bold text-slate-700 uppercase">{emp.brigada}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-3">
-                                                        <Briefcase size={14} className="text-blue-500/40" />
-                                                        <div>
-                                                            <span className="block text-[8px] font-black text-slate-400 uppercase tracking-tighter">Cargo Asignado</span>
-                                                            <span className="text-[10px] font-bold text-slate-700 uppercase">{emp.cargo}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div className="hidden xl:flex items-center gap-10 border-l border-slate-100 pl-8 w-96">
-                                                    <div className="flex items-center gap-2">
-                                                        <Mail size={14} className="text-slate-300" />
-                                                        <span className="text-[10px] font-medium text-slate-500 lowercase truncate max-w-[150px]">{emp.correo}</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <Phone size={14} className="text-slate-300" />
-                                                        <span className="text-[10px] font-bold text-slate-500">{emp.telefono}</span>
-                                                    </div>
-                                                </div>
-
-                                                <div className="ml-auto p-2 rounded-full border border-slate-100 text-slate-300 group-hover:bg-[#002855] group-hover:text-white group-hover:border-[#002855] transition-all shadow-sm shrink-0">
-                                                    <ChevronRight size={18} />
-                                                </div>
-                                            </motion.div>
-                                        ))}
-                                    </AnimatePresence>
+                    {/* Lista Cuentas (Simétrica) */}
+                    <div className="flex flex-col bg-white rounded-sm overflow-hidden border border-white/10 shadow-xl">
+                        <div className="bg-slate-100 px-6 py-3 border-b border-slate-200 flex justify-between">
+                            <span className="text-[10px] font-black text-[#002855] uppercase flex items-center gap-2"><Fingerprint size={14} /> Cuentas de Acceso</span>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-slate-50/50 custom-list-scroll">
+                            {filteredUsers.map((u) => (
+                                <div key={u.id} className="bg-white border border-slate-200 p-3 flex items-center gap-4 group hover:border-[#002855] transition-all shadow-sm">
+                                    <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-black text-[10px] border border-blue-100">{u.rol}</div>
+                                    <div className="flex-1">
+                                        <p className="text-xs font-black text-[#002855] tracking-tight">{u.rut}</p>
+                                        <p className="text-[9px] font-bold text-slate-400 uppercase">Acceso: {u.rol === 1 ? 'ADMIN' : 'GESTOR'}</p>
+                                    </div>
+                                    <button className="opacity-0 group-hover:opacity-100 p-2 text-slate-400 hover:text-blue-600 transition-all rounded-full"><Key size={14} /></button>
                                 </div>
-                            )}
+                            ))}
                         </div>
                     </div>
                 </motion.div>
             </main>
-
             <style>{`
                 .custom-list-scroll::-webkit-scrollbar { width: 4px; }
-                .custom-list-scroll::-webkit-scrollbar-track { background: transparent; }
                 .custom-list-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
             `}</style>
         </div>

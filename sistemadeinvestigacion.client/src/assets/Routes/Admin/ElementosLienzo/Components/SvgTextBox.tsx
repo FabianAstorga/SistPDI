@@ -1,12 +1,15 @@
-﻿import React, { useMemo } from 'react';
+﻿import React, { useMemo, memo } from 'react';
 
 type Props = {
     el: any;
     svgId?: string;
 };
 
-function wrapText(text: string, maxCharsPerLine: number) {
-    const words = (text || '').split(/\s+/).filter(Boolean);
+// 1. Extraemos la lógica de procesamiento de texto fuera del componente.
+// Al ser una función pura, no consume recursos del ciclo de vida de React.
+const wrapText = (text: string, maxCharsPerLine: number): string[] => {
+    if (!text) return [];
+    const words = text.split(/\s+/).filter(Boolean);
     const lines: string[] = [];
     let current = '';
 
@@ -16,55 +19,54 @@ function wrapText(text: string, maxCharsPerLine: number) {
             current = next;
         } else {
             if (current) lines.push(current);
-            // palabra muy larga: córtala igual
             current = w.length > maxCharsPerLine ? w.slice(0, maxCharsPerLine) : w;
         }
     }
     if (current) lines.push(current);
     return lines;
-}
+};
 
-export const SvgTextBox: React.FC<Props> = ({ el, svgId = 'lienzo-svg' }) => {
+// 2. Usamos memo para que el texto solo se recalcule si cambia su contenido, 
+// tamaño o la caja que lo contiene.
+export const SvgTextBox: React.FC<Props> = memo(({ el, svgId = 'lienzo-svg' }) => {
+    // Valores calculados con defaults seguros
     const w = Number(el.width ?? 200);
     const h = Number(el.height ?? 80);
-
     const fontSize = Number(el.fontSize ?? 16);
     const fontFamily = el.fontFamily ?? 'Arial';
     const fontWeight = el.fontWeight ?? '700';
     const fill = el.fill ?? '#000';
 
-    // padding “visual” dentro de la caja
     const pad = 2;
     const lineHeight = Math.round(fontSize * 1.25);
 
-    // aproximación simple: caracteres por línea según ancho
-    // (si quieres precisión real, habría que medir con <textLength> o canvas)
-    const maxChars = Math.max(5, Math.floor((w - pad * 2) / (fontSize * 0.6)));
+    // 3. Optimizamos el cálculo de caracteres máximos
+    const maxChars = useMemo(() => {
+        return Math.max(5, Math.floor((w - pad * 2) / (fontSize * 0.6)));
+    }, [w, fontSize]);
 
-    const lines = useMemo(() => wrapText(String(el.text ?? ''), maxChars), [el.text, maxChars]);
+    // 4. El wrapText solo se ejecuta si el texto o el ancho de la caja cambian
+    const lines = useMemo(() => {
+        return wrapText(String(el.text ?? ''), maxChars);
+    }, [el.text, maxChars]);
 
-    // ✅ ID único (evita colisiones si exportas/pegas/varios SVG)
-    const clipId = `clip-txt-${svgId}-${el.id}`;
+    // ID único persistente para el clipPath
+    const clipId = useMemo(() => `clip-txt-${svgId}-${el.id}`, [svgId, el.id]);
 
     return (
         <g data-elid={el.id}>
-            {/* ✅ HITBOX INVISIBLE:
-          - captura mouse encima del texto
-          - permite drag en DraggableItem (el onMouseDown está en el <g> padre) */}
+            {/* HITBOX: Optimizada para no tener opacidad innecesaria si es transparente */}
             <rect
                 data-elid={el.id}
-                x={0}
-                y={0}
                 width={w}
                 height={h}
-                fill="transparent"
-                opacity={0}
+                fill="none"
                 pointerEvents="all"
             />
 
             <defs>
                 <clipPath id={clipId}>
-                    <rect x="0" y="0" width={w} height={h} />
+                    <rect width={w} height={h} />
                 </clipPath>
             </defs>
 
@@ -78,15 +80,19 @@ export const SvgTextBox: React.FC<Props> = ({ el, svgId = 'lienzo-svg' }) => {
                 fontWeight={fontWeight}
                 dominantBaseline="hanging"
                 clipPath={`url(#${clipId})`}
-                // ✅ NO poner pointerEvents="none" aquí, o vuelves a perder el drag
                 pointerEvents="visiblePainted"
+                style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
             >
                 {lines.map((line, i) => (
-                    <tspan key={i} x={pad} dy={i === 0 ? 0 : lineHeight}>
+                    <tspan
+                        key={`${el.id}-line-${i}`}
+                        x={pad}
+                        dy={i === 0 ? 0 : lineHeight}
+                    >
                         {line}
                     </tspan>
                 ))}
             </text>
         </g>
     );
-};
+});

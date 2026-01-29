@@ -1,7 +1,7 @@
-﻿import React from 'react';
+﻿import React, { useMemo, memo } from 'react';
 import { Maximize2 } from 'lucide-react';
 import { DraggableItem } from './DraggableItem';
-import { SvgTextBox } from './SvgTextBox'; // ✅ NUEVO
+import { SvgTextBox } from './SvgTextBox';
 import type { Pt } from '../types/lienzo.types';
 import {
     getBasePolygonPoints,
@@ -16,7 +16,36 @@ type Props = {
     svgId?: string;
 };
 
-export const CanvasStage: React.FC<Props> = ({ model, svgId = 'lienzo-svg' }) => {
+// 1. Extraemos el renderizado de filtros para que no se recalcule en cada movimiento de mouse
+const SvgFilters = memo(({ elementos, tiposConSaturacion }: { elementos: any[], tiposConSaturacion: Set<string> }) => {
+    return (
+        <defs>
+            {elementos
+                .filter((el) => {
+                    const sat = Number(el.saturation);
+                    return tiposConSaturacion?.has?.(el.type) && Number.isFinite(sat) && sat !== 1;
+                })
+                .map((el) => (
+                    <filter key={`sat-${el.id}`} id={`sat-${el.id}`}>
+                        <feColorMatrix type="saturate" values={`${el.saturation}`} />
+                    </filter>
+                ))}
+            <marker
+                id="arrowhead"
+                markerWidth="10"
+                markerHeight="10"
+                refX="9"
+                refY="3"
+                orient="auto"
+                markerUnits="strokeWidth"
+            >
+                <path d="M 0 0 L 9 3 L 0 6 z" fill="currentColor" />
+            </marker>
+        </defs>
+    );
+});
+
+export const CanvasStage: React.FC<Props> = memo(({ model, svgId = 'lienzo-svg' }) => {
     const {
         elementos,
         canvasSize,
@@ -24,32 +53,47 @@ export const CanvasStage: React.FC<Props> = ({ model, svgId = 'lienzo-svg' }) =>
         herramientaActiva,
         modoPuntos,
         limpiarSeleccion,
-
         svgRef,
-
         manejarClickLienzo,
         iniciarDibujo,
         onSvgMouseMove,
         onSvgMouseUp,
-
         seleccionarElementoCanvas,
         alArrastrando,
         actualizarAtributo,
         redimensionarElemento,
-
         startDragPoint,
-
         seleccionadoId,
         seleccionadosIds,
-
         tiposConSaturacion,
         modoSeleccionActivo
     } = model;
 
-    if (!canvasSize) {
-        console.error('CanvasStage: canvasSize llegó undefined. model recibido:', model);
-        return null;
-    }
+    // 2. Optimizamos el resize del canvas con limpieza de eventos (Prevención de Memory Leaks)
+    const handleCanvasResize = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const startW = canvasSize.w;
+        const startH = canvasSize.h;
+
+        const onMove = (m: MouseEvent) => {
+            setCanvasSize({
+                w: Math.max(100, startW + (m.clientX - startX)),
+                h: Math.max(100, startH + (m.clientY - startY))
+            });
+        };
+
+        const onUp = () => {
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+        };
+
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+    };
+
+    if (!canvasSize) return null;
 
     return (
         <main
@@ -78,49 +122,20 @@ export const CanvasStage: React.FC<Props> = ({ model, svgId = 'lienzo-svg' }) =>
                         onMouseLeave={onSvgMouseUp}
                         className={herramientaActiva ? 'cursor-crosshair' : 'cursor-default'}
                     >
-                        <defs>
-                            {elementos
-                                .filter((el: any) => {
-                                    const sat = Number(el.saturation);
-                                    return tiposConSaturacion?.has?.(el.type) && Number.isFinite(sat) && sat !== 1;
-                                })
-                                .map((el: any) => {
-                                    const sat = Number(el.saturation);
-                                    return (
-                                        <filter key={`sat-${el.id}`} id={`sat-${el.id}`}>
-                                            <feColorMatrix type="saturate" values={`${sat}`} />
-                                        </filter>
-                                    );
-                                })}
-
-                            <marker
-                                id="arrowhead"
-                                markerWidth="10"
-                                markerHeight="10"
-                                refX="9"
-                                refY="3"
-                                orient="auto"
-                                markerUnits="strokeWidth"
-                            >
-                                <path d="M 0 0 L 9 3 L 0 6 z" fill="currentColor" />
-                            </marker>
-                        </defs>
+                        {/* Filtros aislados en componente memoizado */}
+                        <SvgFilters elementos={elementos} tiposConSaturacion={tiposConSaturacion} />
 
                         {elementos.map((el: any) => {
                             const isSelected = seleccionadosIds.includes(el.id);
-
                             const sat = Number(el.saturation);
-                            const aplicaSat = tiposConSaturacion?.has?.(el.type) && Number.isFinite(sat) && sat !== 1;
-                            const satFilter = aplicaSat ? `url(#sat-${el.id})` : undefined;
+                            const satFilter = (tiposConSaturacion?.has?.(el.type) && sat !== 1) ? `url(#sat-${el.id})` : undefined;
 
-                            const polygonPts: Pt[] =
-                                Array.isArray(el.pointsArr) && el.pointsArr.length >= 3
+                            // 3. Lógica de geometría simplificada para el render
+                            const polygonPts = isEditablePolygon(el.type)
+                                ? (Array.isArray(el.pointsArr) && el.pointsArr.length >= 3
                                     ? el.pointsArr
-                                    : isEditablePolygon(el.type)
-                                        ? getBasePolygonPoints(el.type, el.width || 120, el.height || 120)
-                                        : [];
-
-                            const strokePts: Pt[] = Array.isArray(el.pointsArr) && el.pointsArr.length >= 2 ? el.pointsArr : [];
+                                    : getBasePolygonPoints(el.type, el.width || 120, el.height || 120))
+                                : [];
 
                             return (
                                 <DraggableItem
@@ -129,10 +144,11 @@ export const CanvasStage: React.FC<Props> = ({ model, svgId = 'lienzo-svg' }) =>
                                     estaSeleccionado={isSelected}
                                     alSeleccionarCanvas={seleccionarElementoCanvas}
                                     alArrastrando={alArrastrando}
-                                    alTerminarArrastre={(id: number, x: number, y: number) => actualizarAtributo(id, { x, y })}
-                                    alRedimensionar={(id: number, width: number, height: number) => redimensionarElemento(id, width, height)}
+                                    alTerminarArrastre={(id, x, y) => actualizarAtributo(id, { x, y })}
+                                    alRedimensionar={(id, w, h) => redimensionarElemento(id, w, h)}
                                     puedeInteractuar={modoSeleccionActivo}
                                 >
+                                    {/* Polígonos */}
                                     {isEditablePolygon(el.type) && polygonPts.length >= 3 && (
                                         <>
                                             <polygon
@@ -141,19 +157,13 @@ export const CanvasStage: React.FC<Props> = ({ model, svgId = 'lienzo-svg' }) =>
                                                 fill={el.fill || '#000'}
                                                 filter={satFilter}
                                             />
-
                                             {modoPuntos && seleccionadoId === el.id && (
-                                                // ✅ editor-only overlay (se borra al exportar)
                                                 <g data-editor="1">
-                                                    {(Array.isArray(el.pointsArr) ? el.pointsArr : polygonPts).map((p: Pt, idx: number) => (
-                                                        <g key={`${el.id}-h-${idx}`} data-editor="1">
+                                                    {polygonPts.map((p: Pt, idx: number) => (
+                                                        <g key={`${el.id}-p-${idx}`}>
                                                             <circle
-                                                                cx={p.x}
-                                                                cy={p.y}
-                                                                r={9}
-                                                                fill="white"
-                                                                stroke="#2563eb"
-                                                                strokeWidth={2}
+                                                                cx={p.x} cy={p.y} r={9}
+                                                                fill="white" stroke="#2563eb" strokeWidth={2}
                                                                 className="cursor-grab"
                                                                 onMouseDown={(ev) => startDragPoint(ev, el.id, idx)}
                                                             />
@@ -165,90 +175,52 @@ export const CanvasStage: React.FC<Props> = ({ model, svgId = 'lienzo-svg' }) =>
                                         </>
                                     )}
 
+                                    {/* Rectángulos */}
                                     {el.type === 'rectangulo' && (
                                         <rect
                                             data-elid={el.id}
-                                            width={el.width || 100}
-                                            height={el.height || 100}
-                                            fill={el.fill || '#000'}
-                                            rx="2"
+                                            width={el.width || 100} height={el.height || 100}
+                                            fill={el.fill || '#000'} rx="2"
                                             filter={satFilter}
                                         />
                                     )}
 
+                                    {/* Círculos */}
                                     {el.type === 'circulo' && (
                                         <ellipse
                                             data-elid={el.id}
-                                            cx={(el.width || 100) / 2}
-                                            cy={(el.height || 100) / 2}
-                                            rx={(el.width || 100) / 2}
-                                            ry={(el.height || 100) / 2}
+                                            cx={(el.width || 100) / 2} cy={(el.height || 100) / 2}
+                                            rx={(el.width || 100) / 2} ry={(el.height || 100) / 2}
                                             fill={el.fill || '#000'}
                                             filter={satFilter}
                                         />
                                     )}
 
+                                    {/* Trazos y Flechas */}
                                     {isStrokeType(el.type) && (
-                                        <>
-                                            <path
-                                                data-elid={el.id}
-                                                d={buildStrokePathD(el)}
-                                                stroke={el.stroke || el.fill || '#000'}
-                                                strokeWidth={el.strokeWidth || 3}
-                                                fill="none"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                markerEnd={el.type === 'flecha' ? 'url(#arrowhead)' : undefined}
-                                                style={{ color: el.stroke || el.fill || '#000' }}
-                                            />
-
-                                            {modoPuntos && seleccionadoId === el.id && strokePts.length >= 2 && (
-                                                // ✅ editor-only overlay (se borra al exportar)
-                                                <g data-editor="1">
-                                                    {strokePts.map((p: Pt, idx: number) => (
-                                                        <g key={`${el.id}-s-${idx}`} data-editor="1">
-                                                            <circle
-                                                                cx={p.x}
-                                                                cy={p.y}
-                                                                r={9}
-                                                                fill="white"
-                                                                stroke="#2563eb"
-                                                                strokeWidth={2}
-                                                                className="cursor-grab"
-                                                                onMouseDown={(ev) => startDragPoint(ev, el.id, idx)}
-                                                            />
-                                                            <circle cx={p.x} cy={p.y} r={3} fill="#2563eb" pointerEvents="none" />
-                                                        </g>
-                                                    ))}
-                                                </g>
-                                            )}
-                                        </>
+                                        <path
+                                            data-elid={el.id}
+                                            d={buildStrokePathD(el)}
+                                            stroke={el.stroke || el.fill || '#000'}
+                                            strokeWidth={el.strokeWidth || 3}
+                                            fill="none"
+                                            strokeLinecap="round"
+                                            markerEnd={el.type === 'flecha' ? 'url(#arrowhead)' : undefined}
+                                        />
                                     )}
 
+                                    {/* Imágenes */}
                                     {el.type === 'imagen' && (
                                         <image
                                             data-elid={el.id}
                                             href={el.url}
-                                            width={el.width || 100}
-                                            height={el.height || 100}
+                                            width={el.width || 100} height={el.height || 100}
                                             preserveAspectRatio="none"
                                             filter={satFilter}
                                         />
                                     )}
 
-                                    {el.type === 'lapiz' && (
-                                        <path
-                                            data-elid={el.id}
-                                            d={el.points || ''}
-                                            stroke={el.fill || '#000'}
-                                            fill="none"
-                                            strokeWidth={el.strokeWidth || 3}
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                        />
-                                    )}
-
-                                    {/* ✅ CAMBIO: foreignObject -> SvgTextBox */}
+                                    {/* Texto */}
                                     {el.type === 'texto' && <SvgTextBox el={el} svgId={svgId} />}
                                 </DraggableItem>
                             );
@@ -256,30 +228,14 @@ export const CanvasStage: React.FC<Props> = ({ model, svgId = 'lienzo-svg' }) =>
                     </svg>
                 </div>
 
+                {/* Control de redimensión con lógica optimizada */}
                 <div
                     className="absolute -bottom-2 -right-2 w-6 h-6 bg-white border-2 border-blue-500 rounded-full cursor-nwse-resize flex items-center justify-center text-blue-500 hover:scale-110 shadow-md"
-                    onMouseDown={(e) => {
-                        e.stopPropagation();
-                        const startX = e.clientX;
-                        const startY = e.clientY;
-                        const startW = canvasSize.w;
-                        const startH = canvasSize.h;
-
-                        const onMove = (m: MouseEvent) =>
-                            setCanvasSize({ w: startW + (m.clientX - startX), h: startH + (m.clientY - startY) });
-
-                        const onUp = () => {
-                            document.removeEventListener('mousemove', onMove);
-                            document.removeEventListener('mouseup', onUp);
-                        };
-
-                        document.addEventListener('mousemove', onMove);
-                        document.addEventListener('mouseup', onUp);
-                    }}
+                    onMouseDown={handleCanvasResize}
                 >
                     <Maximize2 size={12} />
                 </div>
             </div>
         </main>
     );
-};
+});
