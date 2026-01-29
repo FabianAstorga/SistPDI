@@ -5,7 +5,6 @@ import {
     Building,
     Globe,
     Image as ImageIcon,
-    List,
     Save,
     Mail,
     Phone,
@@ -86,7 +85,6 @@ export default function Institucion() {
             }
 
             setOkMsg('Institución registrada en el sistema exitosamente.');
-            // Reset fields
             setNombre(''); setDescripcion(''); setSitioWeb(''); setEmail('');
             setTelefono(''); setDireccion(''); setLogoFile(null); setLogoPreview(null);
         } catch (err: any) {
@@ -100,7 +98,6 @@ export default function Institucion() {
         <div className="h-screen w-full bg-[#002855] font-sans text-white overflow-hidden flex flex-col">
             <Navbar />
 
-            {/* Background Layer */}
             <div className="fixed inset-0 z-0">
                 <div className="absolute inset-0 bg-cover bg-center opacity-10" style={{ backgroundImage: `url(${HERO_BG})` }} />
                 <div className="absolute inset-0 bg-gradient-to-b from-[#002855] via-transparent to-[#002855]" />
@@ -113,7 +110,7 @@ export default function Institucion() {
                     transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                     className="w-full max-w-6xl h-[85vh] flex shadow-[0_40px_100px_rgba(0,0,0,0.6)] overflow-hidden rounded-sm"
                 >
-                    {/* SIDEBAR IZQUIERDO: ACCIONES Y TÍTULO */}
+                    {/* SIDEBAR IZQUIERDO */}
                     <div className="hidden md:flex w-72 bg-[#002855] p-10 flex-col border-y border-l border-white/10 shrink-0">
                         <div className="w-12 h-12 bg-blue-600 flex items-center justify-center mb-8 shadow-lg border border-white/10">
                             <Building className="text-white" size={24} />
@@ -123,33 +120,16 @@ export default function Institucion() {
                             Nueva <br />
                             <span className="text-blue-400">Institución</span>
                         </h2>
-                        <p className="text-blue-200/40 text-[10px] font-black uppercase tracking-[0.2em] mb-10">
-                            Registro de Entidades
+                        <div className="w-8 h-1 bg-blue-500 mb-6" />
+                        <p className="text-blue-200/40 text-[10px] font-black uppercase tracking-[0.2em]">
+                            Registro centralizado de <br /> entidades colaboradoras
                         </p>
-
-                        <div className="space-y-4 mt-auto">
-                            <button
-                                onClick={() => navigate('/institucionList')}
-                                className="w-full py-4 px-6 border border-white/10 hover:bg-white/5 transition-all flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-blue-200"
-                            >
-                                <List size={16} /> Ver Catálogo
-                            </button>
-
-                            <button
-                                onClick={handleSubmit}
-                                disabled={!canSubmit || saving}
-                                className="w-full py-4 px-6 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-400 transition-all flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest text-white shadow-xl"
-                            >
-                                <Save size={16} /> {saving ? 'Procesando...' : 'Confirmar Registro'}
-                            </button>
-                        </div>
                     </div>
 
                     {/* ÁREA DE FORMULARIO DERECHA */}
                     <div className="flex-1 bg-white flex flex-col overflow-hidden relative">
-                        <div className="flex-1 overflow-y-auto p-10 md:p-14 custom-list-scroll">
+                        <div className="flex-1 overflow-y-auto p-10 md:p-14 pt-20 custom-list-scroll">
 
-                            {/* Alertas Flotantes / Superiores */}
                             <AnimatePresence>
                                 {okMsg && (
                                     <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mb-8 p-4 bg-emerald-50 border-l-4 border-emerald-500 flex items-center gap-3 text-emerald-800">
@@ -163,8 +143,8 @@ export default function Institucion() {
                                 )}
                             </AnimatePresence>
 
-                            <form className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                                {/* COLUMNA 1: DATOS GENERALES */}
+                            <form className="grid grid-cols-1 lg:grid-cols-2 gap-12 pb-20">
+                                {/* COLUMNA 1 */}
                                 <div className="space-y-8">
                                     <div className="border-b border-slate-100 pb-2">
                                         <h3 className="text-[11px] font-black text-[#002855] uppercase tracking-[0.2em]">Identificación y Contacto</h3>
@@ -172,32 +152,32 @@ export default function Institucion() {
 
                                     <div>
                                         <label className={labelStyle}>Nombre de la Organización *</label>
-                                        <input type="text" className={inputStyle} placeholder="Ej: Dirección de Logística" value={nombre} onChange={(e) => setNombre(e.target.value)} />
+                                        <input type="text" className={inputStyle} placeholder="Nombre oficial..." value={nombre} onChange={(e) => setNombre(e.target.value)} />
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-6">
                                         <div>
-                                            <label className={labelStyle}><Mail size={12} /> Email Institucional</label>
-                                            <input type="email" className={inputStyle} placeholder="contacto@pdi.cl" value={email} onChange={(e) => setEmail(e.target.value)} />
+                                            <label className={labelStyle}><Mail size={12} /> Email</label>
+                                            <input type="email" className={inputStyle} placeholder="ejemplo@dominio.cl" value={email} onChange={(e) => setEmail(e.target.value)} />
                                         </div>
                                         <div>
-                                            <label className={labelStyle}><Phone size={12} /> Teléfono Central</label>
-                                            <input type="text" className={inputStyle} placeholder="+56 2..." value={telefono} onChange={(e) => setTelefono(e.target.value)} />
+                                            <label className={labelStyle}><Phone size={12} /> Teléfono</label>
+                                            <input type="text" className={inputStyle} placeholder="+56..." value={telefono} onChange={(e) => setTelefono(e.target.value)} />
                                         </div>
                                     </div>
 
                                     <div>
                                         <label className={labelStyle}><MapPin size={12} /> Dirección Física *</label>
-                                        <input type="text" className={inputStyle} placeholder="Avenida Siempre Viva 123, Santiago" value={direccion} onChange={(e) => setDireccion(e.target.value)} />
+                                        <input type="text" className={inputStyle} placeholder="Calle, Número, Comuna" value={direccion} onChange={(e) => setDireccion(e.target.value)} />
                                     </div>
 
                                     <div>
                                         <label className={labelStyle}><FileText size={12} /> Reseña Institucional *</label>
-                                        <textarea className={`${inputStyle} h-32 resize-none`} placeholder="Describa brevemente la función de la empresa..." value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
+                                        <textarea className={`${inputStyle} h-32 resize-none`} placeholder="Breve descripción..." value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
                                     </div>
                                 </div>
 
-                                {/* COLUMNA 2: MEDIA Y DIGITAL */}
+                                {/* COLUMNA 2 */}
                                 <div className="space-y-8">
                                     <div className="border-b border-slate-100 pb-2">
                                         <h3 className="text-[11px] font-black text-[#002855] uppercase tracking-[0.2em]">Plataforma y Branding</h3>
@@ -205,7 +185,7 @@ export default function Institucion() {
 
                                     <div>
                                         <label className={labelStyle}><Globe size={12} /> Sitio Web Oficial *</label>
-                                        <input type="url" className={inputStyle} placeholder="https://www.pdi.cl" value={sitioWeb} onChange={(e) => setSitioWeb(e.target.value)} />
+                                        <input type="url" className={inputStyle} placeholder="https://www.ejemplo.cl" value={sitioWeb} onChange={(e) => setSitioWeb(e.target.value)} />
                                     </div>
 
                                     <div>
@@ -220,15 +200,13 @@ export default function Institucion() {
                                             <div className="h-64 bg-slate-50 border-2 border-dashed border-slate-200 rounded-sm flex flex-col items-center justify-center transition-all group-hover:bg-slate-100 group-hover:border-blue-400 overflow-hidden">
                                                 {logoPreview ? (
                                                     <motion.img
-                                                        initial={{ opacity: 0 }}
-                                                        animate={{ opacity: 1 }}
-                                                        src={logoPreview}
-                                                        className="h-full w-full object-contain p-4"
+                                                        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                                        src={logoPreview} className="h-full w-full object-contain p-4"
                                                     />
                                                 ) : (
                                                     <>
                                                         <ImageIcon size={40} className="text-slate-300 mb-4" />
-                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Subir Imagen (.PNG, .JPG)</span>
+                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Subir Imagen</span>
                                                     </>
                                                 )}
                                             </div>
@@ -236,6 +214,18 @@ export default function Institucion() {
                                     </div>
                                 </div>
                             </form>
+                        </div>
+
+                        {/* BOTÓN FLOTANTE GUARDAR */}
+                        <div className="absolute bottom-10 right-10 flex flex-col items-center gap-2">
+                            <span className="text-[10px] font-black text-[#002855] uppercase tracking-widest opacity-40">Guardar</span>
+                            <button
+                                onClick={handleSubmit}
+                                disabled={!canSubmit || saving}
+                                className="h-16 w-16 rounded-full bg-[#002855] text-white flex items-center justify-center hover:bg-blue-600 hover:scale-110 shadow-2xl transition-all duration-300 group active:scale-95 disabled:bg-slate-200 disabled:text-slate-400 disabled:scale-100"
+                            >
+                                <Save size={28} className={saving ? "animate-pulse" : "group-hover:rotate-12 transition-transform"} />
+                            </button>
                         </div>
                     </div>
                 </motion.div>

@@ -1,15 +1,25 @@
 ﻿import React, { useEffect, useMemo, useState } from 'react';
+import { motion, AnimatePresence } from "framer-motion";
 import { Navbar } from '../../components/Navbar';
-import { Save } from 'lucide-react';
-import { Users, Search, User, Phone, IdCard, Briefcase, Mail } from 'lucide-react';
+import {
+    Users,
+    Search,
+    User,
+    Phone,
+    IdCard,
+    Mail,
+    Briefcase,
+    Shield,
+    ChevronRight
+} from 'lucide-react';
+
+const API_BASE = 'http://localhost:5091';
+const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
 
 type EmpleadoApiRaw = {
-    // ✅ Formato que tú mostraste
     rut?: string;
     correoElectronico?: string;
     nombreCompleto?: string;
-
-    // ✅ Posibles variantes si tu backend a veces devuelve otros nombres
     id?: number;
     nombre?: string;
     mail?: string | null;
@@ -19,549 +29,201 @@ type EmpleadoApiRaw = {
 };
 
 type EmpleadoUi = {
-    key: string; // para React key aunque no exista id
+    key: string;
     id?: number;
     rut: string;
     correo: string;
     nombre: string;
-
-    // opcionales por si existen en otros endpoints
     brigada?: string;
     cargo?: string;
     telefono?: number | string;
 };
 
-function Empleado() {
+export default function Empleado() {
     const [empleados, setEmpleados] = useState<EmpleadoUi[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
-
     const [inputSearch, setInputSearch] = useState('');
 
     const searchResult = useMemo(() => {
         const q = inputSearch.trim().toLowerCase();
         if (!q) return empleados;
-        return empleados.filter((e) => (e.nombre || '').toLowerCase().includes(q));
+        return empleados.filter((e) =>
+            e.nombre.toLowerCase().includes(q) ||
+            e.rut.toLowerCase().includes(q)
+        );
     }, [empleados, inputSearch]);
 
-    const [modalOpen, setModalOpen] = useState(false);
-
-    // ---- FORM (lo dejo como lo tenías; no impacta el listado) ----
-    const [nombre, setNombre] = useState('');
-    const [rut, setRut] = useState('');
-    const [brigada, setBrigada] = useState('');
-    const [cargo, setCargo] = useState('');
-    const [telefono, setTelefono] = useState('');
-    const [mail, setMail] = useState('');
-
-    const [saving, setSaving] = useState(false);
-    const [errorMsg, setErrorMsg] = useState<string | null>(null);
-    const [okMsg, setOkMsg] = useState<string | null>(null);
-
-    const controlLabel =
-        'text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 block';
-
-    const inputStyle =
-        'w-full bg-white border border-gray-300 text-black text-sm rounded-lg focus:ring-2 focus:ring-[#003385] focus:border-transparent p-2.5 transition-all duration-200 outline-none shadow-sm';
-
-    const cleanRut = (value: string) => value.replace(/\./g, '').replace(/-/g, '').trim();
-
-    const formatRut = (value: string) => {
-        const v = cleanRut(value).toUpperCase();
-        if (v.length <= 1) return v;
-        const body = v.slice(0, -1);
-        const dv = v.slice(-1);
-        const bodyWithDots = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-        return `${bodyWithDots}-${dv}`;
-    };
-
-    const calcDv = (rutBody: string) => {
-        let sum = 0;
-        let mul = 2;
-        for (let i = rutBody.length - 1; i >= 0; i--) {
-            sum += parseInt(rutBody[i], 10) * mul;
-            mul = mul === 7 ? 2 : mul + 1;
-        }
-        const res = 11 - (sum % 11);
-        if (res === 11) return '0';
-        if (res === 10) return 'K';
-        return String(res);
-    };
-
-    const isRutValid = (value: string) => {
-        const v = cleanRut(value).toUpperCase();
-        if (v.length < 8) return false;
-        const body = v.slice(0, -1);
-        const dv = v.slice(-1);
-        if (!/^\d+$/.test(body)) return false;
-        return dv === calcDv(body);
-    };
-
-    // ✅ normaliza lo que venga del backend al formato UI que necesitamos mostrar
     const normalizeEmpleado = (raw: EmpleadoApiRaw, index: number): EmpleadoUi => {
         const nombreUi = (raw.nombreCompleto ?? raw.nombre ?? '').trim();
         const rutUi = (raw.rut ?? '').trim();
         const correoUi = (raw.correoElectronico ?? raw.mail ?? '').trim();
-
         const id = typeof raw.id === 'number' ? raw.id : undefined;
 
         return {
             key: id != null ? String(id) : `${rutUi || 'no-rut'}-${index}`,
             id,
-            nombre: nombreUi || '(sin nombre)',
-            rut: rutUi || '(sin RUT)',
-            correo: correoUi || '(sin correo)',
-            brigada: raw.brigada,
-            cargo: raw.cargo,
-            telefono: raw.telefono,
+            nombre: nombreUi || '(SIN NOMBRE)',
+            rut: rutUi || '(SIN RUT)',
+            correo: correoUi || '(SIN CORREO)',
+            brigada: raw.brigada || 'N/A',
+            cargo: raw.cargo || 'FUNCIONARIO',
+            telefono: raw.telefono || 'S/N',
         };
-    };
-
-    const resetForm = () => {
-        setNombre('');
-        setRut('');
-        setBrigada('');
-        setCargo('');
-        setTelefono('');
-        setMail('');
-        setSaving(false);
-        setErrorMsg(null);
-        setOkMsg(null);
-    };
-
-    const openModal = () => {
-        resetForm();
-        setModalOpen(true);
-    };
-
-    const closeModal = () => setModalOpen(false);
-
-    const handleRutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setRut(formatRut(e.target.value));
-        setOkMsg(null);
-        setErrorMsg(null);
     };
 
     const fetchEmpleados = async () => {
         try {
             setLoading(true);
-            setLoadError(null);
-
             const token = localStorage.getItem('token');
-
-            const res = await fetch('http://localhost:5091/api/Empleados', {
-                method: 'GET',
-                headers: {
-                    accept: 'text/plain',
-                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                },
+            const res = await fetch(`${API_BASE}/api/Empleados`, {
+                headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
             });
-
-            if (!res.ok) {
-                const text = await res.text().catch(() => '');
-                throw new Error(text || `Error HTTP ${res.status}`);
-            }
-
-            const data = (await res.json().catch(() => null)) as any;
-
-            if (!Array.isArray(data)) {
-                throw new Error('Respuesta inesperada del servidor (no es una lista).');
-            }
-
-            const normalized = (data as EmpleadoApiRaw[]).map((x, i) => normalizeEmpleado(x, i));
-            setEmpleados(normalized);
+            if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
+            const data = await res.json();
+            if (!Array.isArray(data)) throw new Error('Formato de datos inválido');
+            setEmpleados(data.map((x, i) => normalizeEmpleado(x, i)));
         } catch (err: any) {
-            setLoadError(err?.message || 'Error al cargar empleados.');
+            setLoadError(err.message);
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => {
-        fetchEmpleados();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
-    const canSubmit = useMemo(() => {
-        return (
-            nombre.trim().length > 0 &&
-            rut.trim().length > 0 &&
-            brigada.trim().length > 0 &&
-            cargo.trim().length > 0 &&
-            telefono.trim().length > 0 &&
-            mail.trim().length > 0 &&
-            isRutValid(rut)
-        );
-    }, [nombre, rut, brigada, cargo, telefono, mail]);
-
-    const handleSubmit = async () => {
-        setErrorMsg(null);
-        setOkMsg(null);
-
-        if (!nombre.trim() || !rut.trim() || !brigada.trim() || !cargo.trim() || !telefono.trim() || !mail.trim()) {
-            setErrorMsg('Faltan campos obligatorios: nombre, rut, mail, brigada, cargo y teléfono.');
-            return;
-        }
-        if (!isRutValid(rut)) {
-            setErrorMsg('RUT inválido. Revisa el dígito verificador.');
-            return;
-        }
-
-        try {
-            setSaving(true);
-
-            const token = localStorage.getItem('token');
-
-            const fd = new FormData();
-            fd.append('Nombre', nombre.trim());
-            fd.append('Rut', formatRut(rut).toUpperCase());
-            fd.append('Mail', mail.trim());
-            fd.append('brigada', brigada.trim());
-            fd.append('cargo', cargo.trim());
-
-            const telNum = Number(String(telefono).replace(/[^\d]/g, ''));
-            fd.append('telefono', Number.isFinite(telNum) ? String(telNum) : '0');
-
-            const res = await fetch('http://localhost:5091/api/Empleados', {
-                method: 'POST',
-                headers: {
-                    accept: 'text/plain',
-                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                },
-                body: fd,
-            });
-
-            if (!res.ok) {
-                const text = await res.text().catch(() => '');
-                throw new Error(text || `Error HTTP ${res.status}`);
-            }
-
-            setOkMsg('Empleado creado correctamente.');
-            await fetchEmpleados();
-
-            setNombre('');
-            setRut('');
-            setBrigada('');
-            setCargo('');
-            setTelefono('');
-            setMail('');
-        } catch (err: any) {
-            setErrorMsg(err?.message || 'Error al crear el empleado.');
-        } finally {
-            setSaving(false);
-        }
-    };
+    useEffect(() => { fetchEmpleados(); }, []);
 
     return (
-        <div className="min-h-screen bg-slate-100 w-full">
+        <div className="h-screen w-full bg-[#002855] font-sans text-white overflow-hidden flex flex-col">
             <Navbar />
 
-            <main className="pt-24 pb-20 px-6">
-                <section className="max-w-[95%] mx-auto mt-6">
-                    <div className="w-full mb-6 shadow-2xl rounded-xl bg-white border border-gray-200 overflow-hidden">
-                        <div className="bg-white border-b border-gray-100 px-8 py-6 flex justify-between items-center gap-4">
-                            <div className="flex items-center">
-                                <div className="p-2 bg-gray-100 rounded-lg mr-3">
-                                    <Users size={24} className="text-black" />
-                                </div>
-                                <h6 className="text-black text-xl font-black uppercase tracking-tighter">Empleados</h6>
+            {/* Background Layer */}
+            <div className="fixed inset-0 z-0">
+                <div className="absolute inset-0 bg-cover bg-center opacity-5" style={{ backgroundImage: `url(${HERO_BG})` }} />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#002855] via-transparent to-[#002855]" />
+            </div>
+
+            {/* Ajuste: pt-28 para alejar de la Navbar y mb-4 para acercar al piso */}
+            <main className="relative z-10 flex-1 flex items-start justify-center p-4 pt-28 mb-4">
+                <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                    className="w-full max-w-7xl h-full max-h-[82vh] flex flex-col shadow-[0_40px_100px_rgba(0,0,0,0.6)] overflow-hidden rounded-sm border border-white/5"
+                >
+                    {/* DIV 1: CABECERA AZUL (SUPERIOR) */}
+                    <div className="bg-[#002855] p-6 border-b border-white/10 flex flex-col md:flex-row justify-between items-end md:items-center gap-6">
+                        <div className="flex items-center gap-5">
+                            <div className="w-14 h-14 bg-blue-600 flex items-center justify-center shadow-lg border border-white/10">
+                                <Users className="text-white" size={28} />
                             </div>
-
-                            <div className="flex items-center gap-3 w-full justify-end">
-                                <div className="w-full max-w-xs relative">
-                                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                                        <Search size={14} />
-                                    </span>
-                                    <input
-                                        type="search"
-                                        className={`${inputStyle} pl-10`}
-                                        placeholder="Buscar por nombre"
-                                        value={inputSearch}
-                                        onChange={(e) => setInputSearch(e.target.value)}
-                                    />
-                                </div>
-
-                                <button
-                                    type="button"
-                                    onClick={openModal}
-                                    className="bg-[#003385] hover:bg-[#002a66] text-white font-bold uppercase text-xs px-8 py-3 rounded-xl shadow-lg transition-all active:scale-95 flex items-center"
-                                >
-                                    <Save size={16} className="mr-2" />
-                                    Crear Empleado
-                                </button>
+                            <div>
+                                <h2 className="text-3xl font-black leading-none uppercase tracking-tighter">
+                                    Funcionarios en sistema <br />
+                                </h2>
+                                <p className="text-blue-200/40 text-[10px] font-black uppercase tracking-[0.2em] mt-2">
+                                    {searchResult.length} Registros identificados
+                                </p>
                             </div>
                         </div>
 
-                        <div className="bg-gray-50 px-6 lg:px-6 py-6 shadow-inner">
-                            <div className="w-full max-h-[650px] overflow-y-auto pr-1">
-                                {loading ? (
-                                    <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
-                                        <p className="text-sm text-gray-700 font-semibold">Cargando empleados...</p>
-                                    </div>
-                                ) : loadError ? (
-                                    <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
-                                        <p className="text-sm text-red-600 font-semibold">{loadError}</p>
-                                        <button
-                                            type="button"
-                                            onClick={fetchEmpleados}
-                                            className="mt-3 bg-gray-900 hover:bg-black text-white font-bold uppercase text-xs px-6 py-2 rounded-xl shadow-lg transition-all active:scale-95"
-                                        >
-                                            Reintentar
-                                        </button>
-                                    </div>
-                                ) : searchResult.length === 0 ? (
-                                    <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
-                                        <p className="text-sm text-indigo-700 font-bold">No results found!</p>
-                                        <p className="text-xs text-gray-500 mt-1">Prueba otro nombre.</p>
-                                    </div>
-                                ) : (
-                                    <ul className="space-y-2">
-                                        {searchResult.map((emp) => (
-                                            <li key={emp.key}>
-                                                <button
-                                                    type="button"
-                                                    onClick={async () => {
-                                                        // ✅ Si tienes endpoint /api/Empleados/{id}, solo lo llamamos si hay id real
-                                                        if (!emp.id) return;
-                                                        try {
-                                                            const token = localStorage.getItem('token');
-                                                            const res = await fetch(`http://localhost:5091/api/Empleados/${emp.id}`, {
-                                                                method: 'GET',
-                                                                headers: {
-                                                                    accept: 'text/plain',
-                                                                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                                                                },
-                                                            });
-                                                            if (!res.ok) return console.log('No se pudo obtener empleado', emp.id);
-                                                            const data = await res.json();
-                                                            console.log('Empleado detalle:', data);
-                                                        } catch (e) {
-                                                            console.log('Error al obtener empleado', e);
-                                                        }
-                                                    }}
-                                                    className="w-full text-left bg-indigo-50 rounded-xl p-8 border border-transparent hover:shadow-lg hover:border-indigo-300 transition-all active:scale-[0.99]"
-                                                >
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="rounded-full w-16 h-16 bg-white border border-white shadow shrink-0 flex items-center justify-center">
-                                                            <User size={26} className="text-gray-700" />
-                                                        </div>
+                        {/* BUSCADOR INTEGRADO EN EL ÁREA AZUL */}
+                        <div className="w-full md:w-96 relative group">
+                            <label className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-2 block opacity-60">Filtrar por Nombre o RUT</label>
+                            <div className="relative">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400/50" size={16} />
+                                <input
+                                    type="text"
+                                    value={inputSearch}
+                                    onChange={(e) => setInputSearch(e.target.value)}
+                                    placeholder="BUSCAR FUNCIONARIO..."
+                                    className="w-full bg-white/5 border border-white/10 text-white pl-12 pr-4 py-3 outline-none focus:bg-white/10 focus:border-blue-400 transition-all font-bold text-xs uppercase tracking-widest"
+                                />
+                            </div>
+                        </div>
+                    </div>
 
-                                                        <div className="flex-1 min-w-0">
-                                                            {/* ✅ nombreCompleto (normalizado) */}
-                                                            <h2 className="text-base font-black text-gray-900 truncate">{emp.nombre}</h2>
+                    {/* DIV 2: LISTADO BLANCO (INFERIOR) */}
+                    <div className="flex-1 bg-white flex flex-col overflow-hidden">
+                        <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-list-scroll bg-slate-50/30">
+                            {loading ? (
+                                <div className="h-full flex flex-col items-center justify-center gap-4">
+                                    <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                                    <span className="text-[#002855] font-black text-[10px] uppercase tracking-[0.3em]">Sincronizando Sistema...</span>
+                                </div>
+                            ) : loadError ? (
+                                <div className="h-full flex items-center justify-center text-red-500 font-black uppercase text-xs tracking-widest">{loadError}</div>
+                            ) : (
+                                <div className="space-y-3">
+                                    <AnimatePresence mode='popLayout'>
+                                        {searchResult.map((emp, idx) => (
+                                            <motion.div
+                                                key={emp.key}
+                                                initial={{ opacity: 0, x: -10 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                transition={{ delay: idx * 0.03, ease: [0.16, 1, 0.3, 1] }}
+                                                whileHover={{ x: 10 }}
+                                                className="group bg-white border border-slate-200 p-4 flex items-center gap-8 relative cursor-pointer hover:shadow-xl hover:shadow-blue-900/5 transition-all"
+                                            >
+                                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 scale-y-0 group-hover:scale-y-100 transition-transform origin-top" />
 
-                                                            {/* ✅ Si existen brigada/cargo, los mostramos; si no, ocultamos esa línea */}
-                                                            {(emp.brigada || emp.cargo) && (
-                                                                <p className="text-sm text-gray-600 truncate">
-                                                                    {emp.brigada || ''}{emp.brigada && emp.cargo ? ' · ' : ''}{emp.cargo || ''}
-                                                                </p>
-                                                            )}
+                                                <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200 group-hover:bg-blue-600 group-hover:border-blue-600 transition-colors">
+                                                    <User size={20} className="text-slate-400 group-hover:text-white transition-colors" />
+                                                </div>
 
-                                                            {/* ✅ rut + correoElectronico */}
-                                                            <p className="text-xs text-gray-600 truncate mt-1">
-                                                                <span className="font-semibold">{emp.rut}</span>
-                                                                <span className="mx-2 text-gray-300">|</span>
-                                                                <span>{emp.correo}</span>
-                                                            </p>
+                                                <div className="w-72 shrink-0">
+                                                    <h3 className="text-sm font-black text-[#002855] uppercase tracking-tighter truncate">{emp.nombre}</h3>
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        <IdCard size={12} className="text-slate-300" />
+                                                        <span className="text-[10px] font-bold text-slate-500 tracking-widest">{emp.rut}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex-1 hidden lg:grid grid-cols-2 gap-4 border-l border-slate-100 pl-8">
+                                                    <div className="flex items-center gap-3">
+                                                        <Shield size={14} className="text-blue-500/40" />
+                                                        <div>
+                                                            <span className="block text-[8px] font-black text-slate-400 uppercase tracking-tighter">Brigada / Unidad</span>
+                                                            <span className="text-[10px] font-bold text-slate-700 uppercase">{emp.brigada}</span>
                                                         </div>
                                                     </div>
-                                                </button>
-                                            </li>
+                                                    <div className="flex items-center gap-3">
+                                                        <Briefcase size={14} className="text-blue-500/40" />
+                                                        <div>
+                                                            <span className="block text-[8px] font-black text-slate-400 uppercase tracking-tighter">Cargo Asignado</span>
+                                                            <span className="text-[10px] font-bold text-slate-700 uppercase">{emp.cargo}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="hidden xl:flex items-center gap-10 border-l border-slate-100 pl-8 w-96">
+                                                    <div className="flex items-center gap-2">
+                                                        <Mail size={14} className="text-slate-300" />
+                                                        <span className="text-[10px] font-medium text-slate-500 lowercase truncate max-w-[150px]">{emp.correo}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <Phone size={14} className="text-slate-300" />
+                                                        <span className="text-[10px] font-bold text-slate-500">{emp.telefono}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="ml-auto p-2 rounded-full border border-slate-100 text-slate-300 group-hover:bg-[#002855] group-hover:text-white group-hover:border-[#002855] transition-all shadow-sm shrink-0">
+                                                    <ChevronRight size={18} />
+                                                </div>
+                                            </motion.div>
                                         ))}
-                                    </ul>
-                                )}
-                            </div>
+                                    </AnimatePresence>
+                                </div>
+                            )}
                         </div>
                     </div>
-                </section>
+                </motion.div>
             </main>
 
-            {/* ---- MODAL: lo dejo como lo tenías ---- */}
-            {modalOpen && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center" aria-modal="true" role="dialog">
-                    <button
-                        type="button"
-                        className="absolute inset-0 bg-black/40"
-                        onClick={closeModal}
-                        aria-label="Cerrar modal"
-                    />
-
-                    <div className="relative w-[min(1100px,95vw)] max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-gray-200">
-                        <div className="rounded-t bg-white border-b border-gray-100 px-8 py-6 flex justify-between items-center">
-                            <div className="flex items-center">
-                                <div className="p-2 bg-gray-100 rounded-lg mr-3">
-                                    <User size={24} className="text-black" />
-                                </div>
-                                <h6 className="text-black text-xl font-black uppercase tracking-tighter">Ingresar Nuevo Empleado</h6>
-                            </div>
-
-                            <div className="flex items-center gap-3">
-                                <button
-                                    className={`${canSubmit && !saving ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-400 cursor-not-allowed'
-                                        } text-white font-bold uppercase text-xs px-8 py-3 rounded-xl shadow-lg transition-all active:scale-95 flex items-center`}
-                                    type="button"
-                                    onClick={handleSubmit}
-                                    disabled={!canSubmit || saving}
-                                >
-                                    {saving ? 'Guardando...' : 'Guardar Empleado'}
-                                </button>
-                            </div>
-                        </div>
-
-                        {(errorMsg || okMsg) && (
-                            <div className="px-8 py-4 border-b bg-white">
-                                {errorMsg && <p className="text-sm text-red-600 font-semibold">{errorMsg}</p>}
-                                {okMsg && <p className="text-sm text-green-700 font-semibold">{okMsg}</p>}
-                            </div>
-                        )}
-
-                        <div className="flex-auto bg-gray-50 px-6 lg:px-12 py-10 shadow-inner">
-                            <form
-                                className="grid grid-cols-1 lg:grid-cols-2 gap-12"
-                                onSubmit={(e) => {
-                                    e.preventDefault();
-                                    handleSubmit();
-                                }}
-                            >
-                                <div className="space-y-6">
-                                    <div className="border-b border-gray-300 pb-1">
-                                        <span className="text-xs font-black text-black uppercase tracking-widest">Datos del empleado</span>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label className={controlLabel}>Nombre *</label>
-                                            <input
-                                                type="text"
-                                                className={inputStyle}
-                                                placeholder="Nombre completo"
-                                                value={nombre}
-                                                onChange={(e) => {
-                                                    setNombre(e.target.value);
-                                                    setOkMsg(null);
-                                                    setErrorMsg(null);
-                                                }}
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className={controlLabel}>RUT *</label>
-                                            <div className="relative">
-                                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                                                    <IdCard size={14} />
-                                                </span>
-                                                <input
-                                                    type="text"
-                                                    className={`${inputStyle} pl-10`}
-                                                    placeholder="12.345.678-5"
-                                                    value={rut}
-                                                    onChange={handleRutChange}
-                                                />
-                                            </div>
-
-                                            {rut.trim().length > 0 && !isRutValid(rut) && (
-                                                <p className="mt-1 text-[11px] text-red-600 font-semibold">RUT inválido.</p>
-                                            )}
-                                        </div>
-
-                                        <div>
-                                            <label className={controlLabel}>Mail *</label>
-                                            <div className="relative">
-                                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                                                    <Mail size={14} />
-                                                </span>
-                                                <input
-                                                    type="email"
-                                                    className={`${inputStyle} pl-10`}
-                                                    placeholder="usuario@mail.com"
-                                                    value={mail}
-                                                    onChange={(e) => {
-                                                        setMail(e.target.value);
-                                                        setOkMsg(null);
-                                                        setErrorMsg(null);
-                                                    }}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <label className={controlLabel}>Teléfono *</label>
-                                            <div className="relative">
-                                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                                                    <Phone size={14} />
-                                                </span>
-                                                <input
-                                                    type="text"
-                                                    className={`${inputStyle} pl-10`}
-                                                    placeholder="+56 9 ..."
-                                                    value={telefono}
-                                                    onChange={(e) => {
-                                                        setTelefono(e.target.value);
-                                                        setOkMsg(null);
-                                                        setErrorMsg(null);
-                                                    }}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-6">
-                                    <div className="border-b border-gray-300 pb-1">
-                                        <span className="text-xs font-black text-black uppercase tracking-widest">Organización</span>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <div className="bg-white p-6 rounded-xl border border-gray-300 shadow-sm">
-                                            <label className={controlLabel}>Brigada *</label>
-                                            <div className="relative">
-                                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                                                    <Users size={14} />
-                                                </span>
-                                                <input
-                                                    type="text"
-                                                    className={`${inputStyle} pl-10`}
-                                                    placeholder="Ej: POLIN / PREPOLINACA"
-                                                    value={brigada}
-                                                    onChange={(e) => {
-                                                        setBrigada(e.target.value);
-                                                        setOkMsg(null);
-                                                        setErrorMsg(null);
-                                                    }}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="bg-white p-6 rounded-xl border border-gray-300 shadow-sm">
-                                            <label className={controlLabel}>Cargo *</label>
-                                            <div className="relative">
-                                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                                                    <Briefcase size={14} />
-                                                </span>
-                                                <input
-                                                    type="text"
-                                                    className={`${inputStyle} pl-10`}
-                                                    placeholder="Ej: Funcionario / Opp"
-                                                    value={cargo}
-                                                    onChange={(e) => {
-                                                        setCargo(e.target.value);
-                                                        setOkMsg(null);
-                                                        setErrorMsg(null);
-                                                    }}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </form>
-
-                            <div className="mt-8 flex justify-end gap-3"></div>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <style>{`
+                .custom-list-scroll::-webkit-scrollbar { width: 4px; }
+                .custom-list-scroll::-webkit-scrollbar-track { background: transparent; }
+                .custom-list-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+            `}</style>
         </div>
     );
 }
-
-export default Empleado;
