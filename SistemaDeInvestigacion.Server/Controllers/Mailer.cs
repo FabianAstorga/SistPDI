@@ -40,4 +40,7 @@ public class AuthMailService
             await client.DisconnectAsync(true);
         }
     }
+
+    public async Task SendMailAcuerdo(string correoDestino, string )
+
 }

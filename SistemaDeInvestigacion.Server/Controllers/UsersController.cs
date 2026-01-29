@@ -24,7 +24,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
         [HttpPost]
         public async Task<ActionResult<User>> CrearUsuario([FromForm] CreateUserDto createUserDto)
         {
-            /*
             var userId = User.GetUserId();
             var userRole = User.GetUserRole();
 
@@ -32,7 +31,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             {
                 return BadRequest("Usuario no es SuperAdministrador");
             }
-            */
+
             var user = createUserDto;
 
             bool rutExiste = await _context.Funcionarios.AnyAsync(x => x.Rut == user.Rut);
@@ -91,12 +90,19 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 newDatos.Rol = DatosUser.Rol;
             }
 
-            bool passValida = BCrypt.Net.BCrypt.Verify(DatosUser.Contrasena, newDatos.Contrasena);
-            if (!passValida) {
+            if (updateUserDto.Contrasena != null) { 
 
-                newDatos.Contrasena = BCrypt.Net.BCrypt.HashPassword(newDatos.Contrasena);
+                bool passValida = BCrypt.Net.BCrypt.Verify(DatosUser.Contrasena, newDatos.Contrasena);
+                    if (!passValida) {
+
+                        newDatos.Contrasena = BCrypt.Net.BCrypt.HashPassword(newDatos.Contrasena);
             
+                    }
+
             }
+
+            await _context.SaveChangesAsync();
+
 
 
 

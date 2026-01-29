@@ -24,11 +24,11 @@ Back-end
 //la imagen se puede modificar
 
 
-recuperacion de contraseña
+//recuperacion de contraseña
 
 
 
-modificar empleados
+//modificar empleados
 modificar empresas
 
 eliminar acuerdos (confirmacion previa)
@@ -42,14 +42,10 @@ resumen o texto completo
 
 paginacion
 
-
-
-
 Cifrado Dimanico
 Hacer las peticiones para modificar segun el rol
 configurar el HABILITADO para darle ciertas funciones a un usuario adentro del sistema
 cambiar el cifrado de estatico a dinamico
-Ingreso por Active-Directory
 
 Front-end
 Abstraer los datos de acuerdo al svg

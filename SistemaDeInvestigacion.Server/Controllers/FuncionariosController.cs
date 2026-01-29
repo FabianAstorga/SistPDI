@@ -89,5 +89,30 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return await _context.Funcionarios.ToListAsync();
         }
 
+        [HttpPatch]
+        public async Task<ActionResult> ActualizarEmpleado([FromBody] editEmpleadoDto dto)
+        {
+            if (dto == null || string.IsNullOrEmpty(dto.rut))
+            {
+                return BadRequest("Rut debe ser existente");
+            }
+
+            var funcionario = await _context.Funcionarios
+                .FirstOrDefaultAsync(f => f.Rut == dto.rut);
+
+            if (funcionario == null)
+            {
+                return NotFound($"No se encontró un empleado con el rut ingresado");
+            }
+
+
+            if (!string.IsNullOrEmpty(dto.CorreoElectronico)) funcionario.CorreoElectronico = dto.CorreoElectronico;
+            if (!string.IsNullOrEmpty(dto.NombreCompleto)) funcionario.NombreCompleto = dto.NombreCompleto;
+            if (!dto.idUnidad.HasValue) funcionario.idUnidad = dto.idUnidad.Value;
+     
+            await _context.SaveChangesAsync();
+     
+            return Ok(new { mensaje = "Empleado actualizado correctamente" });
+        }
     }
 }

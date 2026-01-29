@@ -10,6 +10,7 @@ using System.Text;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.FileProviders;
 using SistemaDeInvestigacion.Server.Servicios;
+using MailKit.Net.Smtp;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
