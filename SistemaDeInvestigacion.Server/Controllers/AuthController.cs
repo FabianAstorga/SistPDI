@@ -145,8 +145,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 return BadRequest("El código es inválido para este usuario.");
             }
 
-
-            Console.WriteLine($"FECHA DE CREACION {resetRequest.FechaCreacion}, FECHA MAS 5 MIN {DateTime.Now.AddMinutes(-5)}");
             if (resetRequest.FechaCreacion < DateTime.Now.AddMinutes(-5))
             {
                 _context.ReinicioContrasena.Remove(resetRequest);

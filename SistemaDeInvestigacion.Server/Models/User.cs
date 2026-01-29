@@ -33,6 +33,6 @@ namespace SistemaDeInvestigacion.Server.Models
         [ForeignKey("idEstado")]
         public virtual Estados Estados { get; set; } = null!;
 
-
     }
+
 }
