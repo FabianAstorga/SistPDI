@@ -1,5 +1,5 @@
-﻿import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { motion, AnimatePresence } from "framer-motion";
+﻿import React, { useEffect, useState, useMemo, useCallback, useRef, memo } from 'react';
+import { motion } from "framer-motion";
 import {
     Search,
     LayoutGrid,
@@ -7,18 +7,16 @@ import {
     Building2,
     ChevronRight
 } from 'lucide-react';
+import { Virtuoso } from 'react-virtuoso';
 import { Navbar } from '../../components/Navbar';
 
-/** * LISTAR ACUERDOS V4.5 OPTIMIZADO - PDI Intranet 2026
- * Fix: Memory Leak prevention mediante AbortController y memoización de items.
+/** * LISTAR ACUERDOS V5.2 ULTRA-FAST - PDI Intranet 2026
+ * Fix: High-speed rendering, zero-latency animations, and priority asset loading.
  */
 
 const API_BASE = 'http://localhost:5091';
 const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
 const PDI_LOGO_URL = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQF7ZHFE9xX50BEWjSmAriqYIdJwxiPAMD1cA&s";
-
-// 1. Utilidades y estilos constantes fuera del componente para liberar el Heap
-const LABEL_STYLE = "text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 flex items-center gap-2";
 
 const resolveBackendUrl = (path?: string | null) => {
     if (!path) return null;
@@ -33,7 +31,11 @@ export default function ListarAcuerdos() {
     const [search, setSearch] = useState("");
     const abortControllerRef = useRef<AbortController | null>(null);
 
-    // 2. Fetch con AbortController para evitar fugas de memoria por promesas "zombis"
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => { document.body.style.overflow = 'unset'; };
+    }, []);
+
     const fetchAcuerdos = useCallback(async () => {
         if (abortControllerRef.current) abortControllerRef.current.abort();
         abortControllerRef.current = new AbortController();
@@ -55,7 +57,7 @@ export default function ListarAcuerdos() {
 
     useEffect(() => {
         fetchAcuerdos();
-        return () => abortControllerRef.current?.abort(); // Limpieza al desmontar
+        return () => abortControllerRef.current?.abort();
     }, [fetchAcuerdos]);
 
     const filtered = useMemo(() => {
@@ -77,9 +79,9 @@ export default function ListarAcuerdos() {
 
             <main className="relative z-10 flex-1 flex items-center justify-center p-6">
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.98 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.3 }}
                     className="w-full max-w-7xl h-[85vh] flex shadow-[0_40px_100px_rgba(0,0,0,0.6)] overflow-hidden rounded-sm"
                 >
                     {/* SIDEBAR */}
@@ -92,105 +94,106 @@ export default function ListarAcuerdos() {
                             Lista de <br /> <span className="text-blue-400">Acuerdos</span>
                         </h2>
                         <p className="text-blue-200/40 text-[10px] font-black uppercase tracking-[0.2em] mb-8">
-                            {filtered.length} Registros activos
+                            {filtered.length} Registros
                         </p>
 
                         <div className="space-y-6">
                             <div>
-                                <label className={LABEL_STYLE}><Search size={12} /> Filtrar Catálogo</label>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 flex items-center gap-2">
+                                    <Search size={12} /> Filtrar
+                                </label>
                                 <input
                                     type="text"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
-                                    placeholder="Buscar convenio..."
+                                    placeholder="Buscar..."
                                     className="w-full bg-white/5 border-b border-white/10 text-white px-4 py-3 outline-none focus:border-blue-400 transition-all font-medium text-sm"
                                 />
                             </div>
                         </div>
                     </div>
 
-                    {/* LISTADO */}
+                    {/* LISTADO VIRTUALIZADO ULTRA RÁPIDO */}
                     <div className="flex-1 bg-white flex flex-col overflow-hidden">
-                        <div className="flex-1 overflow-y-auto p-8 custom-list-scroll bg-slate-50/50">
+                        <div className="flex-1 bg-slate-50/50 relative">
                             {loading ? (
                                 <div className="h-full flex items-center justify-center">
-                                    <span className="text-[#002855] font-black text-xs uppercase tracking-[0.3em] animate-pulse">Cargando base de datos...</span>
+                                    <span className="text-[#002855] font-black text-xs uppercase tracking-[0.3em]">Cargando...</span>
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-1 gap-4 pb-10">
-                                    <AnimatePresence mode='popLayout'>
-                                        {filtered.map((a, idx) => (
-                                            <AcuerdoItem key={a.idAcuerdo || a.id} acuerdo={a} index={idx} />
-                                        ))}
-                                    </AnimatePresence>
-                                </div>
+                                <Virtuoso
+                                    style={{ height: '100%' }}
+                                    data={filtered}
+                                    increaseViewportBy={300} // Pre-renderiza elementos antes de que aparezcan
+                                    className="custom-list-scroll"
+                                    itemContent={(_, a) => (
+                                        <div className="px-8 pt-4 pb-2">
+                                            <AcuerdoItem acuerdo={a} />
+                                        </div>
+                                    )}
+                                    components={{
+                                        Footer: () => <div className="h-10" />
+                                    }}
+                                />
                             )}
                         </div>
                     </div>
                 </motion.div>
             </main>
-
-            <style>{`
-                .custom-list-scroll::-webkit-scrollbar { width: 4px; }
-                .custom-list-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-            `}</style>
         </div>
     );
 }
 
-// 3. Sub-componente memoizado para evitar fugas por recreación masiva de nodos Motion
-const AcuerdoItem = React.memo(({ acuerdo, index }: { acuerdo: any, index: number }) => {
+const AcuerdoItem = memo(({ acuerdo }: { acuerdo: any }) => {
     return (
         <motion.div
-            initial={{ opacity: 0, x: 15 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{
-                delay: index * 0.02,
-                duration: 0.4,
-                ease: [0.16, 1, 0.3, 1]
-            }}
-            whileHover={{ x: 8 }}
-            className="group bg-white border border-slate-200 p-5 flex items-center gap-6 cursor-pointer hover:shadow-xl transition-all relative"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.15 }} // Velocidad de reacción instantánea
+            whileHover={{ scale: 1.005 }}
+            className="group bg-white border border-slate-200 p-5 flex items-center gap-6 cursor-pointer hover:shadow-md transition-all relative overflow-hidden"
         >
             <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 scale-y-0 group-hover:scale-y-100 transition-transform origin-top" />
 
-            <div className="w-24 h-24 bg-slate-100 rounded flex items-center justify-center shrink-0 overflow-hidden border border-slate-100">
+            <div className="w-20 h-20 bg-slate-100 rounded flex items-center justify-center shrink-0 overflow-hidden border border-slate-100">
                 <img
+                    key={`img-ac-${acuerdo.idAcuerdo || acuerdo.id}`}
                     src={resolveBackendUrl(acuerdo.imagenUrl) || PDI_LOGO_URL}
                     alt=""
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    className="w-full h-full object-cover"
+                    loading="eager" // Carga inmediata para evitar cuadros vacíos
                     onError={(e) => { (e.target as HTMLImageElement).src = PDI_LOGO_URL }}
                 />
             </div>
 
-            <div className="flex-1 min-w-0">
-                <span className="text-[9px] font-black bg-[#002855] text-white px-2 py-0.5 rounded uppercase tracking-wider mb-1 inline-block">
+            <div className="flex-1 min-w-0 text-slate-900">
+                <span className="text-[9px] font-black bg-[#002855] text-white px-2 py-0.5 rounded uppercase mb-1 inline-block">
                     {acuerdo.categoria || 'Institucional'}
                 </span>
-                <h3 className="text-xl font-black text-[#002855] uppercase tracking-tighter truncate">
+                <h3 className="text-lg font-black text-[#002855] uppercase tracking-tighter truncate leading-none">
                     {acuerdo.titulo}
                 </h3>
-                <p className="text-slate-500 text-sm font-medium line-clamp-1 italic mb-3">
+                <p className="text-slate-500 text-xs font-medium line-clamp-1 italic mt-1">
                     {acuerdo.descripcion}
                 </p>
-                <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-2 text-slate-400">
-                        <Building2 size={12} />
-                        <span className="text-[10px] font-bold uppercase">Empresa ID: {acuerdo.idEmpresa}</span>
+                <div className="flex items-center gap-4 mt-2">
+                    <div className="flex items-center gap-1.5 text-slate-400">
+                        <Building2 size={11} />
+                        <span className="text-[9px] font-bold uppercase">{acuerdo.idEmpresa}</span>
                     </div>
                     {acuerdo.fechaVencimiento && (
-                        <div className="flex items-center gap-2 text-slate-400">
-                            <Calendar size={12} />
-                            <span className="text-[10px] font-bold uppercase">
-                                Vence: {new Date(acuerdo.fechaVencimiento).toLocaleDateString()}
+                        <div className="flex items-center gap-1.5 text-slate-400">
+                            <Calendar size={11} />
+                            <span className="text-[9px] font-bold uppercase">
+                                {new Date(acuerdo.fechaVencimiento).toLocaleDateString()}
                             </span>
                         </div>
                     )}
                 </div>
             </div>
 
-            <div className="w-12 h-12 rounded-full border border-slate-100 flex items-center justify-center text-[#002855] group-hover:bg-[#002855] group-hover:text-white transition-all shrink-0">
-                <ChevronRight size={20} />
+            <div className="w-10 h-10 rounded-full border border-slate-100 flex items-center justify-center text-[#002855] group-hover:bg-[#002855] group-hover:text-white transition-all shrink-0">
+                <ChevronRight size={18} />
             </div>
         </motion.div>
     );
