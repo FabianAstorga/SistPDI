@@ -187,7 +187,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
             }
 
             Console.WriteLine(template.IdSvg);
-
             var acuerdo = await _context.Acuerdos.FindAsync(idAcuerdo);
 
             if (!string.IsNullOrEmpty(editAcuerdoDto.titulo)) 
@@ -207,11 +206,73 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
             var svgFuente = await _context.SvgTemplates.FindAsync(template.IdSvg);
             Console.Write(svgFuente.SvgEditado);
-               
+
+
+            //crear el svg a imagen
+            string fileName = $"acuerdo_{Guid.NewGuid().ToString().Substring(0, 8)}.png";
+
+            string rutaCarpetaFisica = Path.Combine(_env.ContentRootPath, "media", "acuerdosmedia", acuerdo.IdAcuerdo.ToString());
+
+            if (!Directory.Exists(rutaCarpetaFisica))
+                Directory.CreateDirectory(rutaCarpetaFisica);
+
+            string rutaArchivoFisica = Path.Combine(rutaCarpetaFisica, fileName);
+
+            try
+            {
+                var svgText = svgFuente.SvgEditado.Trim();
+                using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(svgText));
+                var skSvg = new SKSvg();
+                var picture = skSvg.Load(stream);
+
+                if (picture == null)
+                    return BadRequest("No se pudo parsear el SVG.");
+
+                var rect = picture.CullRect;
+                int width = Math.Max(1, (int)Math.Ceiling(rect.Width));
+                int height = Math.Max(1, (int)Math.Ceiling(rect.Height));
+
+                if (width <= 1 || height <= 1)
+                {
+                    width = 1200;
+                    height = 800;
+                }
+
+                using var bitmap = new SKBitmap(width, height, SKColorType.Rgba8888, SKAlphaType.Premul);
+                using var canvas = new SKCanvas(bitmap);
+                canvas.Clear(SKColors.Transparent);
+                canvas.DrawPicture(picture);
+                canvas.Flush();
+
+                using var image = SKImage.FromBitmap(bitmap);
+                using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+
+                await using var outputStream = System.IO.File.OpenWrite(rutaArchivoFisica);
+                data.SaveTo(outputStream);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error procesando SVG: {ex.Message}");
+            }
+
+            acuerdo.ImagenUrl = $"/media/acuerdosmedia/{acuerdo.IdAcuerdo}/{fileName}";
+            await _context.SaveChangesAsync();
+
+
             /*
             _context.Acuerdos.Update(acuerdo);
             await _context.SaveChangesAsync();
             */
+
+            var NewSvg = new SvgTemplate
+            {
+                SvgOriginal = svgFuente.SvgEditado,
+                SvgEditado = editAcuerdoDto.svg_editado,
+                FechaCreacion = DateTime.UtcNow
+            };
+
+            _context.SvgTemplates.Update(NewSvg);
+            await _context.SaveChangesAsync();
 
 
 

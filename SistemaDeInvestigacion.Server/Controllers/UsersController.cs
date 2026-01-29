@@ -24,6 +24,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
         [HttpPost]
         public async Task<ActionResult<User>> CrearUsuario([FromForm] CreateUserDto createUserDto)
         {
+            /*
             var userId = User.GetUserId();
             var userRole = User.GetUserRole();
 
@@ -31,7 +32,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             {
                 return BadRequest("Usuario no es SuperAdministrador");
             }
-
+            */
             var user = createUserDto;
 
             bool rutExiste = await _context.Funcionarios.AnyAsync(x => x.Rut == user.Rut);

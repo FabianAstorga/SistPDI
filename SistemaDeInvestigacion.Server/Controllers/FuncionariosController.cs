@@ -8,12 +8,12 @@ namespace SistemaDeInvestigacion.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class EmpleadosController : Controller
+    public class FuncionariosController : Controller
     {
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
 
-        public EmpleadosController(ApplicationDbContext context, IConfiguration configuration)
+        public FuncionariosController(ApplicationDbContext context, IConfiguration configuration)
         {
             _context = context;
             _configuration = configuration;
@@ -62,9 +62,8 @@ namespace SistemaDeInvestigacion.Server.Controllers
             {
                 return BadRequest("Usuario no es SuperAdministrador");
             }
-            
-            var empleadoDto = createEmpleadoDto;
 
+            var empleadoDto = createEmpleadoDto;
 
             var newEmpleado = new Funcionarios
             {

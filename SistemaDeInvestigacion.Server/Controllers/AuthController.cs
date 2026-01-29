@@ -1,8 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using MailKit;
+using Microsoft.AspNetCore.Identity.Data;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using MimeKit;
 using SistemaDeInvestigacion.Server.Data;
 using SistemaDeInvestigacion.Server.Dtos;
+using SistemaDeInvestigacion.Server.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -84,5 +88,79 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 }
             });
         }
+
+
+        [HttpPost("enviar")]
+        public async Task<IActionResult> recuperarContrasena([FromForm] RequireMail updatePassDto)
+        {
+            var userData = updatePassDto;
+
+            var userAuth = await _context.Users
+                .Include(u => u.Funcionarios)
+                .FirstOrDefaultAsync(u => u.Funcionarios != null && u.Funcionarios.CorreoElectronico == userData.Email);
+
+            if (userAuth == null)
+            {
+                return Ok();
+            }
+
+            string RanCode = new Random().Next(100000, 999999).ToString();
+            Console.WriteLine($"Codigo: {RanCode}");
+
+            var mailer = new AuthMailService();
+            await mailer.SendCode(userData.Email, RanCode);
+
+            var newPassAtempt = new ReinicioContrasena
+            {
+                IdPersona = (int)userAuth.IdPersona,
+                Codigo = RanCode,
+                FechaCreacion = DateTime.UtcNow
+
+            };
+
+            _context.ReinicioContrasena.Add(newPassAtempt);
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
+        [HttpPost("comprobar")]
+        public async Task<IActionResult> comprobarCorreo([FromForm] UpdatePassDto updatePassDto)
+        {
+            var userData = updatePassDto;
+
+            var userAuthId = await _context.Users
+                .Include(u => u.Funcionarios)
+                .FirstOrDefaultAsync(u => u.Funcionarios != null && u.Funcionarios.CorreoElectronico == userData.Email);
+
+            if (userAuthId == null)
+            {
+                return Ok();
+            }
+
+            var resetRequest = await _context.ReinicioContrasena
+                .FirstOrDefaultAsync(rc => rc.IdPersona == userAuthId.IdPersona && rc.Codigo == updatePassDto.Code);
+
+            if (resetRequest == null)
+            {
+                return BadRequest("El código es inválido para este usuario.");
+            }
+
+
+            Console.WriteLine($"FECHA DE CREACION {resetRequest.FechaCreacion}, FECHA MAS 5 MIN {DateTime.Now.AddMinutes(-5)}");
+            if (resetRequest.FechaCreacion < DateTime.Now.AddMinutes(-5))
+            {
+                _context.ReinicioContrasena.Remove(resetRequest);
+                await _context.SaveChangesAsync();
+                return BadRequest("El código ha expirado.");
+            }
+
+            userAuthId.Contrasena = BCrypt.Net.BCrypt.HashPassword(userData.Password);
+            _context.Entry(userAuthId).Property(u => u.Contrasena).IsModified = true;
+            await _context.SaveChangesAsync();
+            return Ok("Contraseña cambiada correctamente");
+
+        }
+
     }
+
 }

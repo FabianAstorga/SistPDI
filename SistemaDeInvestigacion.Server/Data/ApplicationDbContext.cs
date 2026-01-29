@@ -28,6 +28,7 @@ namespace SistemaDeInvestigacion.Server.Data
         public DbSet<Estados> Estados { get; set; } = null!;
         public DbSet<Unidad> Unidades { get; set; } = null!;
         public DbSet<Comentarios> Comentarios { get; set; } = null!;
+        public DbSet<ReinicioContrasena> ReinicioContrasena { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -342,6 +343,32 @@ namespace SistemaDeInvestigacion.Server.Data
                       .OnDelete(DeleteBehavior.Restrict)
                       .HasConstraintName("fk_svg");
             });
+
+            modelBuilder.Entity<ReinicioContrasena>(entity =>
+            {
+                entity.ToTable("reiniciocontrasena");
+
+                entity.HasKey(e => new { e.IdPersona, e.Codigo });
+
+                entity.Property(e => e.IdPersona)
+                      .HasColumnName("IdPersona");
+
+                entity.Property(e => e.Codigo)
+                      .HasColumnName("Codigo")
+                      .HasMaxLength(6)
+                      .IsRequired();
+
+                entity.Property(e => e.FechaCreacion)
+                      .HasColumnName("FechaCreacion")
+                      .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasOne(d => d.User)
+                      .WithMany()
+                      .HasForeignKey(d => d.IdPersona)
+                      .OnDelete(DeleteBehavior.Cascade)
+                      .HasConstraintName("fk_reinicio_usuario");
+            });
         }
+
     }
 }

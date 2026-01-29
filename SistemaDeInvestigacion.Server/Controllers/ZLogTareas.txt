@@ -9,9 +9,42 @@ Base de datos:
 // -Normalizar Estado en SVG
 // -Agregar ESTADO a USERS
 // Agregar una tabla COMENTARIOS para acuerdos
+agregar tabla de olvidar contraseña
+
 Crear una base de datos para las claves de cifrado
 
 Back-end
+
+//hacer peticiones que permitan modificar acuerdos
+//se puede:
+//modificar titulo
+//descripcion
+//resumen
+//categoria se puede editar
+//la imagen se puede modificar
+
+
+recuperacion de contraseña
+
+
+
+modificar empleados
+modificar empresas
+
+eliminar acuerdos (confirmacion previa)
+
+gestionar usuarios
+crear modificar asignar rol
+
+notificar por correo
+seleccionar lista de destinatarios
+resumen o texto completo
+
+paginacion
+
+
+
+
 Cifrado Dimanico
 Hacer las peticiones para modificar segun el rol
 configurar el HABILITADO para darle ciertas funciones a un usuario adentro del sistema
