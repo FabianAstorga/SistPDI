@@ -1,22 +1,24 @@
-﻿import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+﻿import React, { useEffect, useMemo, useState, useCallback, useRef, memo } from 'react';
 import { motion } from "framer-motion";
+import { Virtuoso } from 'react-virtuoso';
 import { Navbar } from '../../components/Navbar';
 import {
     Search,
     User,
-    Key,
     ShieldCheck,
-    Fingerprint,
     UserPlus,
     RefreshCw,
     AlertCircle,
+    UserCheck,
+    Mail,
+    Clock,
+    ShieldAlert
 } from 'lucide-react';
 
 const API_BASE = 'http://localhost:5091';
 const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
 
-// Función de limpieza fuera del componente para evitar recreación
-const cleanRut = (r: string) => String(r).replace(/[^0-9kK]/g, '').toLowerCase();
+const cleanRut = (r: string) => String(r || "").replace(/[^0-9kK]/g, '').toLowerCase();
 
 export default function AdministracionIdentidad() {
     const [funcionarios, setFuncionarios] = useState<any[]>([]);
@@ -24,9 +26,15 @@ export default function AdministracionIdentidad() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState("");
-
-    // AbortController para limpiar peticiones pendientes
     const abortControllerRef = useRef<AbortController | null>(null);
+
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = 'unset';
+            abortControllerRef.current?.abort();
+        };
+    }, []);
 
     const fetchData = useCallback(async () => {
         if (abortControllerRef.current) abortControllerRef.current.abort();
@@ -36,59 +44,45 @@ export default function AdministracionIdentidad() {
         setError(null);
         try {
             const token = localStorage.getItem('token');
-            const headers = {
-                'Accept': 'application/json',
-                ...(token ? { Authorization: `Bearer ${token}` } : {})
-            };
+            const headers = { 'Accept': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
 
-            const [resEmp, resUsr] = await Promise.all([
-                fetch(`${API_BASE}/api/Empleados`, { headers, signal: abortControllerRef.current.signal }),
+            const [resFunc, resUsr] = await Promise.all([
+                fetch(`${API_BASE}/api/Funcionarios`, { headers, signal: abortControllerRef.current.signal }),
                 fetch(`${API_BASE}/api/Users`, { headers, signal: abortControllerRef.current.signal })
             ]);
 
-            if (!resEmp.ok || !resUsr.ok) throw new Error("Error en servidor");
+            if (!resFunc.ok || !resUsr.ok) throw new Error("Error sync");
 
-            const dataEmp = await resEmp.json();
+            const dataFunc = await resFunc.json();
             const dataUsr = await resUsr.json();
 
-            // Ordenamiento optimizado
-            const sortFn = (a: any, b: any) => cleanRut(a.rut).localeCompare(cleanRut(b.rut));
-
-            setFuncionarios((Array.isArray(dataEmp) ? dataEmp : []).sort(sortFn));
-            setUsuarios((Array.isArray(dataUsr) ? dataUsr : []).sort(sortFn));
+            setFuncionarios(Array.isArray(dataFunc) ? dataFunc : []);
+            setUsuarios(Array.isArray(dataUsr) ? dataUsr : []);
         } catch (e: any) {
-            if (e.name !== 'AbortError') {
-                setError("No se pudo sincronizar con el servidor.");
-            }
+            if (e.name !== 'AbortError') setError("Error de conexión");
         } finally {
             setLoading(false);
         }
     }, []);
 
-    useEffect(() => {
-        fetchData();
-        return () => abortControllerRef.current?.abort(); // Cleanup al desmontar
-    }, [fetchData]);
+    useEffect(() => { fetchData(); }, [fetchData]);
 
-    // Filter function estable
-    const filterFn = useCallback((item: any) => {
-        const val = search.toLowerCase();
-        if (!val) return true;
-        return (
-            item.rut.toLowerCase().includes(val) ||
-            (item.nombreCompleto && item.nombreCompleto.toLowerCase().includes(val))
+    const unifiedData = useMemo(() => {
+        const userMap = new Map();
+        usuarios.forEach(u => userMap.set(cleanRut(u.rut), u));
+
+        const base = funcionarios.map(f => ({
+            funcionario: f,
+            usuario: userMap.get(cleanRut(f.rut)) || null
+        }));
+
+        if (!search) return base;
+        const q = search.toLowerCase();
+        return base.filter(item =>
+            item.funcionario.rut.toLowerCase().includes(q) ||
+            item.funcionario.nombreCompleto?.toLowerCase().includes(q)
         );
-    }, [search]);
-
-    const filteredFunc = useMemo(() => funcionarios.filter(filterFn), [funcionarios, filterFn]);
-    const filteredUsers = useMemo(() => usuarios.filter(filterFn), [usuarios, filterFn]);
-
-    // Mapeo de Ruts de usuarios para búsqueda O(1) en lugar de O(N) dentro del render
-    const userRutsMap = useMemo(() => {
-        const set = new Set();
-        usuarios.forEach(u => set.add(cleanRut(u.rut)));
-        return set;
-    }, [usuarios]);
+    }, [funcionarios, usuarios, search]);
 
     return (
         <div className="h-screen w-full bg-[#002855] font-sans text-white overflow-hidden flex flex-col">
@@ -98,86 +92,135 @@ export default function AdministracionIdentidad() {
                 <div className="absolute inset-0 bg-gradient-to-b from-[#002855] via-transparent to-[#002855]" />
             </div>
 
-            <main className="relative z-10 flex-1 p-4 pt-28 mb-4 flex justify-center overflow-hidden">
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="w-full max-w-[1600px] h-full grid grid-cols-2 grid-rows-[auto_1fr] gap-3 overflow-hidden"
-                >
-                    {/* Header bar */}
-                    <div className="col-span-2 bg-[#002855]/80 backdrop-blur-md px-8 py-4 border border-white/10 rounded-sm flex justify-between items-center shadow-2xl">
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-blue-600 flex items-center justify-center border border-white/10 shrink-0">
-                                <ShieldCheck size={20} />
+            <main className="relative z-10 flex-1 p-6 pt-28 mb-4 flex flex-col items-center overflow-hidden">
+                <div className="w-full max-w-[1500px] flex flex-col h-full gap-4">
+
+                    {/* TOOLBAR */}
+                    <div className="bg-[#001a35]/90 backdrop-blur-xl px-8 py-5 border border-white/10 rounded-sm flex justify-between items-center shadow-2xl shrink-0">
+                        <div className="flex items-center gap-6">
+                            <div className="w-12 h-12 bg-blue-600 flex items-center justify-center shadow-lg shrink-0 rounded-sm">
+                                <ShieldCheck size={24} />
                             </div>
                             <div>
-                                <h2 className="text-xl font-black uppercase tracking-tighter">Consola de <span className="text-blue-400">Administración</span></h2>
-                                <p className="text-blue-200/40 text-[9px] font-black uppercase tracking-[0.2em]">{loading ? 'Sincronizando...' : 'Sistemas en línea'}</p>
+                                <h2 className="text-2xl font-black uppercase tracking-tighter leading-none">Control de <span className="text-blue-400">Funcionarios</span></h2>
+                                <p className="text-blue-200/40 text-[10px] font-bold uppercase tracking-[0.2em] mt-1">Directorio de identidades y privilegios</p>
                             </div>
                         </div>
+
                         <div className="flex items-center gap-4">
-                            {error && <div className="text-red-400 text-[10px] font-black uppercase flex items-center gap-2 animate-pulse"><AlertCircle size={14} /> {error}</div>}
-                            <div className="relative w-72">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400/50" size={14} />
+                            <div className="relative w-80">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400/50" size={16} />
                                 <input
                                     type="text" value={search} onChange={(e) => setSearch(e.target.value)}
-                                    placeholder="FILTRAR POR RUT O NOMBRE..."
-                                    className="w-full bg-white/5 border border-white/10 text-white pl-10 pr-4 py-2 outline-none focus:border-blue-400 font-bold text-[10px] tracking-widest uppercase"
+                                    placeholder="BUSCAR FUNCIONARIO..."
+                                    className="w-full bg-white/5 border border-white/10 text-white pl-12 pr-4 py-3 rounded-lg outline-none focus:border-blue-400 font-bold text-xs uppercase tracking-widest transition-all"
                                 />
                             </div>
-                            <button onClick={fetchData} className="p-2 hover:bg-white/10 rounded-full transition-all text-blue-400">
-                                <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
+                            <button onClick={fetchData} className="p-3 hover:bg-white/10 rounded-full transition-all text-blue-400">
+                                <RefreshCw size={20} className={loading ? "animate-spin" : ""} />
                             </button>
                         </div>
                     </div>
 
-                    {/* Lista Funcionarios */}
-                    <div className="flex flex-col bg-white rounded-sm overflow-hidden border border-white/10 shadow-xl">
-                        <div className="bg-slate-100 px-6 py-3 border-b border-slate-200 flex justify-between">
-                            <span className="text-[10px] font-black text-[#002855] uppercase flex items-center gap-2"><User size={14} /> Registro de Funcionarios</span>
-                        </div>
-                        <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-slate-50/50 custom-list-scroll">
-                            {filteredFunc.map((f) => (
-                                <div key={f.rut} className="bg-white border border-slate-200 p-3 flex items-center gap-4 group hover:border-blue-400 transition-all shadow-sm">
-                                    <div className={`w-1.5 h-8 rounded-full ${userRutsMap.has(cleanRut(f.rut)) ? 'bg-emerald-500' : 'bg-slate-200 opacity-50'}`} />
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-black text-[#002855] uppercase truncate">{f.nombreCompleto}</p>
-                                        <span className="text-[9px] font-bold text-slate-500 tracking-widest">{f.rut}</span>
-                                    </div>
-                                    {!userRutsMap.has(cleanRut(f.rut)) && (
-                                        <button className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all rounded-sm border border-blue-100">
-                                            <UserPlus size={14} />
-                                        </button>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                    {/* GRILLA UNIFICADA */}
+                    <div className="flex-1 bg-white flex flex-col overflow-hidden rounded-sm shadow-2xl relative">
+                        {/* Línea divisoria de fondo (estática) */}
+                        <div className="absolute left-1/2 top-0 bottom-0 w-[1px] bg-slate-200 z-0 hidden lg:block" />
 
-                    {/* Lista Cuentas (Simétrica) */}
-                    <div className="flex flex-col bg-white rounded-sm overflow-hidden border border-white/10 shadow-xl">
-                        <div className="bg-slate-100 px-6 py-3 border-b border-slate-200 flex justify-between">
-                            <span className="text-[10px] font-black text-[#002855] uppercase flex items-center gap-2"><Fingerprint size={14} /> Cuentas de Acceso</span>
+                        <div className="grid grid-cols-2 bg-slate-100 border-b border-slate-200 px-10 py-3 text-[10px] font-black text-[#002855] uppercase tracking-[0.2em] z-10">
+                            <div>Datos del Funcionario</div>
+                            <div className="pl-10">Estado de Credenciales</div>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-slate-50/50 custom-list-scroll">
-                            {filteredUsers.map((u) => (
-                                <div key={u.id} className="bg-white border border-slate-200 p-3 flex items-center gap-4 group hover:border-[#002855] transition-all shadow-sm">
-                                    <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-black text-[10px] border border-blue-100">{u.rol}</div>
-                                    <div className="flex-1">
-                                        <p className="text-xs font-black text-[#002855] tracking-tight">{u.rut}</p>
-                                        <p className="text-[9px] font-bold text-slate-400 uppercase">Acceso: {u.rol === 1 ? 'ADMIN' : 'GESTOR'}</p>
-                                    </div>
-                                    <button className="opacity-0 group-hover:opacity-100 p-2 text-slate-400 hover:text-blue-600 transition-all rounded-full"><Key size={14} /></button>
+
+                        <div className="flex-1 relative z-10">
+                            {loading ? (
+                                <div className="h-full flex items-center justify-center bg-white">
+                                    <span className="text-[#002855] font-black text-xs uppercase tracking-[0.3em] animate-pulse">Cargando Directorio...</span>
                                 </div>
-                            ))}
+                            ) : (
+                                <Virtuoso
+                                    data={unifiedData}
+                                    className="custom-list-scroll"
+                                    itemContent={(_, row) => (
+                                        <IdentityRow data={row} />
+                                    )}
+                                />
+                            )}
                         </div>
                     </div>
-                </motion.div>
+                </div>
             </main>
-            <style>{`
-                .custom-list-scroll::-webkit-scrollbar { width: 4px; }
-                .custom-list-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-            `}</style>
         </div>
     );
 }
+
+// --- FILA DE IDENTIDAD UNIFICADA ---
+
+const IdentityRow = memo(({ data }: { data: any }) => {
+    const isLinked = !!data.usuario;
+
+    return (
+        <div className="px-6 py-1.5 bg-white">
+            <div
+                onClick={() => console.log("Ver detalle:", data.funcionario.rut)}
+                className={`grid grid-cols-2 border transition-all duration-200 cursor-pointer ${isLinked
+                        ? 'border-slate-300 bg-slate-100 hover:border-blue-400'
+                        : 'border-slate-200 bg-slate-50 hover:border-slate-300'
+                    }`}
+            >
+                {/* SECCIÓN FUNCIONARIO */}
+                <div className="flex items-center gap-5 p-5 pr-10">
+                    <div className={`w-12 h-12 rounded-sm flex items-center justify-center shrink-0 transition-colors ${isLinked ? 'bg-[#002855] text-white' : 'bg-slate-300 text-slate-500'}`}>
+                        {isLinked ? <UserCheck size={22} /> : <User size={22} />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-black uppercase truncate ${isLinked ? 'text-[#002855]' : 'text-slate-500'}`}>
+                            {data.funcionario.nombreCompleto}
+                        </p>
+                        <div className="flex items-center gap-3 mt-0.5">
+                            <span className="text-[10px] font-bold text-slate-400 tracking-widest">{data.funcionario.rut}</span>
+                            <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-sm uppercase ${isLinked ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>
+                                {isLinked ? 'Verificado' : 'Sin Acceso'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* SECCIÓN CREDENCIALES */}
+                <div className="flex items-center gap-5 p-5 pl-10">
+                    {isLinked ? (
+                        <div className="flex-1 grid grid-cols-2 gap-4">
+                            <div>
+                                <p className="text-[10px] font-black text-[#002855] uppercase tracking-tighter leading-none mb-1">Acceso Activo</p>
+                                <div className="flex items-center gap-2 text-slate-500">
+                                    <Mail size={12} className="shrink-0" />
+                                    <span className="text-[10px] font-bold truncate lowercase">{data.usuario.email || 'correo@pdi.cl'}</span>
+                                </div>
+                            </div>
+                            <div className="flex flex-col justify-center border-l border-slate-200 pl-4">
+                                <div className="flex items-center gap-2 text-slate-400">
+                                    <Clock size={11} />
+                                    <span className="text-[9px] font-bold uppercase">U. Conexión: {data.usuario.lastLogin ? new Date(data.usuario.lastLogin).toLocaleDateString() : 'Pendiente'}</span>
+                                </div>
+                                <span className={`text-[8px] font-black uppercase mt-1 ${data.usuario.rol === 1 ? 'text-blue-600' : 'text-slate-600'}`}>
+                                    Privilegios: {data.usuario.rol === 1 ? 'Nivel Admin' : 'Nivel Gestor'}
+                                </span>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="flex-1 flex items-center justify-between opacity-60">
+                            <div className="flex items-center gap-3">
+                                <ShieldAlert size={18} className="text-slate-400" />
+                                <div>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Credenciales no asignadas</p>
+                                    <p className="text-[9px] text-slate-400 uppercase mt-1 italic">Requiere registro manual</p>
+                                </div>
+                            </div>
+                            <UserPlus size={18} className="text-slate-300" />
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+});
