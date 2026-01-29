@@ -13,5 +13,6 @@
     <Folder Include="src\assets\Routes\Admin\ElementosLienzo\types\" />
     <Folder Include="src\assets\Routes\Admin\ElementosLienzo\Utils\" />
     <Folder Include="src\assets\Routes\Client\" />
+    <Folder Include="src\assets\Routes\deprecado\landing\" />
   </ItemGroup>
 </Project>

@@ -18,8 +18,13 @@ export const LoginDrawer = ({ isOpen, onClose, onLoginSuccess }: LoginDrawerProp
     const [loading, setLoading] = useState(false);
 
     const navigate = useNavigate();
-    
-    // Función handleSubmit actualizada
+
+    // Función para manejar la recuperación de contraseña
+    const handleForgotPassword = () => {
+        // Lógica para recuperar contraseña (ej: navigate o abrir otro modal)
+        console.log("Redirigiendo a recuperación...");
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
@@ -27,7 +32,6 @@ export const LoginDrawer = ({ isOpen, onClose, onLoginSuccess }: LoginDrawerProp
 
         try {
             await authService.login(email, password);
-            // EN LUGAR DE RELOAD, EJECUTAMOS LOS CALLBACKS
             onLoginSuccess();
             onClose();
         } catch (err: any) {
@@ -65,9 +69,8 @@ export const LoginDrawer = ({ isOpen, onClose, onLoginSuccess }: LoginDrawerProp
                         </div>
 
                         <div className="flex-1">
-                            
                             <h2 className="text-2xl font-black text-[#002855] text-center uppercase tracking-tighter mb-2">Acceso Funcionarios</h2>
-                            <p className="text-slate-500 text-sm text-center mb-10 font-medium">Ingrese sus credenciales de Active Directorys</p>
+                            <p className="text-slate-500 text-sm text-center mb-10 font-medium">Ingrese sus credenciales de sistema</p>
 
                             {error && (
                                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-xs font-bold rounded-r-lg uppercase">
@@ -106,6 +109,9 @@ export const LoginDrawer = ({ isOpen, onClose, onLoginSuccess }: LoginDrawerProp
                                             required
                                         />
                                     </div>
+
+                                    {/* Botón discreto de recuperación */}
+                                    
                                 </div>
 
                                 <button
@@ -120,6 +126,17 @@ export const LoginDrawer = ({ isOpen, onClose, onLoginSuccess }: LoginDrawerProp
                                         </>
                                     )}
                                 </button>
+
+                                <div className="flex justify-center pr-1">
+                                    <button
+                                        type="button"
+                                        onClick={handleForgotPassword}
+                                        className="text-[10px] font-bold text-slate-400 hover:text-[#003385] uppercase tracking-tight py-2 px-3 rounded-lg hover:bg-slate-50 transition-all"
+                                    >
+                                        ¿Olvidó su contraseña?
+                                    </button>
+                                </div>
+
                             </form>
                         </div>
 

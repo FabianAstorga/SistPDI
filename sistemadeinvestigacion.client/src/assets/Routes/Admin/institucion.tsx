@@ -1,11 +1,27 @@
 ﻿import React, { useMemo, useState } from 'react';
-import { Navbar } from '../../components/Navbar';
 import { useNavigate } from 'react-router-dom';
-import { Building, Globe, Image as ImageIcon, List, Save } from 'lucide-react';
+import { motion, AnimatePresence } from "framer-motion";
+import {
+    Building,
+    Globe,
+    Image as ImageIcon,
+    List,
+    Save,
+    Mail,
+    Phone,
+    MapPin,
+    FileText,
+    CheckCircle2,
+    AlertCircle
+} from 'lucide-react';
+import { Navbar } from '../../components/Navbar';
 
-function Institucion() {
+const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
+
+export default function Institucion() {
     const navigate = useNavigate();
 
+    // Estados del formulario
     const [nombre, setNombre] = useState('');
     const [descripcion, setDescripcion] = useState('');
     const [sitioWeb, setSitioWeb] = useState('');
@@ -20,19 +36,11 @@ function Institucion() {
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [okMsg, setOkMsg] = useState<string | null>(null);
 
-    const controlLabel =
-        'text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 block';
-    const inputStyle =
-        'w-full bg-white border border-gray-300 text-black text-sm rounded-lg focus:ring-2 focus:ring-[#003385] focus:border-transparent p-2.5 transition-all duration-200 outline-none shadow-sm';
+    const labelStyle = "text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 flex items-center gap-2";
+    const inputStyle = "w-full bg-slate-100 border-b border-slate-200 text-slate-900 px-4 py-3 outline-none focus:border-[#002855] focus:bg-white transition-all duration-300 font-semibold text-sm";
 
     const canSubmit = useMemo(() => {
-        return (
-            nombre.trim() &&
-            descripcion.trim() &&
-            sitioWeb.trim() &&
-            direccion.trim() &&
-            !!logoFile
-        );
+        return nombre.trim() && descripcion.trim() && sitioWeb.trim() && direccion.trim() && !!logoFile;
     }, [nombre, descripcion, sitioWeb, direccion, logoFile]);
 
     const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,12 +48,12 @@ function Institucion() {
         setLogoFile(file);
         setOkMsg(null);
         setErrorMsg(null);
-
         if (file) setLogoPreview(URL.createObjectURL(file));
         else setLogoPreview(null);
     };
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
         setErrorMsg(null);
         setOkMsg(null);
 
@@ -56,25 +64,19 @@ function Institucion() {
 
         try {
             setSaving(true);
-
             const token = localStorage.getItem('token');
-
             const fd = new FormData();
             fd.append('nombre', nombre.trim());
             fd.append('descripcion', descripcion.trim());
             fd.append('sitioWeb', sitioWeb.trim());
             fd.append('direccion', direccion.trim());
-
             if (email.trim()) fd.append('email', email.trim());
             if (telefono.trim()) fd.append('telefono', telefono.trim());
-
             if (logoFile) fd.append('logo', logoFile);
 
             const res = await fetch('http://localhost:5091/api/Empresa/crear', {
                 method: 'POST',
-                headers: {
-                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                },
+                headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
                 body: fd,
             });
 
@@ -83,212 +85,167 @@ function Institucion() {
                 throw new Error(text || `Error HTTP ${res.status}`);
             }
 
-            setOkMsg('Institución creada correctamente.');
-            setNombre('');
-            setDescripcion('');
-            setSitioWeb('');
-            setEmail('');
-            setTelefono('');
-            setDireccion('');
-            setLogoFile(null);
-            setLogoPreview(null);
+            setOkMsg('Institución registrada en el sistema exitosamente.');
+            // Reset fields
+            setNombre(''); setDescripcion(''); setSitioWeb(''); setEmail('');
+            setTelefono(''); setDireccion(''); setLogoFile(null); setLogoPreview(null);
         } catch (err: any) {
-            setErrorMsg(err?.message || 'Error al crear la institución.');
+            setErrorMsg(err?.message || 'Error al procesar el registro.');
         } finally {
             setSaving(false);
         }
     };
 
     return (
-        <div className="min-h-screen bg-slate-100 overflow-y-auto w-full">
+        <div className="h-screen w-full bg-[#002855] font-sans text-white overflow-hidden flex flex-col">
             <Navbar />
 
-            <main className="pt-24 pb-20 px-6">
-                <section className="max-w-[95%] mx-auto mt-6">
-                    <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-2xl rounded-xl bg-white border border-gray-200 overflow-hidden">
+            {/* Background Layer */}
+            <div className="fixed inset-0 z-0">
+                <div className="absolute inset-0 bg-cover bg-center opacity-10" style={{ backgroundImage: `url(${HERO_BG})` }} />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#002855] via-transparent to-[#002855]" />
+            </div>
 
-                        <div className="rounded-t bg-white border-b border-gray-100 px-8 py-6 flex justify-between items-center">
-                            <div className="flex items-center">
-                                <div className="p-2 bg-gray-100 rounded-lg mr-3">
-                                    <Building size={24} className="text-black" />
-                                </div>
-                                <h6 className="text-black text-xl font-black uppercase tracking-tighter">
-                                    Ingresar Nueva Empresa
-                                </h6>
-                            </div>
-
-                            <div className="flex items-center gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => navigate('/institucionList')}
-                                    className="bg-[#003385] hover:bg-[#002a66] text-white font-bold uppercase text-xs px-4 py-3 rounded-xl shadow-lg transition-all active:scale-95 flex items-center"
-                                    
-                                >
-                                    <List size={16} className="mr-2" />
-                                    Listado Empresas
-                                </button>
-
-
-                                <button
-                                    className={`${canSubmit && !saving
-                                        ? 'bg-[#003385] hover:bg-[#002a66]'
-                                        : 'bg-gray-400 cursor-not-allowed'
-                                        } text-white font-bold uppercase text-xs px-8 py-3 rounded-xl shadow-lg transition-all active:scale-95 flex items-center`}
-                                    type="button"
-                                    onClick={handleSubmit}
-                                    disabled={!canSubmit || saving}
-                                >
-                                    <Save size={16} className="mr-2" />
-                                    {saving ? 'Guardando...' : 'Guardar Empresa'}
-                                </button>
-                            </div>
+            <main className="relative z-10 flex-1 flex items-center justify-center p-6">
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                    className="w-full max-w-6xl h-[85vh] flex shadow-[0_40px_100px_rgba(0,0,0,0.6)] overflow-hidden rounded-sm"
+                >
+                    {/* SIDEBAR IZQUIERDO: ACCIONES Y TÍTULO */}
+                    <div className="hidden md:flex w-72 bg-[#002855] p-10 flex-col border-y border-l border-white/10 shrink-0">
+                        <div className="w-12 h-12 bg-blue-600 flex items-center justify-center mb-8 shadow-lg border border-white/10">
+                            <Building className="text-white" size={24} />
                         </div>
 
-                        {/* Mensajes */}
-                        {(errorMsg || okMsg) && (
-                            <div className="px-8 py-4 border-b bg-white">
-                                {errorMsg && (
-                                    <p className="text-sm text-red-600 font-semibold">{errorMsg}</p>
-                                )}
-                                {okMsg && (
-                                    <p className="text-sm text-green-700 font-semibold">{okMsg}</p>
-                                )}
-                            </div>
-                        )}
+                        <h2 className="text-3xl font-black leading-none uppercase tracking-tighter mb-2">
+                            Nueva <br />
+                            <span className="text-blue-400">Institución</span>
+                        </h2>
+                        <p className="text-blue-200/40 text-[10px] font-black uppercase tracking-[0.2em] mb-10">
+                            Registro de Entidades
+                        </p>
 
-                        {/* CUERPO GRIS DIVIDIDO EN DOS COLUMNAS */}
-                        <div className="flex-auto bg-gray-50 px-6 lg:px-12 py-10 shadow-inner">
-                            <form
-                                className="grid grid-cols-1 lg:grid-cols-2 gap-12"
-                                onSubmit={(e) => {
-                                    e.preventDefault();
-                                    handleSubmit();
-                                }}
+                        <div className="space-y-4 mt-auto">
+                            <button
+                                onClick={() => navigate('/institucionList')}
+                                className="w-full py-4 px-6 border border-white/10 hover:bg-white/5 transition-all flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-blue-200"
                             >
-                                {/* COLUMNA IZQUIERDA */}
-                                <div className="space-y-6">
-                                    <div className="border-b border-gray-300 pb-1">
-                                        <span className="text-xs font-black text-black uppercase tracking-widest">
-                                            Información de Contacto
-                                        </span>
+                                <List size={16} /> Ver Catálogo
+                            </button>
+
+                            <button
+                                onClick={handleSubmit}
+                                disabled={!canSubmit || saving}
+                                className="w-full py-4 px-6 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-400 transition-all flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest text-white shadow-xl"
+                            >
+                                <Save size={16} /> {saving ? 'Procesando...' : 'Confirmar Registro'}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* ÁREA DE FORMULARIO DERECHA */}
+                    <div className="flex-1 bg-white flex flex-col overflow-hidden relative">
+                        <div className="flex-1 overflow-y-auto p-10 md:p-14 custom-list-scroll">
+
+                            {/* Alertas Flotantes / Superiores */}
+                            <AnimatePresence>
+                                {okMsg && (
+                                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mb-8 p-4 bg-emerald-50 border-l-4 border-emerald-500 flex items-center gap-3 text-emerald-800">
+                                        <CheckCircle2 size={18} /> <span className="text-xs font-bold uppercase tracking-tight">{okMsg}</span>
+                                    </motion.div>
+                                )}
+                                {errorMsg && (
+                                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mb-8 p-4 bg-red-50 border-l-4 border-red-500 flex items-center gap-3 text-red-800">
+                                        <AlertCircle size={18} /> <span className="text-xs font-bold uppercase tracking-tight">{errorMsg}</span>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            <form className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                                {/* COLUMNA 1: DATOS GENERALES */}
+                                <div className="space-y-8">
+                                    <div className="border-b border-slate-100 pb-2">
+                                        <h3 className="text-[11px] font-black text-[#002855] uppercase tracking-[0.2em]">Identificación y Contacto</h3>
                                     </div>
 
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label className={controlLabel}>Nombre de la Empresa *</label>
-                                            <input
-                                                type="text"
-                                                className={inputStyle}
-                                                placeholder="Nombre oficial..."
-                                                value={nombre}
-                                                onChange={(e) => setNombre(e.target.value)}
-                                            />
-                                        </div>
+                                    <div>
+                                        <label className={labelStyle}>Nombre de la Organización *</label>
+                                        <input type="text" className={inputStyle} placeholder="Ej: Dirección de Logística" value={nombre} onChange={(e) => setNombre(e.target.value)} />
+                                    </div>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div>
-                                                <label className={controlLabel}>Email de Contacto</label>
-                                                <input
-                                                    type="email"
-                                                    className={inputStyle}
-                                                    placeholder="ejemplo@institucion.cl"
-                                                    value={email}
-                                                    onChange={(e) => setEmail(e.target.value)}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className={controlLabel}>Teléfono</label>
-                                                <input
-                                                    type="text"
-                                                    className={inputStyle}
-                                                    placeholder="+56 9 ..."
-                                                    value={telefono}
-                                                    onChange={(e) => setTelefono(e.target.value)}
-                                                />
-                                            </div>
-                                        </div>
-
+                                    <div className="grid grid-cols-2 gap-6">
                                         <div>
-                                            <label className={controlLabel}>Dirección Física *</label>
-                                            <input
-                                                type="text"
-                                                className={inputStyle}
-                                                placeholder="Calle, Número, Ciudad"
-                                                value={direccion}
-                                                onChange={(e) => setDireccion(e.target.value)}
-                                            />
+                                            <label className={labelStyle}><Mail size={12} /> Email Institucional</label>
+                                            <input type="email" className={inputStyle} placeholder="contacto@pdi.cl" value={email} onChange={(e) => setEmail(e.target.value)} />
                                         </div>
-
                                         <div>
-                                            <label className={controlLabel}>Descripción *</label>
-                                            <textarea
-                                                className={`${inputStyle} h-47 resize-none`}
-                                                placeholder="Breve reseña de la institución..."
-                                                value={descripcion}
-                                                onChange={(e) => setDescripcion(e.target.value)}
-                                            />
+                                            <label className={labelStyle}><Phone size={12} /> Teléfono Central</label>
+                                            <input type="text" className={inputStyle} placeholder="+56 2..." value={telefono} onChange={(e) => setTelefono(e.target.value)} />
                                         </div>
+                                    </div>
+
+                                    <div>
+                                        <label className={labelStyle}><MapPin size={12} /> Dirección Física *</label>
+                                        <input type="text" className={inputStyle} placeholder="Avenida Siempre Viva 123, Santiago" value={direccion} onChange={(e) => setDireccion(e.target.value)} />
+                                    </div>
+
+                                    <div>
+                                        <label className={labelStyle}><FileText size={12} /> Reseña Institucional *</label>
+                                        <textarea className={`${inputStyle} h-32 resize-none`} placeholder="Describa brevemente la función de la empresa..." value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
                                     </div>
                                 </div>
 
-                                <div className="space-y-6">
-                                    <div className="border-b border-gray-300 pb-1">
-                                        <span className="text-xs font-black text-black uppercase tracking-widest">
-                                            Sitio web y logo
-                                        </span>
+                                {/* COLUMNA 2: MEDIA Y DIGITAL */}
+                                <div className="space-y-8">
+                                    <div className="border-b border-slate-100 pb-2">
+                                        <h3 className="text-[11px] font-black text-[#002855] uppercase tracking-[0.2em]">Plataforma y Branding</h3>
                                     </div>
 
-                                    <div className="bg-white p-6 rounded-xl border border-gray-300 shadow-sm space-y-4">
-                                        <label className={controlLabel}>Logo Empresarial *</label>
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handleLogoChange}
-                                            className="block w-full text-xs text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all cursor-pointer"
-                                        />
-
-                                        <div className="mt-4 border-2 border-dashed border-gray-200 rounded-lg flex items-center justify-center bg-gray-50 h-48 overflow-hidden">
-                                            {logoPreview ? (
-                                                <img
-                                                    src={logoPreview}
-                                                    alt="Preview logo"
-                                                    className="max-h-full object-contain p-2"
-                                                />
-                                            ) : (
-                                                <div className="text-center">
-                                                    <ImageIcon size={32} className="mx-auto text-gray-300 mb-2" />
-                                                    <p className="text-[10px] text-gray-400 font-bold uppercase">
-                                                        Vista previa del logo
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </div>
+                                    <div>
+                                        <label className={labelStyle}><Globe size={12} /> Sitio Web Oficial *</label>
+                                        <input type="url" className={inputStyle} placeholder="https://www.pdi.cl" value={sitioWeb} onChange={(e) => setSitioWeb(e.target.value)} />
                                     </div>
 
-                                    <div className="bg-white p-6 rounded-xl border border-gray-300 shadow-sm">
-                                        <label className={controlLabel}>Sitio Web (URL) *</label>
-                                        <div className="relative">
-                                            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                                                <Globe size={14} />
-                                            </span>
+                                    <div>
+                                        <label className={labelStyle}><ImageIcon size={12} /> Logotipo Empresarial *</label>
+                                        <div className="mt-4 relative group">
                                             <input
-                                                type="url"
-                                                className={`${inputStyle} pl-10`}
-                                                placeholder="https://www.empresa.com"
-                                                value={sitioWeb}
-                                                onChange={(e) => setSitioWeb(e.target.value)}
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={handleLogoChange}
+                                                className="absolute inset-0 w-full h-full opacity-0 z-20 cursor-pointer"
                                             />
+                                            <div className="h-64 bg-slate-50 border-2 border-dashed border-slate-200 rounded-sm flex flex-col items-center justify-center transition-all group-hover:bg-slate-100 group-hover:border-blue-400 overflow-hidden">
+                                                {logoPreview ? (
+                                                    <motion.img
+                                                        initial={{ opacity: 0 }}
+                                                        animate={{ opacity: 1 }}
+                                                        src={logoPreview}
+                                                        className="h-full w-full object-contain p-4"
+                                                    />
+                                                ) : (
+                                                    <>
+                                                        <ImageIcon size={40} className="text-slate-300 mb-4" />
+                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Subir Imagen (.PNG, .JPG)</span>
+                                                    </>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </form>
-
                         </div>
                     </div>
-                </section>
+                </motion.div>
             </main>
+
+            <style>{`
+                .custom-list-scroll::-webkit-scrollbar { width: 4px; }
+                .custom-list-scroll::-webkit-scrollbar-track { background: transparent; }
+                .custom-list-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+            `}</style>
         </div>
     );
 }
-
-export default Institucion;

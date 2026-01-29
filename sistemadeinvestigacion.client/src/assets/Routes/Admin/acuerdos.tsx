@@ -1,315 +1,219 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from "framer-motion";
 import { Navbar } from '../../components/Navbar';
-import { Settings2, Save } from 'lucide-react';
+import { Settings2, ArrowRight, Building2, Calendar, FileText, Info, X } from 'lucide-react';
 
-type Empresa = {
-    idEmpresa: number | string;
-    nombre: string;
-    descripcion?: string;
-    logo?: string;
-    sitioWeb?: string;
-    email?: string;
-    telefono?: number;
-    direccion?: string;
-    fechaCreacion?: string;
-    fechaActualizacion?: string;
-};
-
-type TempAcuerdo = {
-    titulo: string;
-    descripcion: string;
-    detallesDescripcion: string;
-    fechaVencimiento: string; // ISO string
-
-    // solo UI
-    idEmpresa: number | '';
-};
-
-function nowIso() {
-    return new Date().toISOString();
-}
-
-function toIsoFromDatetimeLocal(value: string) {
-    // value: "YYYY-MM-DDTHH:mm"
-    if (!value) return '';
-    const d = new Date(value);
-    if (Number.isNaN(d.getTime())) return '';
-    return d.toISOString();
-}
-
-function toDatetimeLocalFromIso(iso: string) {
-    if (!iso) return '';
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return '';
-    const pad = (n: number) => String(n).padStart(2, '0');
-    const yyyy = d.getFullYear();
-    const mm = pad(d.getMonth() + 1);
-    const dd = pad(d.getDate());
-    const hh = pad(d.getHours());
-    const mi = pad(d.getMinutes());
-    return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
-}
+const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
 
 export default function Acuerdos() {
     const navigate = useNavigate();
+    const [empresas, setEmpresas] = useState<any[]>([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const [empresas, setEmpresas] = useState<Empresa[]>([]);
-    const [loadingEmpresas, setLoadingEmpresas] = useState(true);
+    const getOneYearFromNow = () => {
+        const date = new Date();
+        date.setFullYear(date.getFullYear() + 1);
+        return date.toISOString().slice(0, 16);
+    };
 
-    const [formData, setFormData] = useState<TempAcuerdo>(() => {
-        const tempStored = localStorage.getItem('temp_acuerdo'); // ✅ localStorage (misma key)
-        if (tempStored) {
-            try {
-                const parsed = JSON.parse(tempStored);
-                return {
-                    titulo: parsed?.titulo ?? '',
-                    descripcion: parsed?.descripcion ?? '',
-                    detallesDescripcion: parsed?.detallesDescripcion ?? '',
-                    fechaVencimiento: parsed?.fechaVencimiento ?? nowIso(),
-                    idEmpresa:
-                        parsed?.idEmpresa !== undefined && parsed?.idEmpresa !== null && parsed?.idEmpresa !== ''
-                            ? Number(parsed.idEmpresa)
-                            : '',
-                };
-            } catch (e) {
-                console.error('Error recuperando datos temporales', e);
-            }
-        }
-
-        return {
-            titulo: '',
-            descripcion: '',
-            detallesDescripcion: '',
-            fechaVencimiento: nowIso(),
-            idEmpresa: '',
-        };
+    const [formData, setFormData] = useState({
+        titulo: '',
+        descripcion: '',
+        detallesDescripcion: '',
+        fechaVencimiento: getOneYearFromNow(),
+        idEmpresa: '' as string | number,
     });
 
-    const empresaSeleccionada = useMemo(() => {
-        if (formData.idEmpresa === '' || formData.idEmpresa === null || formData.idEmpresa === undefined) return null;
-        return empresas.find((e) => Number(e.idEmpresa) === Number(formData.idEmpresa)) || null;
-    }, [empresas, formData.idEmpresa]);
+    const fetchEmpresas = async (selectNewest = false) => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('http://localhost:5091/api/Empresa', {
+                headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+            });
+            const data = await res.json();
+            const list = Array.isArray(data) ? data : [];
+            setEmpresas(list);
 
-    useEffect(() => {
-        const fetchEmpresas = async () => {
-            try {
-                const token = localStorage.getItem('token');
-
-                const response = await fetch('http://localhost:5091/api/Empresa', {
-                    method: 'GET',
-                    headers: {
-                        Accept: 'application/json, text/plain;q=0.9, */*;q=0.8',
-                        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                    },
-                });
-
-                if (!response.ok) {
-                    const text = await response.text().catch(() => '');
-                    console.error('Error HTTP cargando empresas:', response.status, response.statusText, text);
-                    setEmpresas([]);
-                    setLoadingEmpresas(false);
-                    return;
-                }
-
-                // robusto ante text/plain con JSON
-                let list: Empresa[] = [];
-                try {
-                    const data = await response.json();
-                    list = Array.isArray(data) ? data : [];
-                } catch {
-                    const text = await response.text().catch(() => '');
-                    try {
-                        const data = JSON.parse(text);
-                        list = Array.isArray(data) ? data : [];
-                    } catch (err) {
-                        console.error('No se pudo parsear respuesta de /api/Empresa', err);
-                        list = [];
-                    }
-                }
-
-                setEmpresas(list);
-
-                // si no hay empresa seleccionada, setea la primera
-                setFormData((prev) => {
-                    if (prev.idEmpresa !== '' && prev.idEmpresa !== null && prev.idEmpresa !== undefined) return prev;
-                    if (list.length === 0) return prev;
-                    return { ...prev, idEmpresa: Number(list[0]?.idEmpresa) };
-                });
-
-                setLoadingEmpresas(false);
-            } catch (error) {
-                console.error('Error cargando empresas:', error);
-                setEmpresas([]);
-                setLoadingEmpresas(false);
+            if (list.length > 0 && (formData.idEmpresa === '' || selectNewest)) {
+                const targetId = selectNewest ? list[list.length - 1].idEmpresa : list[0].idEmpresa;
+                setFormData(p => ({ ...p, idEmpresa: targetId }));
             }
-        };
+        } catch (e) { console.error(e); }
+    };
 
-        fetchEmpresas();
-    }, []);
+    useEffect(() => { fetchEmpresas(); }, []);
 
-    const controlLabel = 'text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 block';
-    const inputStyle =
-        'w-full bg-white border border-gray-300 text-black text-sm rounded-lg focus:ring-2 focus:ring-[#003385] focus:border-transparent p-2.5 transition-all duration-200 outline-none shadow-sm';
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const val = e.target.value;
+        if (val === "NEW_COMPANY") {
+            setIsModalOpen(true);
+        } else {
+            setFormData({ ...formData, idEmpresa: val });
+        }
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-
-        const idEmp =
-            formData.idEmpresa === '' || formData.idEmpresa === null || formData.idEmpresa === undefined
-                ? 0
-                : Number(formData.idEmpresa);
-
-        if (!formData.titulo || !formData.descripcion || !formData.detallesDescripcion || !formData.fechaVencimiento || !idEmp) {
-            alert('Título, Descripción, Detalles, Fecha y Empresa son obligatorios');
-            return;
-        }
-
-        // ✅ payload según swagger: agrega idEmpresa, quita habilitado, estado fijo "ACTIVO", sin SVGs
-        const payload = {
-            titulo: formData.titulo,
-            descripcion: formData.descripcion,
-            detallesDescripcion: formData.detallesDescripcion,
-            fechaVencimiento: formData.fechaVencimiento, // ISO
-            estado: 'ACTIVO',
-            idEmpresa: idEmp,
-        };
-
-        localStorage.setItem('temp_acuerdo', JSON.stringify(payload)); // ✅ guarda también idEmpresa
+        localStorage.setItem('temp_acuerdo', JSON.stringify({ ...formData, estado: 'ACTIVO' }));
         navigate('/lienzo');
     };
 
+    const labelStyle = "text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 flex items-center gap-2";
+    const inputStyle = "w-full bg-slate-100 border-b border-slate-200 text-slate-900 px-4 py-4 outline-none focus:border-[#002855] focus:bg-white transition-all duration-300 font-semibold text-sm";
+
     return (
-        <div className="min-h-screen bg-slate-100 overflow-y-auto w-full">
+        <div className="h-screen w-full bg-[#002855] font-sans text-white overflow-hidden flex flex-col">
             <Navbar />
 
-            <main className="pt-24 pb-20 px-6">
-                <section className="max-w-[95%] mx-auto mt-6">
-                    <form
-                        onSubmit={handleSubmit}
-                        autoComplete="off"
-                        className="relative flex flex-col w-full mb-6 shadow-2xl rounded-xl bg-white border border-gray-200 overflow-hidden"
-                    >
-                        <div className="rounded-t bg-white border-b border-gray-100 px-8 py-6 flex justify-between items-center">
-                            <div className="flex items-center">
-                                <div className="p-2 bg-gray-100 rounded-lg mr-3">
-                                    <Settings2 size={24} className="text-black" />
-                                </div>
-                                <h6 className="text-black text-xl font-black uppercase tracking-tighter">Configuración de Acuerdo</h6>
-                            </div>
+            <ModalNuevaEmpresa
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onCreated={() => fetchEmpresas(true)}
+            />
 
-                            <button
-                                className="bg-[#003385] hover:bg-[#002a66] text-white font-bold uppercase text-xs px-8 py-3 rounded-xl shadow-lg transition-all active:scale-95 flex items-center"
-                                type="submit"
-                            >
-                                <Save size={16} className="mr-2" /> Continuar al Lienzo
+            <div className="fixed inset-0 z-0">
+                <div className="absolute inset-0 bg-cover bg-center opacity-10" style={{ backgroundImage: `url(${HERO_BG})` }} />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#002855] via-transparent to-[#002855]" />
+            </div>
+
+            <main className="relative z-10 flex-1 flex items-center justify-center p-6 mt-4">
+                <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="w-full max-w-6xl h-[85vh] flex shadow-[0_40px_100px_rgba(0,0,0,0.6)] rounded-sm overflow-hidden"
+                >
+                    {/* Sidebar Izquierda */}
+                    <div className="hidden md:flex w-72 bg-[#002855] p-10 flex-col justify-start border-y border-l border-white/10 shrink-0">
+                        <div className="relative z-10">
+                            <div className="w-12 h-12 bg-blue-600 flex items-center justify-center mb-8 shadow-lg border border-white/10">
+                                <Settings2 className="text-white" size={24} />
+                            </div>
+                            <h2 className="text-3xl font-black leading-none uppercase tracking-tighter mb-4">
+                                Nuevo <br />
+                                <span className="text-blue-400"> Acuerdo</span>
+                            </h2>
+                            <div className="w-8 h-1 bg-blue-500 mb-6" />
+                            {/* Texto solicitado debajo de la franja */}
+                            <p className="text-blue-200/40 text-[10px] font-bold uppercase tracking-widest leading-relaxed">
+                                Ingresa un nuevo acuerdo con fecha de vencimiento calculada para un año
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Formulario Derecha */}
+                    <form onSubmit={handleSubmit} className="flex-1 flex flex-col bg-white border-y border-r border-white/10 overflow-hidden relative">
+                        <div className="flex-1 p-10 md:p-14 overflow-y-auto">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+                                <div className="md:col-span-2">
+                                    <label className={labelStyle}>Título del Acuerdo</label>
+                                    <input value={formData.titulo} onChange={e => setFormData({ ...formData, titulo: e.target.value })} className={inputStyle} placeholder="Nombre del acuerdo..." required />
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className={labelStyle}><Building2 size={12} /> Empresa </label>
+                                    <select
+                                        value={formData.idEmpresa}
+                                        onChange={handleSelectChange}
+                                        className={inputStyle}
+                                        required
+                                    >
+                                        <option value="" disabled>Seleccione una empresa</option>
+                                        {empresas.map(e => <option key={e.idEmpresa} value={e.idEmpresa}>{e.nombre}</option>)}
+                                        {/* Opción al final con estilo estándar */}
+                                        <option value="NEW_COMPANY">+ Empresa</option>
+                                    </select>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className={labelStyle}><Calendar size={12} /> Fecha Término</label>
+                                    <input type="datetime-local" value={formData.fechaVencimiento} onChange={e => setFormData({ ...formData, fechaVencimiento: e.target.value })} className={inputStyle} required />
+                                </div>
+
+                                <div className="md:col-span-2">
+                                    <label className={labelStyle}><FileText size={12} /> Descripción breve</label>
+                                    <textarea value={formData.descripcion} onChange={e => setFormData({ ...formData, descripcion: e.target.value })} className={`${inputStyle} h-24 resize-none`} required />
+                                </div>
+                                <div className="md:col-span-2 text-slate-900">
+                                    <label className={labelStyle}><Info size={12} /> Descripción detallada</label>
+                                    <textarea value={formData.detallesDescripcion} onChange={e => setFormData({ ...formData, detallesDescripcion: e.target.value })} className={`${inputStyle} h-40 resize-none text-xs`} required />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="absolute bottom-10 right-10">
+                            <button type="submit" className="h-16 w-16 rounded-full bg-[#002855] text-white flex items-center justify-center hover:bg-blue-600 hover:scale-110 shadow-2xl transition-all duration-300 group active:scale-95">
+                                <ArrowRight size={28} className="group-hover:translate-x-1 transition-transform" />
+                            </button>
+                        </div>
+                    </form>
+                </motion.div>
+            </main>
+        </div>
+    );
+}
+
+function ModalNuevaEmpresa({ isOpen, onClose, onCreated }: { isOpen: boolean, onClose: () => void, onCreated: () => void }) {
+    const [nombre, setNombre] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const handleSave = async () => {
+        if (!nombre) return;
+        setLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('http://localhost:5091/api/Empresa', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                body: JSON.stringify({ nombre })
+            });
+            if (res.ok) { onCreated(); onClose(); setNombre(''); }
+        } catch (e) { console.error(e); }
+        setLoading(false);
+    };
+
+    return (
+        <AnimatePresence>
+            {isOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#002855]/60 backdrop-blur-md">
+                    <motion.div
+                        initial={{ scale: 0.95, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.95, opacity: 0 }}
+                        className="bg-white w-full max-w-md p-10 rounded-[2rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] border border-white/20 overflow-hidden"
+                    >
+                        <div className="flex justify-between items-center mb-8">
+                            <div>
+                                <h3 className="text-slate-900 font-black uppercase tracking-tighter text-2xl leading-none">Nueva <br /><span className="text-blue-600">Empresa</span></h3>
+                                <div className="w-6 h-1 bg-blue-500 mt-2" />
+                            </div>
+                            <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                                <X size={24} className="text-slate-400" />
                             </button>
                         </div>
 
-                        <div className="bg-gray-50 px-6 lg:px-12 py-10 shadow-inner">
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                                <div className="space-y-8">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="md:col-span-2">
-                                            <label className={controlLabel}>Título del Acuerdo *</label>
-                                            <input
-                                                name="titulo"
-                                                value={formData.titulo}
-                                                onChange={handleChange}
-                                                type="text"
-                                                className={inputStyle}
-                                                required
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className={controlLabel}>Fecha Vencimiento *</label>
-                                            <input
-                                                name="fechaVencimiento"
-                                                value={toDatetimeLocalFromIso(formData.fechaVencimiento)}
-                                                onChange={(e) => {
-                                                    const iso = toIsoFromDatetimeLocal(e.target.value);
-                                                    setFormData((prev) => ({ ...prev, fechaVencimiento: iso }));
-                                                }}
-                                                type="datetime-local"
-                                                className={inputStyle}
-                                                required
-                                            />
-                                            <div className="mt-2 text-[11px] text-gray-500">
-                                                ISO: <span className="font-mono">{formData.fechaVencimiento || '—'}</span>
-                                            </div>
-                                        </div>
-
-                                        <div className="md:col-span-2">
-                                            <label className={controlLabel}>Empresa *</label>
-                                            <select
-                                                name="idEmpresa"
-                                                value={formData.idEmpresa}
-                                                onChange={(e) => setFormData((prev) => ({ ...prev, idEmpresa: Number(e.target.value) }))}
-                                                className={inputStyle}
-                                                required
-                                                disabled={loadingEmpresas || empresas.length === 0}
-                                            >
-                                                {empresas.length === 0 ? (
-                                                    <option value="">No hay empresas disponibles</option>
-                                                ) : (
-                                                    <>
-                                                        {formData.idEmpresa === '' && (
-                                                            <option value="" disabled>
-                                                                Seleccione una empresa
-                                                            </option>
-                                                        )}
-                                                        {empresas.map((emp) => (
-                                                            <option key={String(emp.idEmpresa)} value={Number(emp.idEmpresa)}>
-                                                                {emp.nombre}
-                                                            </option>
-                                                        ))}
-                                                    </>
-                                                )}
-                                            </select>
-
-                                            {empresaSeleccionada && (
-                                                <div className="mt-2 text-xs text-gray-600">
-                                                    Seleccionada: <strong>{empresaSeleccionada.nombre}</strong>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-6">
-                                    <div>
-                                        <label className={controlLabel}>Descripción Breve *</label>
-                                        <textarea
-                                            name="descripcion"
-                                            value={formData.descripcion}
-                                            onChange={handleChange}
-                                            className={`${inputStyle} h-36 resize-none`}
-                                            required
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className={controlLabel}>Detalles Completos *</label>
-                                        <textarea
-                                            name="detallesDescripcion"
-                                            value={formData.detallesDescripcion}
-                                            onChange={handleChange}
-                                            className={`${inputStyle} h-[220px] resize-none`}
-                                            required
-                                        />
-                                    </div>
-                                </div>
+                        <div className="space-y-6">
+                            <div>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-3 block">Nombre de la Organización</label>
+                                <input
+                                    autoFocus
+                                    placeholder="Ej: Constructora S.A."
+                                    className="w-full bg-slate-50 border-b-2 border-slate-100 text-slate-900 px-0 py-4 outline-none focus:border-blue-600 transition-all font-semibold text-sm"
+                                    value={nombre}
+                                    onChange={e => setNombre(e.target.value)}
+                                />
                             </div>
+                            <button
+                                onClick={handleSave}
+                                disabled={loading || !nombre}
+                                className="w-full bg-[#002855] text-white py-5 rounded-2xl font-black uppercase text-[11px] tracking-[0.2em] hover:bg-blue-600 hover:shadow-xl hover:shadow-blue-900/20 transition-all active:scale-[0.98] disabled:bg-slate-200 disabled:text-slate-400"
+                            >
+                                {loading ? 'Procesando...' : 'Confirmar Registro'}
+                            </button>
                         </div>
-                    </form>
-                </section>
-            </main>
-        </div>
+                    </motion.div>
+                </div>
+            )}
+        </AnimatePresence>
     );
 }

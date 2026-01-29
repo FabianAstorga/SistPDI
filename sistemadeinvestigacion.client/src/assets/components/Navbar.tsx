@@ -43,15 +43,15 @@ export const Navbar = () => {
         {
             id: 'acuerdos', label: 'Acuerdos', icon: FileSignature,
             items: [
-                { label: 'Listar Acuerdos', path: '/acuerdos', icon: List },
-                { label: 'Crear Acuerdo', path: '/acuerdos/crear', icon: PlusCircle },
+                { label: 'Crear Acuerdo', path: '/acuerdos', icon: PlusCircle },
+                { label: 'Listar Acuerdos', path: '/listarAcuerdos', icon: List},
             ]
         },
         {
             id: 'empresas', label: 'Empresas', icon: Building,
             items: [
                 { label: 'Listar Empresas', path: '/institucionList', icon: List },
-                { label: 'Registrar Empresa', path: '/institucion/crear', icon: PlusCircle },
+                { label: 'Registrar Empresa', path: '/institucion', icon: PlusCircle },
             ]
         },
         {

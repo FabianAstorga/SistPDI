@@ -80,13 +80,20 @@ export default function Panel() {
             try {
                 const userObj = JSON.parse(userJson);
                 setUserName(userObj.nombre ? userObj.nombre.split(' ')[0] : "Funcionario");
-            } catch (e) { console.error("Error parsing user", e); }
+
+                // Si el usuario está logueado pero la URL es la raíz, redirigimos a /panel
+                if (location.pathname === "/") {
+                    navigate("/panel", { replace: true });
+                }
+            } catch (e) {
+                console.error("Error parsing user", e);
+            }
         } else {
             setIsLoggedIn(false);
             setUserName("");
         }
         fetchData();
-    }, []);
+    }, [location.pathname, navigate]); // Añadimos dependencias clave
 
     useEffect(() => {
         checkSession();
