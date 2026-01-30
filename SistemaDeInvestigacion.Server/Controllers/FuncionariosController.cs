@@ -58,7 +58,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             var userID = User.GetUserId();
             var userRole = User.GetUserRole();
 
-            if (userRole != 1)
+            if (userRole is not( 1 or 2))
             {
                 return BadRequest("Usuario no es SuperAdministrador");
             }
