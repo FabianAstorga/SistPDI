@@ -75,43 +75,44 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return await _context.Users.ToListAsync();
         }
 
+        
         [HttpPatch]
         public async Task<ActionResult> UpdateUser(UpdateUserDto updateUserDto)
         {
-            var DatosUser = await _context.Users.FindAsync(updateUserDto.IdPersona);            
+            var usuarioExistente = await _context.Users.FindAsync(updateUserDto.IdPersona);
 
-            var newDatos = updateUserDto;
-            if (updateUserDto.Rut == null)
+            if (usuarioExistente == null) return NotFound("Usuario no encontrado");
+
+            // Actualizar campos básicos
+            if (!string.IsNullOrEmpty(updateUserDto.Rut))
+                usuarioExistente.Rut = updateUserDto.Rut;
+
+            if (updateUserDto.Rol.HasValue && updateUserDto.Rol > 0)
+                usuarioExistente.Rol = updateUserDto.Rol.Value;
+
+            // Lógica de Contraseña corregida
+            if (!string.IsNullOrEmpty(updateUserDto.Contrasena))
             {
-                newDatos.Rut = DatosUser.Rut;
+                // ORDEN CORRECTO: (textoPlano, hashAlmacenado)
+                bool esMismaPassword = BCrypt.Net.BCrypt.Verify(updateUserDto.Contrasena, usuarioExistente.Contrasena);
+
+                if (!esMismaPassword)
+                {
+                    // Solo hasheamos si la contraseña es distinta a la actual
+                    usuarioExistente.Contrasena = BCrypt.Net.BCrypt.HashPassword(updateUserDto.Contrasena);
+                }
             }
 
-            if (newDatos.Rol == null)
+            try
             {
-                newDatos.Rol = DatosUser.Rol;
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "Usuario actualizado correctamente" });
             }
-
-            Console.WriteLine($"Esta es la contra que me pasaron: { newDatos.Contrasena}");
-
-            if (!string.IsNullOrEmpty(newDatos.Contrasena)) {
-                Console.WriteLine("no se porque pero llegue aqui");
-                bool passValida = BCrypt.Net.BCrypt.Verify(DatosUser.Contrasena, newDatos.Contrasena);
-                    if (!passValida) {
-
-                        newDatos.Contrasena = BCrypt.Net.BCrypt.HashPassword(newDatos.Contrasena);
-            
-                    }
-
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error al guardar: {ex.Message}");
             }
-
-            await _context.SaveChangesAsync();
-
-
-
-
-
-            return Ok();
-            }
+        }
 
     }
 }

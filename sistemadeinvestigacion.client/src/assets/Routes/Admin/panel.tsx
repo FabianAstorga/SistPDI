@@ -165,7 +165,7 @@ export default function Panel() {
                                 </h2>
                                 <h1 className="text-5xl md:text-8xl font-black text-white uppercase leading-none mb-6">
                                     {isLoggedIn ? 'PANEL ' : 'ACUERDOS '}
-                                    <span className="text-blue-500">{isLoggedIn ? 'INTERNO' : currentYear}</span>
+                                    <span className="text-blue-500">{isLoggedIn ? 'ADMINISTADOR' : currentYear}</span>
                                 </h1>
                                 <p className="text-lg text-white/70 font-medium mb-10 max-w-2xl mx-auto">
                                     {isLoggedIn ? 'Gestiona y revisa todos los convenios vigentes.' : 'Accede a los convenios y beneficios exclusivos.'}

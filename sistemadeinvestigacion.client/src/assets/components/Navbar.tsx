@@ -34,7 +34,7 @@ const NAV_CONFIG = [
         ]
     },
     {id: 'funcionarios', label: 'Funcionarios', path: '/empleado', icon: Users},
-    { id: 'plantilla', label: 'Plantilla', path: '/lienzo', icon: Layers },
+    //{ id: 'plantilla', label: 'Plantilla', path: '/lienzo', icon: Layers },
 ];
 
 export const Navbar = () => {
