@@ -83,22 +83,18 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
             if (usuarioExistente == null) return NotFound("Usuario no encontrado");
 
-            // Actualizar campos básicos
             if (!string.IsNullOrEmpty(updateUserDto.Rut))
                 usuarioExistente.Rut = updateUserDto.Rut;
 
             if (updateUserDto.Rol.HasValue && updateUserDto.Rol > 0)
                 usuarioExistente.Rol = updateUserDto.Rol.Value;
 
-            // Lógica de Contraseña corregida
             if (!string.IsNullOrEmpty(updateUserDto.Contrasena))
             {
-                // ORDEN CORRECTO: (textoPlano, hashAlmacenado)
-                bool esMismaPassword = BCrypt.Net.BCrypt.Verify(updateUserDto.Contrasena, usuarioExistente.Contrasena);
 
+                bool esMismaPassword = BCrypt.Net.BCrypt.Verify(updateUserDto.Contrasena, usuarioExistente.Contrasena);
                 if (!esMismaPassword)
                 {
-                    // Solo hasheamos si la contraseña es distinta a la actual
                     usuarioExistente.Contrasena = BCrypt.Net.BCrypt.HashPassword(updateUserDto.Contrasena);
                 }
             }

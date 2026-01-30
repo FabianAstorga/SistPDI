@@ -78,6 +78,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             _context.Funcionarios.Add(newEmpleado);
             await _context.SaveChangesAsync();
             return Ok("Empleado creado Exitosamente");
+
         }
 
 
