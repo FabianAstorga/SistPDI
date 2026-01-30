@@ -20,6 +20,7 @@ namespace SistemaDeInvestigacion.Server.Dtos
         public string? Contrasena { get; set; }
         public int? Rol { get; set; }
         public string? Rut { get; set; }
+        public int? idEstado { get; set; }
 
     }
 }
