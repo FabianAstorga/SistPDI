@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using SistemaDeInvestigacion.Server.Data;
 using SistemaDeInvestigacion.Server.Dtos;
 using SistemaDeInvestigacion.Server.Models;
+using System.Data;
 
 namespace SistemaDeInvestigacion.Server.Controllers
 {
@@ -90,8 +91,10 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 newDatos.Rol = DatosUser.Rol;
             }
 
-            if (updateUserDto.Contrasena != null) { 
+            Console.WriteLine($"Esta es la contra que me pasaron: { newDatos.Contrasena}");
 
+            if (!string.IsNullOrEmpty(newDatos.Contrasena)) {
+                Console.WriteLine("no se porque pero llegue aqui");
                 bool passValida = BCrypt.Net.BCrypt.Verify(DatosUser.Contrasena, newDatos.Contrasena);
                     if (!passValida) {
 
