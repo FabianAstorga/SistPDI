@@ -41,6 +41,12 @@ public class AuthMailService
         }
     }
 
-    public async Task SendMailAcuerdo(string correoDestino, string )
+    public async Task SendMailAcuerdo(string correoDestino)
+    {
+        var message = new MimeMessage();
+        message.From.Add(new MailboxAddress("Sistema de Acuerdos", _email));
+        message.To.Add(MailboxAddress.Parse(correoDestino));
+
+    }
 
 }

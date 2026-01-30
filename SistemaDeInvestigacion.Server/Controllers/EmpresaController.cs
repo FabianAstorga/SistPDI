@@ -100,6 +100,15 @@ namespace SistemaDeInvestigacion.Server.Controllers
         
             
             }
+/*
+        [HttpPatch("Editar/{idEmpresa}")]
+        public async Task<ActionResult> EditEmpresa
+        {
+
+        }
+*/
             
     }
+
+   
 }

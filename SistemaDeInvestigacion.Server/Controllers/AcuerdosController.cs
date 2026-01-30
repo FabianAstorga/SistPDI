@@ -173,7 +173,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return Ok(acuerdosPendientes);
         }
 
-        [HttpPut("editar/{idAcuerdo}")]
+        [HttpPatch("editar/{idAcuerdo}")]
         public async Task<IActionResult> PutAcuerdo(int idAcuerdo, [FromForm] editAcuerdoDto editAcuerdoDto)
         {
             var user = User.GetUserId();

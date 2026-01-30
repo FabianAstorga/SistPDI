@@ -89,7 +89,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return await _context.Funcionarios.ToListAsync();
         }
 
-        [HttpPatch]
+        [HttpPatch("editar")]
         public async Task<ActionResult> ActualizarEmpleado([FromBody] editEmpleadoDto dto)
         {
             if (dto == null || string.IsNullOrEmpty(dto.rut))
