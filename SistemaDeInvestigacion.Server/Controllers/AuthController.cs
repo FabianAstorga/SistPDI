@@ -85,7 +85,8 @@ namespace SistemaDeInvestigacion.Server.Controllers
                     nombre = userAuth.Funcionarios?.NombreCompleto,
                     email = userAuth.Funcionarios?.CorreoElectronico,
                     rol = userAuth.Rol,
-                    idUsuario = userAuth.IdPersona
+                    idUsuario = userAuth.IdPersona,
+                    rut = userAuth.Rut
                 }
             });
         }
