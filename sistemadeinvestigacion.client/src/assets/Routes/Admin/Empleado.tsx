@@ -42,6 +42,16 @@ export default function AdministracionIdentidad() {
     const [selectedFunc, setSelectedFunc] = useState<any | null>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
 
+    // Obtener ID del usuario conectado desde el objeto "user" en localStorage
+    const currentUserId = useMemo(() => {
+        const userJson = localStorage.getItem('user');
+        if (!userJson) return null;
+        try {
+            const userObj = JSON.parse(userJson);
+            return userObj.idUsuario || userObj.idPersona; // Usar la clave que definas en el login
+        } catch (e) { return null; }
+    }, []);
+
     const currentUserRole = useMemo(() => {
         const token = localStorage.getItem('token');
         if (!token) return 2;
@@ -84,17 +94,28 @@ export default function AdministracionIdentidad() {
     const unifiedData = useMemo(() => {
         const userMap = new Map();
         usuarios.forEach(u => userMap.set(cleanRut(u.rut), u));
-        const base = funcionarios.map(f => ({
-            funcionario: f,
-            usuario: userMap.get(cleanRut(f.rut)) || null
-        }));
+
+        const base = funcionarios
+            .map(f => {
+                const usuarioEncontrado = userMap.get(cleanRut(f.rut)) || null;
+                return {
+                    funcionario: f,
+                    usuario: usuarioEncontrado
+                };
+            })
+            // FILTRO CRÍTICO: Omitir al usuario que está logueado actualmente
+            .filter(item => {
+                if (!currentUserId) return true;
+                return item.usuario?.idPersona !== currentUserId;
+            });
+
         if (!search) return base;
         const q = search.toLowerCase();
         return base.filter(item =>
             item.funcionario.rut.toLowerCase().includes(q) ||
             item.funcionario.nombreCompleto?.toLowerCase().includes(q)
         );
-    }, [funcionarios, usuarios, search]);
+    }, [funcionarios, usuarios, search, currentUserId]);
 
     return (
         <div className="h-screen w-full bg-[#002855] font-sans text-white overflow-hidden flex flex-col relative">
@@ -214,7 +235,6 @@ const ModalGestionFuncionario = ({ item, onClose, onRefresh, isAdmin }: any) => 
 
     const canSubmit = useMemo(() => {
         const baseFunc = nombre.trim() && rut.trim() && email.trim();
-        // Si es Admin y nuevo, exige password. Si es Funcionario y nuevo, solo baseFunc.
         if (isNew) return isAdmin ? !!(baseFunc && password.trim()) : !!baseFunc;
         return !!baseFunc;
     }, [nombre, rut, email, password, isNew, isAdmin]);
@@ -228,12 +248,10 @@ const ModalGestionFuncionario = ({ item, onClose, onRefresh, isAdmin }: any) => 
 
         try {
             if (isNew) {
-                // Crear Funcionario (Común para ambos)
                 const bodyCrearFunc = { rut: rut.trim(), correoElectronico: email.trim(), nombreCompleto: nombre.trim() };
                 const resF = await fetch(`${API_BASE}/api/Funcionarios/crear`, { method: 'POST', headers, body: JSON.stringify(bodyCrearFunc) });
                 if (!resF.ok) throw new Error(await resF.text() || "Error al registrar funcionario");
 
-                // Solo si es Admin se crea el User simultáneamente
                 if (isAdmin && password.trim()) {
                     const fd = new FormData();
                     fd.append('Rut', rut.trim());
@@ -271,7 +289,7 @@ const ModalGestionFuncionario = ({ item, onClose, onRefresh, isAdmin }: any) => 
                     <div className="w-8 h-1 bg-blue-500 mb-6" />
                     <p className="text-blue-200/40 text-[10px] font-black uppercase tracking-[0.2em] leading-relaxed mb-10">Validación institucional de identidad digital.</p>
 
-                    {isNew && (
+                    {(isNew || isAdmin) && (
                         <button
                             onClick={handleSave}
                             disabled={saving || !canSubmit}
@@ -294,7 +312,6 @@ const ModalGestionFuncionario = ({ item, onClose, onRefresh, isAdmin }: any) => 
                                 <div><label className={LABEL_STYLE}><Mail size={12} /> Correo *</label><input className={INPUT_STYLE} value={email} onChange={e => setEmail(e.target.value)} disabled={!isNew && !isAdmin} /></div>
                             </div>
 
-                            {/* SECCIÓN DE SEGURIDAD (Condicional para Funcionarios en registros nuevos) */}
                             <div className={`space-y-8 ${(isNew && !isAdmin) ? 'opacity-30 pointer-events-none' : ''}`}>
                                 <div className="border-b border-slate-100 pb-2"><h3 className="text-[11px] font-black text-[#002855] uppercase tracking-[0.2em]">Seguridad y Rol</h3></div>
                                 <div className="relative">
@@ -321,7 +338,7 @@ const ModalGestionFuncionario = ({ item, onClose, onRefresh, isAdmin }: any) => 
                         </div>
                     </div>
 
-                    {!isNew && (
+                    {!isNew && isAdmin && (
                         <div className="absolute bottom-10 right-10 flex flex-col items-center gap-2">
                             <span className="text-[10px] font-black text-[#002855] uppercase tracking-widest opacity-40">{saving ? 'Guardando...' : 'Confirmar'}</span>
                             <button type="button" onClick={handleSave} disabled={saving || !canSubmit} className="h-16 w-16 rounded-full bg-[#002855] text-white flex items-center justify-center hover:bg-blue-600 hover:scale-110 shadow-2xl transition-all active:scale-95 disabled:bg-slate-200">
