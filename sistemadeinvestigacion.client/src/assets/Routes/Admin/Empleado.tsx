@@ -316,7 +316,7 @@ const ModalGestionFuncionario = ({ item, onClose, onRefresh, isAdmin }: any) => 
                                 <div className="border-b border-slate-100 pb-2"><h3 className="text-[11px] font-black text-[#002855] uppercase tracking-[0.2em]">Seguridad y Rol</h3></div>
                                 <div className="relative">
                                     <label className={LABEL_STYLE}><Lock size={12} /> {isLinked ? 'Cambiar Contraseña' : 'Contraseña de Acceso *'}</label>
-                                    <input type={showPass ? "text" : "password"} className={INPUT_STYLE} value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" placeholder={isLinked ? "OPCIONAL" : (isNew && !isAdmin) ? "BLOQUEADO" : "MÍNIMO 8 CARACTERES"} disabled={!isAdmin && !isNew} />
+                                    <input type={showPass ? "text" : "password"} className={INPUT_STYLE} value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" placeholder={isLinked ? "OPCIONAL" : (isNew && !isAdmin) ? "BLOQUEADO" : "MÍNIMO 4 CARACTERES"} disabled={!isAdmin && !isNew} />
                                     {isAdmin && <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-4 top-9 text-slate-400 hover:text-blue-600 transition-colors">{showPass ? <EyeOff size={16} /> : <Eye size={16} />}</button>}
                                 </div>
                                 <div>
