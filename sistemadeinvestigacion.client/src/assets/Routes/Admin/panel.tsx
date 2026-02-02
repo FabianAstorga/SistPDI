@@ -5,9 +5,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Navbar } from "../../components/Navbar";
 import { LoginDrawer } from "./LoginDrawer";
+import { X, RefreshCw, Send, MessageSquare, AlertCircle, Hash, Calendar } from 'lucide-react';
 
-/** * PANEL UNIFICADO V4.8 - PDI Intranet 2026
- * Optimizaciones: Memoización de cierres (onClose), indicadores estables y limpieza de basura en Modal.
+/** * PANEL UNIFICADO V4.9 - PDI Intranet 2026
+ * Optimizaciones: Grid estructural 4x6 en Modal, Feedback funcional y Estética Industrial.
  */
 
 const API_BASE = 'http://localhost:5091';
@@ -56,7 +57,6 @@ export default function Panel() {
     const [inputSearch, setInputSearch] = useState("");
     const currentYear = useMemo(() => new Date().getFullYear(), []);
 
-    // 1. Memoización de funciones de cierre para evitar basura en el Heap
     const handleCloseModal = useCallback(() => setModalData(null), []);
     const handleOpenModal = useCallback((item: any) => setModalData(item), []);
 
@@ -109,7 +109,6 @@ export default function Panel() {
         return () => { abortControllerRef.current?.abort(); };
     }, [checkSession]);
 
-    // 2. Configuración de Carrusel con funciones estables
     const [emblaRef, emblaApi] = useEmblaCarousel(
         { loop: true, align: "center", duration: 25 },
         [Autoplay({ delay: 5000, stopOnInteraction: false })]
@@ -154,7 +153,6 @@ export default function Panel() {
             </AnimatePresence>
 
             <div className="h-full overflow-y-auto snap-y snap-mandatory scroll-smooth overflow-x-hidden custom-list-scroll">
-                {/* SECCIÓN 1: HERO */}
                 <section className={`snap-start w-full h-screen flex flex-col items-center justify-center px-6 relative bg-[#002855] transition-all duration-700 ${isLoggedIn ? 'pt-16' : ''}`}>
                     <div className="absolute inset-0 bg-cover bg-center opacity-40 animate-pulse-slow pointer-events-none" style={{ backgroundImage: `url(${HERO_BG})` }} />
                     <div className="max-w-5xl mx-auto text-center z-10">
@@ -183,10 +181,10 @@ export default function Panel() {
                     </div>
                 </section>
 
-                {/* SECCIÓN 2: CARRUSEL */}
-                <section ref={carouselRef} className="snap-start w-full h-screen flex flex-col justify-center bg-slate-50 relative overflow-hidden">
-                    <div className="max-w-7xl mx-auto w-full px-6 mb-6 text-center">
+                <section ref={carouselRef} className="snap-start w-full h-screen flex flex-col justify-center bg-slate-200 relative overflow-hidden transition-colors duration-500">
+                    <div className="max-w-7xl mx-auto w-full px-6 mb-10 text-center">
                         <h2 className="text-3xl md:text-4xl font-black text-[#002855] uppercase tracking-tighter">Acuerdos Destacados</h2>
+                        <div className="w-16 h-1.5 bg-[#002855] mx-auto mt-2" />
                     </div>
                     <div className="w-full relative px-4 overflow-visible">
                         <div className="embla overflow-visible" ref={emblaRef}>
@@ -197,11 +195,9 @@ export default function Panel() {
                             </div>
                         </div>
                     </div>
-                    {/* Indicadores memoizados */}
                     <CarouselDots snaps={scrollSnaps} selectedIndex={selectedIndex} onDotClick={scrollTo} />
                 </section>
 
-                {/* SECCIÓN 3: LISTADO */}
                 <section ref={listSectionRef} className="snap-start w-full h-screen bg-[#002855] text-white py-12 px-6 flex items-center overflow-hidden">
                     <div className="max-w-6xl mx-auto w-full flex flex-col h-[80vh]">
                         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
@@ -226,8 +222,7 @@ export default function Panel() {
                 </section>
             </div>
 
-            {/* MODAL DETALLE CON CIERRE MEMOIZADO */}
-            <AnimatePresence onExitComplete={() => window.scrollTo(0, window.scrollY)}>
+            <AnimatePresence>
                 {modalData && (
                     <ModalDetalle data={modalData} onClose={handleCloseModal} />
                 )}
@@ -244,8 +239,6 @@ export default function Panel() {
         </div>
     );
 }
-
-// --- SUBCOMPONENTES MEMOIZADOS (Prevención de Memory Leaks) ---
 
 const CarouselDots = React.memo(({ snaps, selectedIndex, onDotClick }: any) => (
     <div className="flex justify-center gap-3 mt-8">
@@ -275,46 +268,168 @@ const ListItem = React.memo(({ item, onOpen }: any) => (
     </div>
 ));
 
-const ModalDetalle = React.memo(({ data, onClose }: any) => (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-black/85 backdrop-blur-md" />
-        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white w-full max-w-5xl rounded-3xl overflow-hidden relative z-10 shadow-2xl flex flex-col md:grid md:grid-cols-2 md:grid-rows-2 h-[90vh] md:h-[75vh]">
-            <div className="bg-slate-100 border-b border-r border-slate-200 relative aspect-[16/9] md:aspect-auto">
-                <img src={resolveBackendUrl(data.imagenUrl) || PDI_LOGO_URL} className="absolute inset-0 w-full h-full object-cover" alt="" />
-            </div>
-            <div className="p-8 md:p-10 bg-slate-50/50 border-b border-slate-200 flex flex-col justify-center">
-                <div className="space-y-4">
-                    <div><p className="text-[10px] font-black text-slate-400 uppercase">Categoría</p><p className="text-lg font-bold text-[#002855] uppercase">{data.categoria}</p></div>
-                    <div><p className="text-[10px] font-black text-slate-400 uppercase">Estado</p><p className="text-lg font-bold text-green-600 uppercase">{data.estado || 'Activo'}</p></div>
-                    {data.fechaVencimiento && (<div><p className="text-[10px] font-black text-slate-400 uppercase">Vencimiento</p><p className="text-lg font-bold text-[#002855] uppercase">{new Date(data.fechaVencimiento).toLocaleDateString()}</p></div>)}
+const ModalDetalle = React.memo(({ data, onClose }: any) => {
+    const [comentarios, setComentarios] = useState<any[]>([]);
+    const [loadingComentarios, setLoadingComentarios] = useState(true);
+    const [nuevoComentario, setNuevoComentario] = useState("");
+    const [nombreInput, setNombreInput] = useState("");
+    const [isSending, setIsSending] = useState(false);
+
+    const fetchComentarios = useCallback(async () => {
+        try {
+            setLoadingComentarios(true);
+            const res = await fetch(`${API_BASE}/api/Comentarios/${data.id}`);
+            if (res.ok) {
+                const json = await res.json();
+                setComentarios(Array.isArray(json) ? json : []);
+            }
+        } catch (e) {
+            console.error("Error al cargar comentarios", e);
+        } finally {
+            setLoadingComentarios(false);
+        }
+    }, [data.id]);
+
+    useEffect(() => {
+        const userJson = localStorage.getItem('user');
+        if (userJson) {
+            try {
+                const user = JSON.parse(userJson);
+                if (user.nombre) setNombreInput(user.nombre);
+            } catch (e) { console.error("Error parsing user", e); }
+        }
+        fetchComentarios();
+    }, [fetchComentarios]);
+
+    const handleSendComentario = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!nuevoComentario.trim() || isSending) return;
+
+        setIsSending(true);
+        const formData = new FormData();
+        formData.append('idAcuerdo', String(data.id));
+        formData.append('Comentario', nuevoComentario.trim());
+        formData.append('NombreUsuario', nombreInput.trim() || "Anónimo");
+
+        try {
+            const res = await fetch(`${API_BASE}/api/Comentarios/crear`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (res.ok) {
+                setNuevoComentario("");
+                await fetchComentarios();
+            }
+        } catch (e) {
+            console.error("Error al enviar", e);
+        } finally {
+            setIsSending(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-black/85 backdrop-blur-md" />
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white w-full max-w-6xl rounded-none overflow-hidden relative z-10 shadow-2xl h-[90vh] md:h-[80vh]">
+                <div className="grid grid-cols-4 grid-rows-6 gap-0 h-full">
+
+                    {/* 1: IMAGEN */}
+                    <div className="col-span-2 row-span-3 bg-slate-200 relative overflow-hidden border-b border-r border-slate-100">
+                        <img src={resolveBackendUrl(data.imagenUrl) || PDI_LOGO_URL} className="absolute inset-0 w-full h-full object-cover" alt="" />
+                    </div>
+
+                    {/* 2: COMENTARIOS */}
+                    <div className="col-span-2 row-span-6 col-start-3 bg-slate-50 flex flex-col border-l border-slate-200 overflow-hidden">
+                        <div className="p-4 bg-white border-b border-slate-200 flex justify-between items-center shadow-sm">
+                            <h4 className="text-xs font-black uppercase tracking-widest text-[#002855] flex items-center gap-2">
+                                <MessageSquare size={14} className="text-blue-500" /> Feedback Institucional
+                            </h4>
+                            <button onClick={onClose} className="text-slate-400 hover:text-red-500 transition-colors"><X size={20} /></button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-list-scroll bg-slate-50">
+                            {loadingComentarios ? (
+                                <div className="flex justify-center py-10"><RefreshCw className="animate-spin text-slate-300" /></div>
+                            ) : comentarios.length > 0 ? (
+                                comentarios.map((c, idx) => (
+                                    <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} key={idx} className="bg-white p-4 shadow-sm border-l-4 border-blue-600">
+                                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-tighter block mb-1">{c.nombreUsuario || "Anónimo"}</span>
+                                        <p className="text-xs text-slate-700 font-medium leading-relaxed">{c.comentario}</p>
+                                    </motion.div>
+                                ))
+                            ) : (
+                                <div className="text-center py-20 italic text-slate-400 text-xs font-bold uppercase tracking-widest">Sin comentarios registrados</div>
+                            )}
+                        </div>
+
+                        <div className="p-4 bg-white border-t border-slate-200">
+                            <form onSubmit={handleSendComentario} className="flex flex-col gap-3">
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text" placeholder="Nombre (Opcional)" value={nombreInput}
+                                        onChange={(e) => setNombreInput(e.target.value)}
+                                        className="w-1/3 bg-slate-50 border-b-2 border-slate-200 px-3 py-2 text-[10px] font-black outline-none focus:border-blue-500 transition-all uppercase"
+                                    />
+                                    <input
+                                        type="text" placeholder="Escribir feedback..." value={nuevoComentario}
+                                        onChange={(e) => setNuevoComentario(e.target.value)}
+                                        className="flex-1 bg-slate-50 border-b-2 border-slate-200 px-3 py-2 text-[10px] font-bold outline-none focus:border-blue-500 transition-all"
+                                    />
+                                </div>
+                                <button
+                                    disabled={!nuevoComentario.trim() || isSending}
+                                    className="w-full bg-[#002855] text-white py-2.5 text-[9px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-blue-600 transition-all disabled:bg-slate-300 shadow-lg"
+                                >
+                                    {isSending ? <RefreshCw size={12} className="animate-spin" /> : <Send size={12} />} {isSending ? "Publicando..." : "Publicar Feedback"}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    {/* 4: INFORMACIÓN TÍTULO */}
+                    <div className="col-span-2 row-start-4 bg-white p-8 border-r border-slate-100 flex flex-col justify-center">
+                        <div className="flex items-center gap-3 mb-2">
+                            <span className="bg-blue-600 text-white text-[9px] font-black px-2 py-0.5 uppercase tracking-tighter">{data.categoria}</span>
+                            <span className="text-green-600 text-[9px] font-black uppercase tracking-tighter border border-green-200 px-2 py-0.5">{data.estado || 'Activo'}</span>
+                        </div>
+                        <h3 className="text-3xl font-black text-[#002855] uppercase leading-none truncate">{data.titulo}</h3>
+                        <div className="flex items-center gap-4 mt-2">
+                            <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest flex items-center gap-1"><Hash size={12} /> ID: 2026-{(data.id || 0).toString().padStart(4, '0')}</span>
+                            {data.fechaVencimiento && <span className="text-[10px] text-red-500 font-black uppercase tracking-widest flex items-center gap-1"><Calendar size={12} /> VENCE: {new Date(data.fechaVencimiento).toLocaleDateString()}</span>}
+                        </div>
+                    </div>
+
+                    {/* 5: DESCRIPCIÓN */}
+                    <div className="col-span-2 row-span-2 row-start-5 bg-white p-8 pt-0 border-r border-slate-100 overflow-y-auto custom-list-scroll">
+                        <div className="w-12 h-1 bg-[#002855] mb-4" />
+                        <p className="text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Memoria Descriptiva</p>
+                        <p className="text-sm text-slate-600 leading-relaxed font-medium italic">
+                            {data.detallesDescripcion || data.descripcion || "Información en proceso de validación institucional."}
+                        </p>
+                    </div>
                 </div>
-            </div>
-            <div className="p-8 md:p-10 flex flex-col justify-center border-r border-slate-200 bg-white">
-                <h3 className="text-2xl md:text-3xl font-black text-[#002855] uppercase leading-none mb-3 truncate">{data.titulo}</h3>
-                <p className="text-base md:text-lg text-slate-500 font-medium italic line-clamp-3">"{data.descripcion}"</p>
-            </div>
-            <div className="p-8 md:p-10 flex flex-col justify-between bg-white overflow-y-auto">
-                <div><p className="text-[10px] font-black text-slate-400 uppercase mb-3">Detalles</p><p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{data.detallesDescripcion || "No hay detalles."}</p></div>
-                <button onClick={onClose} className="mt-6 py-4 bg-[#002855] text-white rounded-xl font-black uppercase shadow-lg">Cerrar</button>
-            </div>
-        </motion.div>
-    </div>
-));
+            </motion.div>
+        </div>
+    );
+});
 
 const CarouselItem = React.memo(({ item, isActive, onClick }: any) => (
-    <div className="embla__slide flex-[0_0_90%] md:flex-[0_0_42%] px-3">
+    <div className="embla__slide flex-[0_0_90%] md:flex-[0_0_42%] px-4">
         <motion.div
             onClick={isActive ? onClick : undefined}
-            animate={{ scale: isActive ? 1.02 : 0.9, opacity: isActive ? 1 : 0.4 }}
-            className={`relative bg-white rounded-2xl overflow-hidden shadow-2xl border border-slate-200 flex flex-col ${isActive ? 'cursor-pointer' : 'cursor-default'}`}
+            animate={{ scale: isActive ? 1.02 : 0.9, opacity: isActive ? 1 : 0.6 }}
+            className={`relative bg-white rounded-none overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.05)] flex flex-col border-none ${isActive ? 'cursor-pointer' : 'cursor-default'}`}
         >
-            <div className="relative w-full aspect-[16/10] bg-gray-100 overflow-hidden">
+            <div className="relative w-full aspect-[16/9] bg-gray-100 overflow-hidden">
                 <img src={resolveBackendUrl(item.imagenUrl) || PDI_LOGO_URL} className="absolute inset-0 w-full h-full object-cover" alt="" />
             </div>
-            <div className="p-6 md:p-8 bg-white border-t border-slate-100 min-h-[140px] flex flex-col justify-center">
-                <span className="text-blue-600 font-black text-[10px] uppercase tracking-widest mb-1 block">{item.categoria}</span>
-                <h3 className="text-xl md:text-2xl font-black text-[#002855] uppercase leading-tight mb-2 truncate">{item.titulo}</h3>
-                <p className="text-slate-500 text-xs md:text-sm font-medium italic line-clamp-2">{item.descripcion}</p>
+            <div className="bg-[#002855] px-6 py-4 flex items-center justify-between gap-4">
+                <h3 className="text-lg font-black text-white uppercase leading-none truncate flex-1">{item.titulo}</h3>
+                <span className="shrink-0 text-[10px] font-black bg-blue-500 text-white px-2 py-1 uppercase tracking-tighter">{item.categoria}</span>
+            </div>
+            <div className="p-6 bg-white min-h-[100px] flex items-center">
+                <p className="text-slate-600 text-sm font-bold italic line-clamp-2 leading-tight">{item.descripcion}</p>
             </div>
         </motion.div>
     </div>
