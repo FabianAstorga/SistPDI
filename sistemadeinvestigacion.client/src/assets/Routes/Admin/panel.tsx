@@ -281,7 +281,7 @@ const ModalDetalle = React.memo(({ data, onClose }: any) => {
             const res = await fetch(`${API_BASE}/api/Comentarios/${data.id}`);
             if (res.ok) {
                 const json = await res.json();
-                setComentarios(Array.isArray(json) ? json : []);
+                setComentarios(Array.isArray(json) ? [...json].reverse() : []);
             }
         } catch (e) {
             console.error("Error al cargar comentarios", e);
@@ -304,7 +304,6 @@ const ModalDetalle = React.memo(({ data, onClose }: any) => {
     const handleSendComentario = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!nuevoComentario.trim() || isSending) return;
-
         setIsSending(true);
         const formData = new FormData();
         formData.append('idAcuerdo', String(data.id));
@@ -312,11 +311,7 @@ const ModalDetalle = React.memo(({ data, onClose }: any) => {
         formData.append('NombreUsuario', nombreInput.trim() || "Anónimo");
 
         try {
-            const res = await fetch(`${API_BASE}/api/Comentarios/crear`, {
-                method: 'POST',
-                body: formData
-            });
-
+            const res = await fetch(`${API_BASE}/api/Comentarios/crear`, { method: 'POST', body: formData });
             if (res.ok) {
                 setNuevoComentario("");
                 await fetchComentarios();
@@ -329,86 +324,144 @@ const ModalDetalle = React.memo(({ data, onClose }: any) => {
     };
 
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-black/85 backdrop-blur-md" />
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white w-full max-w-6xl rounded-none overflow-hidden relative z-10 shadow-2xl h-[90vh] md:h-[80vh]">
-                <div className="grid grid-cols-4 grid-rows-6 gap-0 h-full">
+        <div className="fixed inset-0 z-[9999] flex justify-center p-0 md:p-10 overflow-y-auto bg-[#001a35]/90 backdrop-blur-sm custom-list-scroll">
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={onClose}
+                className="fixed inset-0 z-[-1]"
+            />
 
-                    {/* 1: IMAGEN */}
-                    <div className="col-span-2 row-span-3 bg-slate-200 relative overflow-hidden border-b border-r border-slate-100">
-                        <img src={resolveBackendUrl(data.imagenUrl) || PDI_LOGO_URL} className="absolute inset-0 w-full h-full object-cover" alt="" />
+            <motion.div
+                initial={{ scale: 0.98, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.98, opacity: 0, y: 20 }}
+                className="bg-white w-full max-w-7xl h-fit min-h-screen md:min-h-0 rounded-none shadow-2xl relative mb-10 overflow-hidden"
+            >
+                <header className="px-8 py-8 border-b border-slate-100 flex items-center justify-between bg-white z-20">
+                    <div className="flex-1 min-w-0 pr-6">
+                        <h2 className="text-2xl md:text-5xl font-black text-[#002855] uppercase leading-none truncate tracking-tighter">
+                            {data.titulo}
+                        </h2>
                     </div>
-
-                    {/* 2: COMENTARIOS */}
-                    <div className="col-span-2 row-span-6 col-start-3 bg-slate-50 flex flex-col border-l border-slate-200 overflow-hidden">
-                        <div className="p-4 bg-white border-b border-slate-200 flex justify-between items-center shadow-sm">
-                            <h4 className="text-xs font-black uppercase tracking-widest text-[#002855] flex items-center gap-2">
-                                <MessageSquare size={14} className="text-blue-500" /> Feedback Institucional
-                            </h4>
-                            <button onClick={onClose} className="text-slate-400 hover:text-red-500 transition-colors"><X size={20} /></button>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-list-scroll bg-slate-50">
-                            {loadingComentarios ? (
-                                <div className="flex justify-center py-10"><RefreshCw className="animate-spin text-slate-300" /></div>
-                            ) : comentarios.length > 0 ? (
-                                comentarios.map((c, idx) => (
-                                    <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} key={idx} className="bg-white p-4 shadow-sm border-l-4 border-blue-600">
-                                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-tighter block mb-1">{c.nombreUsuario || "Anónimo"}</span>
-                                        <p className="text-xs text-slate-700 font-medium leading-relaxed">{c.comentario}</p>
-                                    </motion.div>
-                                ))
-                            ) : (
-                                <div className="text-center py-20 italic text-slate-400 text-xs font-bold uppercase tracking-widest">Sin comentarios registrados</div>
+                    <div className="flex items-center gap-8 shrink-0">
+                        <div className="hidden md:flex flex-col text-right">
+                            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest italic mb-1">ID REGISTRO: {data.id}</span>
+                            {data.fechaVencimiento && (
+                                <span className="text-xs md:text-sm font-black text-red-600 bg-red-50 px-3 py-1 uppercase tracking-tight border border-red-100">
+                                    VENCE: {new Date(data.fechaVencimiento).toLocaleDateString()}
+                                </span>
                             )}
                         </div>
+                        <button onClick={onClose} className="p-2 bg-slate-50 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all rounded-full">
+                            <X size={32} />
+                        </button>
+                    </div>
+                </header>
 
-                        <div className="p-4 bg-white border-t border-slate-200">
-                            <form onSubmit={handleSendComentario} className="flex flex-col gap-3">
-                                <div className="flex gap-2">
-                                    <input
-                                        type="text" placeholder="Nombre (Opcional)" value={nombreInput}
-                                        onChange={(e) => setNombreInput(e.target.value)}
-                                        className="w-1/3 bg-slate-50 border-b-2 border-slate-200 px-3 py-2 text-[10px] font-black outline-none focus:border-blue-500 transition-all uppercase"
-                                    />
-                                    <input
-                                        type="text" placeholder="Escribir feedback..." value={nuevoComentario}
-                                        onChange={(e) => setNuevoComentario(e.target.value)}
-                                        className="flex-1 bg-slate-50 border-b-2 border-slate-200 px-3 py-2 text-[10px] font-bold outline-none focus:border-blue-500 transition-all"
-                                    />
+                <main className="bg-white">
+                    <div className="flex flex-col md:flex-row items-stretch">
+                        {/* IMAGEN: Ahora usa object-cover y w-full h-full para llenar todo el div sin espacios */}
+                        <div className="w-full md:w-1/2 bg-slate-200 border-r border-slate-200 min-h-[500px]">
+                            <img
+                                src={resolveBackendUrl(data.imagenUrl) || PDI_LOGO_URL}
+                                className="w-full h-full object-cover"
+                                alt={data.titulo}
+                            />
+                        </div>
+
+                        <div className="w-full md:w-1/2 p-8 md:p-20 bg-slate-50 flex flex-col justify-start">
+                            <div className="mb-10">
+                                <h4 className="text-xs font-black uppercase tracking-[0.4em] text-blue-600 mb-6 border-b-4 border-blue-600 w-fit pb-2">
+                                    Detalles de acuerdo
+                                </h4>
+                                
+                                <div className="prose prose-slate max-w-none">
+                                    <p className="text-base md:text-lg text-slate-600 leading-relaxed whitespace-pre-wrap font-medium">
+                                        {data.detallesDescripcion || "Información institucional en proceso de actualización por el departamento encargado."}
+                                    </p>
                                 </div>
-                                <button
-                                    disabled={!nuevoComentario.trim() || isSending}
-                                    className="w-full bg-[#002855] text-white py-2.5 text-[9px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-blue-600 transition-all disabled:bg-slate-300 shadow-lg"
-                                >
-                                    {isSending ? <RefreshCw size={12} className="animate-spin" /> : <Send size={12} />} {isSending ? "Publicando..." : "Publicar Feedback"}
-                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <section className="bg-white p-8 md:p-24 border-t border-slate-100">
+                        <div className="max-w-4xl mx-auto">
+                            <div className="flex items-center gap-4 mb-16">
+                                <MessageSquare size={32} className="text-[#002855]" />
+                                <h3 className="text-3xl font-black uppercase tracking-tighter text-[#002855]">Comentarios</h3>
+                                <div className="h-1 flex-1 bg-slate-100 ml-4" />
+                            </div>
+
+                            <form onSubmit={handleSendComentario} className="bg-slate-50 p-10 border border-slate-200 shadow-xl mb-24 relative">
+                                <div className="absolute -top-4 left-10 bg-[#002855] text-white text-[10px] font-black px-6 py-2 uppercase tracking-widest shadow-lg">
+                                    Añadir nuevo comentario
+                                </div>
+                                <div className="flex flex-col md:flex-row gap-8">
+                                    <div className="w-full md:w-1/3">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Identificación</label>
+                                        <input
+                                            type="text" placeholder="NOMBRE / UNIDAD" value={nombreInput}
+                                            onChange={(e) => setNombreInput(e.target.value)}
+                                            className="w-full bg-white border-2 border-slate-100 px-4 py-4 text-xs font-bold outline-none focus:border-[#002855] transition-all uppercase"
+                                        />
+                                    </div>
+                                    <div className="flex-1">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Mensaje Institucional</label>
+                                        <div className="relative">
+                                            <input
+                                                type="text" placeholder="Escriba su opinión sobre el acuerdo..." value={nuevoComentario}
+                                                onChange={(e) => setNuevoComentario(e.target.value)}
+                                                className="w-full bg-white border-2 border-slate-100 pl-6 pr-16 py-4 text-xs font-bold outline-none focus:border-[#002855] transition-all"
+                                            />
+                                            <button
+                                                disabled={!nuevoComentario.trim() || isSending}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 p-3 text-[#002855] hover:text-blue-600 disabled:opacity-20 transition-all scale-125"
+                                            >
+                                                {isSending ? <RefreshCw className="animate-spin" /> : <Send />}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </form>
-                        </div>
-                    </div>
 
-                    {/* 4: INFORMACIÓN TÍTULO */}
-                    <div className="col-span-2 row-start-4 bg-white p-8 border-r border-slate-100 flex flex-col justify-center">
-                        <div className="flex items-center gap-3 mb-2">
-                            <span className="bg-blue-600 text-white text-[9px] font-black px-2 py-0.5 uppercase tracking-tighter">{data.categoria}</span>
-                            <span className="text-green-600 text-[9px] font-black uppercase tracking-tighter border border-green-200 px-2 py-0.5">{data.estado || 'Activo'}</span>
+                            <div className="divide-y divide-slate-100">
+                                {loadingComentarios ? (
+                                    <div className="flex justify-center py-24"><RefreshCw className="animate-spin text-blue-600" size={40} /></div>
+                                ) : comentarios.length > 0 ? (
+                                    comentarios.map((c, idx) => (
+                                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} key={idx} className="py-12 flex gap-10 items-start group">
+                                            <div className="shrink-0 w-14 h-14 bg-[#002855] text-white flex items-center justify-center text-lg font-black uppercase shadow-lg">
+                                                {(c.nombreUsuario || "A")[0].toUpperCase()}
+                                            </div>
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-4 mb-3">
+                                                    <span className="text-sm font-black text-[#002855] uppercase tracking-wide">{c.nombreUsuario || "Anónimo"}</span>
+                                                    <div className="h-1 w-1 bg-slate-300 rounded-full" />
+                                                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic">Personal Verificado</span>
+                                                </div>
+                                                <p className="text-base md:text-lg text-slate-600 leading-relaxed font-medium">
+                                                    {c.comentario}
+                                                </p>
+                                            </div>
+                                        </motion.div>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-24 bg-slate-50 border-2 border-dashed border-slate-200">
+                                        <p className="text-sm font-black text-slate-300 uppercase tracking-[0.5em]">Sin actividad reciente</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                        <h3 className="text-3xl font-black text-[#002855] uppercase leading-none truncate">{data.titulo}</h3>
-                        <div className="flex items-center gap-4 mt-2">
-                            <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest flex items-center gap-1"><Hash size={12} /> ID: 2026-{(data.id || 0).toString().padStart(4, '0')}</span>
-                            {data.fechaVencimiento && <span className="text-[10px] text-red-500 font-black uppercase tracking-widest flex items-center gap-1"><Calendar size={12} /> VENCE: {new Date(data.fechaVencimiento).toLocaleDateString()}</span>}
-                        </div>
-                    </div>
+                    </section>
+                </main>
 
-                    {/* 5: DESCRIPCIÓN */}
-                    <div className="col-span-2 row-span-2 row-start-5 bg-white p-8 pt-0 border-r border-slate-100 overflow-y-auto custom-list-scroll">
-                        <div className="w-12 h-1 bg-[#002855] mb-4" />
-                        <p className="text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Memoria Descriptiva</p>
-                        <p className="text-sm text-slate-600 leading-relaxed font-medium italic">
-                            {data.detallesDescripcion || data.descripcion || "Información en proceso de validación institucional."}
-                        </p>
-                    </div>
-                </div>
+                <footer className="p-12 bg-slate-50 flex justify-center border-t border-slate-100">
+                    <button onClick={onClose} className="px-16 py-5 bg-[#002855] text-white font-black uppercase tracking-[0.3em] text-sm hover:bg-blue-800 transition-all shadow-2xl active:scale-95">
+                        cerrar acuerdo
+                    </button>
+                </footer>
             </motion.div>
         </div>
     );

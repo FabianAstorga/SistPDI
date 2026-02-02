@@ -33,12 +33,12 @@ modificar empresas
 
 eliminar acuerdos (confirmacion previa)
 
-gestionar usuarios
-crear modificar asignar rol
+//gestionar usuarios
+//crear modificar asignar rol
 
 notificar por correo
 seleccionar lista de destinatarios
-resumen o texto completo
+//resumen o texto completo
 
 paginacion
 
@@ -49,10 +49,10 @@ cambiar el cifrado de estatico a dinamico
 
 Front-end
 Abstraer los datos de acuerdo al svg
-Crear vista de los 2 roles
-Crear vista de funcionario fuera del sistema ("E-comerce")
+//Crear vista de los 2 roles
+//Crear vista de funcionario fuera del sistema ("E-comerce")
 Crear funcion para importar usuarios por excel
-Actualizar vista de acuerdos para poder crear una empresa y sus contactos
+//Actualizar vista de acuerdos para poder crear una empresa y sus contactos
 mantener el svg como archivo temporal dentro de la sesion
 
 
