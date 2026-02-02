@@ -9,22 +9,18 @@ namespace SistemaDeInvestigacion.Server.Models
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         [Column("IdComentario")]
-        public int IdComentario { get; set; }
+        public int? IdComentario { get; set; }
 
         [Required]
         [Column("IdAcuerdo")]
-        public int IdAcuerdo { get; set; }
+        public required int IdAcuerdo { get; set; }
 
         [Required]
         [Column("Comentario")]
         public required string Comentario { get; set;}
 
-        [Required]
-        [Column("IdPersona")]
-        public required int IdPersona { get; set; }
-        
-        [ForeignKey("IdPersona")]
-        public virtual User? User { get; set; }
+        [Column("NombreUsuario")]
+        public string NombreUsuario { get; set;}
 
         [ForeignKey("IdAcuerdo")]
         public virtual Acuerdo? Acuerdo { get; set; }

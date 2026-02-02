@@ -259,7 +259,7 @@ namespace SistemaDeInvestigacion.Server.Data
                 entity.Property(e => e.IdComentario).HasColumnName("IdComentario");
                 entity.Property(e => e.IdAcuerdo).HasColumnName("IdAcuerdo");
                 entity.Property(e => e.Comentario).HasColumnName("Comentario");
-                entity.Property(e => e.IdPersona).HasColumnName("IdPersona");
+                entity.Property(e => e.NombreUsuario).HasColumnName("NombreUsuario");
 
                 entity.HasOne(d => d.Acuerdo)
                       .WithMany()
@@ -267,11 +267,6 @@ namespace SistemaDeInvestigacion.Server.Data
                       .OnDelete(DeleteBehavior.Restrict)
                       .HasConstraintName("fk_comentario_acuerdo");
 
-                entity.HasOne(d => d.User)
-                      .WithMany()
-                      .HasForeignKey(d => d.IdPersona)
-                      .OnDelete(DeleteBehavior.Restrict)
-                      .HasConstraintName("fk_comentario_usuario");
             });
 
 
