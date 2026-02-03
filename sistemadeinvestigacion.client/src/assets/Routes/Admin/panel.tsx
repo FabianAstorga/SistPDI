@@ -182,9 +182,9 @@ export default function Panel() {
                 </section>
 
                 <section ref={carouselRef} className="snap-start w-full h-screen flex flex-col justify-center bg-slate-200 relative overflow-hidden transition-colors duration-500">
-                    <div className="max-w-7xl mx-auto w-full px-6 mb-10 text-center">
+                    <div className="max-w-7xl mx-auto w-full px-6 mb-2 text-center">
                         <h2 className="text-3xl md:text-4xl font-black text-[#002855] uppercase tracking-tighter">Acuerdos Destacados</h2>
-                        <div className="w-16 h-1.5 bg-[#002855] mx-auto mt-2" />
+                        
                     </div>
                     <div className="w-full relative px-4 overflow-visible">
                         <div className="embla overflow-visible" ref={emblaRef}>
@@ -325,19 +325,13 @@ const ModalDetalle = React.memo(({ data, onClose }: any) => {
 
     return (
         <div className="fixed inset-0 z-[9999] flex justify-center p-0 md:p-10 overflow-y-auto bg-[#001a35]/90 backdrop-blur-sm custom-list-scroll">
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={onClose}
-                className="fixed inset-0 z-[-1]"
-            />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 z-[-1]" />
 
             <motion.div
                 initial={{ scale: 0.98, opacity: 0, y: 20 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.98, opacity: 0, y: 20 }}
-                className="bg-white w-full max-w-7xl h-fit min-h-screen md:min-h-0 rounded-none shadow-2xl relative mb-10 overflow-hidden"
+                className="bg-white w-full max-w-7xl h-fit rounded-none shadow-2xl relative mb-10 overflow-hidden"
             >
                 <header className="px-8 py-8 border-b border-slate-100 flex items-center justify-between bg-white z-20">
                     <div className="flex-1 min-w-0 pr-6">
@@ -361,22 +355,26 @@ const ModalDetalle = React.memo(({ data, onClose }: any) => {
                 </header>
 
                 <main className="bg-white">
+                    {/* SECCIÓN CUERPO PARALELO */}
                     <div className="flex flex-col md:flex-row items-stretch">
-                        {/* IMAGEN: Ahora usa object-cover y w-full h-full para llenar todo el div sin espacios */}
-                        <div className="w-full md:w-1/2 bg-slate-200 border-r border-slate-200 min-h-[500px]">
+                        {/* 1. IMAGEN: Con object-contain para que no se recorte y fondo oscuro para contraste */}
+                        <div className="w-full md:w-1/2 bg-white flex items-center justify-center p-4 border-r border-slate-200">
                             <img
                                 src={resolveBackendUrl(data.imagenUrl) || PDI_LOGO_URL}
-                                className="w-full h-full object-cover"
+                                className="max-w-full max-h-[550px] object-contain"
                                 alt={data.titulo}
                             />
                         </div>
 
-                        <div className="w-full md:w-1/2 p-8 md:p-20 bg-slate-50 flex flex-col justify-start">
-                            <div className="mb-10">
+                        {/* 2. DESCRIPCIÓN: Con altura máxima y scroll interno para no deformar el modal */}
+                        <div className="w-full md:w-1/2 bg-slate-50 flex flex-col max-h-[600px]">
+                            <div className="p-8 md:p-20 overflow-y-auto custom-list-scroll">
                                 <h4 className="text-xs font-black uppercase tracking-[0.4em] text-blue-600 mb-6 border-b-4 border-blue-600 w-fit pb-2">
                                     Detalles de acuerdo
                                 </h4>
-                                
+                                <p className="text-2xl text-[#002855] font-black italic leading-tight mb-8">
+                                    "{data.descripcion}"
+                                </p>
                                 <div className="prose prose-slate max-w-none">
                                     <p className="text-base md:text-lg text-slate-600 leading-relaxed whitespace-pre-wrap font-medium">
                                         {data.detallesDescripcion || "Información institucional en proceso de actualización por el departamento encargado."}
@@ -386,6 +384,7 @@ const ModalDetalle = React.memo(({ data, onClose }: any) => {
                         </div>
                     </div>
 
+                    {/* SECCIÓN COMENTARIOS */}
                     <section className="bg-white p-8 md:p-24 border-t border-slate-100">
                         <div className="max-w-4xl mx-auto">
                             <div className="flex items-center gap-4 mb-16">
@@ -396,7 +395,7 @@ const ModalDetalle = React.memo(({ data, onClose }: any) => {
 
                             <form onSubmit={handleSendComentario} className="bg-slate-50 p-10 border border-slate-200 shadow-xl mb-24 relative">
                                 <div className="absolute -top-4 left-10 bg-[#002855] text-white text-[10px] font-black px-6 py-2 uppercase tracking-widest shadow-lg">
-                                    Añadir nuevo comentario
+                                    Añadir Feedback
                                 </div>
                                 <div className="flex flex-col md:flex-row gap-8">
                                     <div className="w-full md:w-1/3">
@@ -411,13 +410,13 @@ const ModalDetalle = React.memo(({ data, onClose }: any) => {
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Mensaje Institucional</label>
                                         <div className="relative">
                                             <input
-                                                type="text" placeholder="Escriba su opinión sobre el acuerdo..." value={nuevoComentario}
+                                                type="text" placeholder="Escriba su opinión..." value={nuevoComentario}
                                                 onChange={(e) => setNuevoComentario(e.target.value)}
                                                 className="w-full bg-white border-2 border-slate-100 pl-6 pr-16 py-4 text-xs font-bold outline-none focus:border-[#002855] transition-all"
                                             />
                                             <button
                                                 disabled={!nuevoComentario.trim() || isSending}
-                                                className="absolute right-3 top-1/2 -translate-y-1/2 p-3 text-[#002855] hover:text-blue-600 disabled:opacity-20 transition-all scale-125"
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 p-3 text-[#002855] hover:text-blue-600 disabled:opacity-20 transition-all"
                                             >
                                                 {isSending ? <RefreshCw className="animate-spin" /> : <Send />}
                                             </button>
@@ -439,7 +438,7 @@ const ModalDetalle = React.memo(({ data, onClose }: any) => {
                                                 <div className="flex items-center gap-4 mb-3">
                                                     <span className="text-sm font-black text-[#002855] uppercase tracking-wide">{c.nombreUsuario || "Anónimo"}</span>
                                                     <div className="h-1 w-1 bg-slate-300 rounded-full" />
-                                                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic">Personal Verificado</span>
+                                                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic">Oficial</span>
                                                 </div>
                                                 <p className="text-base md:text-lg text-slate-600 leading-relaxed font-medium">
                                                     {c.comentario}
@@ -471,14 +470,14 @@ const CarouselItem = React.memo(({ item, isActive, onClick }: any) => (
     <div className="embla__slide flex-[0_0_90%] md:flex-[0_0_42%] px-4">
         <motion.div
             onClick={isActive ? onClick : undefined}
-            animate={{ scale: isActive ? 1.02 : 0.9, opacity: isActive ? 1 : 0.6 }}
+            animate={{ scale: isActive ? 0.9 : 0.9, opacity: isActive ? 1 : 0.6 }}
             className={`relative bg-white rounded-none overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.05)] flex flex-col border-none ${isActive ? 'cursor-pointer' : 'cursor-default'}`}
         >
-            <div className="relative w-full aspect-[16/9] bg-gray-100 overflow-hidden">
+            <div className="relative w-full aspect-[4/3] bg-gray-100 overflow-hidden">
                 <img src={resolveBackendUrl(item.imagenUrl) || PDI_LOGO_URL} className="absolute inset-0 w-full h-full object-cover" alt="" />
             </div>
-            <div className="bg-[#002855] px-6 py-4 flex items-center justify-between gap-4">
-                <h3 className="text-lg font-black text-white uppercase leading-none truncate flex-1">{item.titulo}</h3>
+            <div className="bg-white px-8 py-5 flex items-center justify-between gap-4">
+                <h3 className="text-2xl font-black text-black uppercase leading-none truncate flex-1">{item.titulo}</h3>
                 <span className="shrink-0 text-[10px] font-black bg-blue-500 text-white px-2 py-1 uppercase tracking-tighter">{item.categoria}</span>
             </div>
             <div className="p-6 bg-white min-h-[100px] flex items-center">
