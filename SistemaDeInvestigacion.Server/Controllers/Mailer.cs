@@ -74,7 +74,6 @@ public class AuthMailService
         }
         else
         {
-            // Si por alguna razón la imagen no existe, enviamos solo el texto
             builder.HtmlBody = $"<h2>Nuevo Acuerdo: {titulo}</h2><p>{descripcion}</p>";
         }
 

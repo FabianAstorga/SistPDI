@@ -56,21 +56,14 @@ namespace SistemaDeInvestigacion.Server.Controllers
         [HttpGet("unidades")]
         public async Task<IActionResult> GetUnidades()
         {
-            try
-            {
-                var unidades = await _context.Unidades
-                    .Select(u => new {
-                        Id = u.idUnidad,
-                        Nombre = u.Nombre
-                    })
-                    .ToListAsync();
+           var unidades = await _context.Unidades
+             .Select(u => new {                    
+                 Id = u.idUnidad,       
+                 Nombre = u.Nombre
+             })
+             .ToListAsync();    
+            return Ok(unidades);
 
-                return Ok(unidades);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Error al obtener unidades: {ex.Message}");
-            }
         }
     }
 }

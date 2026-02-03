@@ -85,7 +85,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
             _context.Funcionarios.Add(newEmpleado);
             await _context.SaveChangesAsync();
-            return Ok("Empleado creado Exitosamente");
+            return Ok("Funcionario creado Exitosamente");
 
         }
 
@@ -102,7 +102,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
             if (funcionario == null)
             {
-                return NotFound($"No se encontró un empleado con el rut ingresado");
+                return NotFound("No se encontró un funcionario con el rut ingresado");
             }
 
 
@@ -112,7 +112,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
      
             await _context.SaveChangesAsync();
      
-            return Ok(new { mensaje = "Empleado actualizado correctamente" });
+            return Ok(new { mensaje = "Funcionario actualizado correctamente" });
         }
     }
 }
