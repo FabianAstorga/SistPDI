@@ -11,7 +11,7 @@ public class AuthMailService
     public async Task SendCode(string correoDestino, string codigo)
     {
         var message = new MimeMessage();
-        message.From.Add(new MailboxAddress("Soporte SiAc", _email));
+        message.From.Add(new MailboxAddress("Soporte SISAC", _email));
         message.To.Add(MailboxAddress.Parse(correoDestino));
         message.Subject = "Código de Recuperación de Contraseña";
         message.Body = new TextPart("html")
@@ -44,8 +44,11 @@ public class AuthMailService
     public async Task SendMailAcuerdo(string correoDestino)
     {
         var message = new MimeMessage();
-        message.From.Add(new MailboxAddress("Sistema de Acuerdos", _email));
+        message.From.Add(new MailboxAddress("SISAC", _email));
         message.To.Add(MailboxAddress.Parse(correoDestino));
+
+
+
 
     }
 

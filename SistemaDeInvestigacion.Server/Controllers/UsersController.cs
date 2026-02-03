@@ -21,6 +21,24 @@ namespace SistemaDeInvestigacion.Server.Controllers
             _configuration = configuration;
         }
 
+        [HttpGet("{id}")]
+        public async Task<ActionResult<User>> TenerUsuario(int id)
+        {
+            var UserData = await _context.Users.FindAsync(id);
+
+            if (UserData == null)
+            {
+                return NotFound();
+            }
+            return Ok(UserData);
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<User>>> GetUser()
+        {
+            Console.WriteLine("ola");
+            return await _context.Users.ToListAsync();
+        }
 
         [HttpPost]
         public async Task<ActionResult<User>> CrearUsuario([FromForm] CreateUserDto createUserDto)
@@ -56,26 +74,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return Ok(new { Message = "Usuario Nuevo Creado" });
         }
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult<User>> TenerUsuario(int id)
-        {
-            var UserData = await _context.Users.FindAsync(id);
-
-            if (UserData == null)
-            {
-                return NotFound();
-            }
-            return Ok(UserData);
-        }
-
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<User>>> GetUser()
-        {
-            Console.WriteLine("ola");
-            return await _context.Users.ToListAsync();
-        }
-
-        
         [HttpPatch]
         public async Task<ActionResult> UpdateUser(UpdateUserDto updateUserDto)
         {
@@ -109,7 +107,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 return StatusCode(500, $"Error al guardar: {ex.Message}");
             }
         }
-
     }
 }
 

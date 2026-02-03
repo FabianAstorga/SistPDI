@@ -3,6 +3,7 @@ using SistemaDeInvestigacion.Server.Data;
 using SistemaDeInvestigacion.Server.Dtos;
 using SistemaDeInvestigacion.Server.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace SistemaDeInvestigacion.Server.Controllers
 {
@@ -45,6 +46,14 @@ namespace SistemaDeInvestigacion.Server.Controllers
             _context.Comentarios.Add(nuevoComentario);
             await _context.SaveChangesAsync();
             return Ok("Comentario creado Correctamente");
+        }
+ 
+        [HttpDelete("eliminar/{idComentario}")]
+        public async Task<ActionResult<Comentarios>> deleteComentario(int idComentario){
+            var comentariosData = await _context.Comentarios.FindAsync(idComentario);
+            _context.Comentarios.Remove(comentariosData);
+            await _context.SaveChangesAsync();
+            return NoContent();
         }
     }
 }

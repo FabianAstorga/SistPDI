@@ -19,6 +19,14 @@ namespace SistemaDeInvestigacion.Server.Controllers
             _configuration = configuration;
         }
 
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Funcionarios>>> GetEmpleados()
+        {
+
+            Console.WriteLine("ola");
+            return await _context.Funcionarios.ToListAsync();
+        }
+
         [HttpGet("{idPersona}")]
         public async Task<ActionResult> TenerUsuario(int idPersona)
         {
@@ -79,15 +87,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
             await _context.SaveChangesAsync();
             return Ok("Empleado creado Exitosamente");
 
-        }
-
-
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Funcionarios>>> GetEmpleados()
-        {
-            
-            Console.WriteLine("ola");
-            return await _context.Funcionarios.ToListAsync();
         }
 
         [HttpPatch("editar")]

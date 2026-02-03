@@ -33,6 +33,35 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return acuerdos;
         }
 
+        [HttpGet("mejores")]
+        public async Task<ActionResult<IEnumerable<Acuerdo>>> GetMejores()
+        {
+            var acuerdos = await _context.Acuerdos
+                .Where(acuerdos => acuerdos.IdEstado == 1)
+                .OrderByDescending(x => x.FechaCreacion)
+                .Take(10)
+                .ToListAsync();
+            return Ok(acuerdos);
+        }
+
+        [HttpGet()]
+        public async Task<ActionResult<IEnumerable<Acuerdo>>> GetAcuerdos()
+        {
+            var acuerdoslista = await _context.Acuerdos
+                .Where(acuerdos => acuerdos.IdEstado == 1)
+                .ToListAsync();
+            return Ok(acuerdoslista);
+        }
+
+        [HttpGet("pendientes")]
+        public async Task<ActionResult<IEnumerable<Acuerdo>>> GetPendientes()
+        {
+            var acuerdosPendientes = await _context.Acuerdos
+                .Where(acuerdos => acuerdos.IdEstado == 1)
+                .ToListAsync();
+            return Ok(acuerdosPendientes);
+        }
+
         [Authorize]
         [HttpPost("crear")]
         public async Task<ActionResult<Acuerdo>> PublicarAcuerdo([FromForm] createAcuerdoDto AcuerdoDto)
@@ -137,40 +166,11 @@ namespace SistemaDeInvestigacion.Server.Controllers
             };
 
             Console.WriteLine(NewSvg.Id);
-          
+
             _context.AcuerdosUserTemplates.Add(NewDatos);
             await _context.SaveChangesAsync();
 
             return Ok(new { Message = "Acuerdo Creado", Url = NewAcuerdo.ImagenUrl });
-        }
-
-        [HttpGet("mejores")]
-        public async Task<ActionResult<IEnumerable<Acuerdo>>> GetMejores()
-        {
-            var acuerdos = await _context.Acuerdos
-                .Where(acuerdos => acuerdos.IdEstado == 1)
-                .OrderByDescending(x => x.FechaCreacion)
-                .Take(10)
-                .ToListAsync();
-            return Ok(acuerdos);
-        }
-
-        [HttpGet()]
-        public async Task<ActionResult<IEnumerable<Acuerdo>>> GetAcuerdos()
-        {
-            var acuerdoslista = await _context.Acuerdos
-                .Where(acuerdos => acuerdos.IdEstado == 1)
-                .ToListAsync();
-            return Ok(acuerdoslista);
-        }
-
-        [HttpGet("pendientes")]
-        public async Task<ActionResult<IEnumerable<Acuerdo>>> GetPendientes()
-        {
-            var acuerdosPendientes = await _context.Acuerdos
-                .Where(acuerdos => acuerdos.IdEstado == 1)
-                .ToListAsync();
-            return Ok(acuerdosPendientes);
         }
 
         [HttpPatch("editar/{idAcuerdo}")]
@@ -189,17 +189,17 @@ namespace SistemaDeInvestigacion.Server.Controllers
             Console.WriteLine(template.IdSvg);
             var acuerdo = await _context.Acuerdos.FindAsync(idAcuerdo);
 
-            if (!string.IsNullOrEmpty(editAcuerdoDto.titulo)) 
+            if (!string.IsNullOrEmpty(editAcuerdoDto.titulo))
                 acuerdo.Titulo = editAcuerdoDto.titulo;
-            
-            if (!string.IsNullOrEmpty(editAcuerdoDto.descripcion)) 
+
+            if (!string.IsNullOrEmpty(editAcuerdoDto.descripcion))
                 acuerdo.Descripcion = editAcuerdoDto.descripcion;
-            
-            if (!string.IsNullOrEmpty(editAcuerdoDto.detallesDescripcion)) 
+
+            if (!string.IsNullOrEmpty(editAcuerdoDto.detallesDescripcion))
                 acuerdo.DetallesDescripcion = editAcuerdoDto.detallesDescripcion;
 
             if (editAcuerdoDto.idCategoria.HasValue) acuerdo.IdCategoria = editAcuerdoDto.idCategoria;
-            
+
             if (editAcuerdoDto.fechaVencimiento.HasValue) acuerdo.FechaVencimiento = editAcuerdoDto.fechaVencimiento;
 
             acuerdo.FechaActualizacion = DateTime.Now;
@@ -274,10 +274,19 @@ namespace SistemaDeInvestigacion.Server.Controllers
             _context.SvgTemplates.Update(NewSvg);
             await _context.SaveChangesAsync();
 
-
-
             return NoContent();
-        
+
         }
+
+        [HttpPatch("deshabilitar/{idAcuerdo}")]
+        public async Task<ActionResult<Acuerdo>> deshabilitarAcuerdo(int idAcuerdo)
+        {
+            var acuerdo = await _context.Acuerdos.FindAsync(idAcuerdo);
+            acuerdo.IdEstado = 2;
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        
     }
 }

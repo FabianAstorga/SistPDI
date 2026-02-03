@@ -22,6 +22,42 @@ namespace SistemaDeInvestigacion.Server.Controllers
             _configuration = configuration;
         }
 
+        
+
+        [Authorize]
+        [HttpGet("obtenerTemplates")]
+        public async Task<ActionResult<IEnumerable<SvgTemplate>>> ObtenerTemplates()
+        {
+            var listaSvg = await _context.SvgTemplates
+                .Where(s => s.IdEstado == 1)
+                .ToListAsync();
+            return Ok(listaSvg);
+        }
+
+        [Authorize]
+        [HttpGet("obtenerBorradores")]
+        public async Task<ActionResult<IEnumerable<SvgTemplate>>> ObtenerBorradores()
+        {
+            var userId = User.GetUserId();
+
+            var listaSvg = await _context.AcuerdosUserTemplates
+                .Where(relacion => relacion.IdUsuario == userId) 
+                .Select(relacion => relacion.SvgTemplate)        
+                .Where(svg => svg.IdEstado == 2)                
+                .ToListAsync();
+
+            return Ok(listaSvg);
+        }
+
+        [Authorize]
+        [HttpGet("devolverSvg")]
+        public async Task<ActionResult<IEnumerable<SvgTemplate>>> devolverSvg(int idSvg)
+        {
+            var listaSvg = await _context.SvgTemplates.FirstOrDefaultAsync(s => s.Id == idSvg);
+
+            return Ok(listaSvg.SvgEditado);
+        }
+
         [Authorize]
         [HttpPost("crear")]
         public async Task<IActionResult> CrearSvg([FromBody] CreateSvgDto createSvgDto)
@@ -57,40 +93,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
             await _context.SaveChangesAsync();
             return Ok(new { id = svgNuevo.Id });
 
-        }
-
-        [Authorize]
-        [HttpGet("obtenerTemplates")]
-        public async Task<ActionResult<IEnumerable<SvgTemplate>>> ObtenerTemplates()
-        {
-            var listaSvg = await _context.SvgTemplates
-                .Where(s => s.IdEstado == 1)
-                .ToListAsync();
-            return Ok(listaSvg);
-        }
-
-        [Authorize]
-        [HttpGet("obtenerBorradores")]
-        public async Task<ActionResult<IEnumerable<SvgTemplate>>> ObtenerBorradores()
-        {
-            var userId = User.GetUserId();
-
-            var listaSvg = await _context.AcuerdosUserTemplates
-                .Where(relacion => relacion.IdUsuario == userId) 
-                .Select(relacion => relacion.SvgTemplate)        
-                .Where(svg => svg.IdEstado == 2)                
-                .ToListAsync();
-
-            return Ok(listaSvg);
-        }
-
-        [Authorize]
-        [HttpGet("devolverSvg")]
-        public async Task<ActionResult<IEnumerable<SvgTemplate>>> devolverSvg(int idSvg)
-        {
-            var listaSvg = await _context.SvgTemplates.FirstOrDefaultAsync(s => s.Id == idSvg);
-
-            return Ok(listaSvg.SvgEditado);
         }
 
     }
