@@ -37,7 +37,7 @@ export const SvgTextBox: React.FC<Props> = memo(({ el, svgId = 'lienzo-svg' }) =
     const fontWeight = el.fontWeight ?? '700';
     const fill = el.fill ?? '#000';
 
-    const pad = 2;
+    const pad = 10;
     const lineHeight = Math.round(fontSize * 1.25);
 
     // 3. Optimizamos el cálculo de caracteres máximos
@@ -66,7 +66,7 @@ export const SvgTextBox: React.FC<Props> = memo(({ el, svgId = 'lienzo-svg' }) =
 
             <defs>
                 <clipPath id={clipId}>
-                    <rect width={w} height={h} />
+                    <rect x="0" y="-20" width={w} height={h+20} />
                 </clipPath>
             </defs>
 

@@ -237,43 +237,17 @@ namespace SistemaDeInvestigacion.Server.Controllers
             if (!Directory.Exists(rutaCarpetaFisica))
                 Directory.CreateDirectory(rutaCarpetaFisica);
 
+            
             string rutaArchivoFisica = Path.Combine(rutaCarpetaFisica, fileName);
-
             try
             {
-                var svgText = svgFuente.SvgEditado.Trim();
-                using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(svgText));
-                var skSvg = new SKSvg();
-                var picture = skSvg.Load(stream);
-
-                if (picture == null)
-                    return BadRequest("No se pudo parsear el SVG.");
-
-                var rect = picture.CullRect;
-                int width = Math.Max(1, (int)Math.Ceiling(rect.Width));
-                int height = Math.Max(1, (int)Math.Ceiling(rect.Height));
-
-                if (width <= 1 || height <= 1)
-                {
-                    width = 1200;
-                    height = 800;
-                }
-
-                using var bitmap = new SKBitmap(width, height, SKColorType.Rgba8888, SKAlphaType.Premul);
-                using var canvas = new SKCanvas(bitmap);
-                canvas.Clear(SKColors.Transparent);
-                canvas.DrawPicture(picture);
-                canvas.Flush();
-
-                using var image = SKImage.FromBitmap(bitmap);
-                using var data = image.Encode(SKEncodedImageFormat.Png, 100);
-
-                await using var outputStream = System.IO.File.OpenWrite(rutaArchivoFisica);
-                data.SaveTo(outputStream);
+                // USAR EL SERVICIO AQUÍ TAMBIÉN (Antes tenías el código manual de SKCanvas)
+                byte[] imageData = _svgService.RenderToPng(svgFuente.SvgEditado);
+                await System.IO.File.WriteAllBytesAsync(rutaArchivoFisica, imageData);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Error procesando SVG: {ex.Message}");
+                return StatusCode(500, $"Error procesando SVG en edición: {ex.Message}");
             }
 
             acuerdo.ImagenUrl = $"/media/acuerdosmedia/{acuerdo.IdAcuerdo}/{fileName}";

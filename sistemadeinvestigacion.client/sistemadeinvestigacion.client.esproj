@@ -9,10 +9,10 @@
     <BuildOutputFolder>$(MSBuildProjectDirectory)\dist</BuildOutputFolder>
   </PropertyGroup>
   <ItemGroup>
-    <Folder Include="src\assets\Routes\Admin\ElementosLienzo\Hooks\" />
-    <Folder Include="src\assets\Routes\Admin\ElementosLienzo\types\" />
-    <Folder Include="src\assets\Routes\Admin\ElementosLienzo\Utils\" />
-    <Folder Include="src\assets\Routes\Client\" />
+    <None Remove="src\assets\Routes\Client\**" />
+    <TypeScriptConfiguration Remove="src\assets\Routes\Client\**" />
+  </ItemGroup>
+  <ItemGroup>
     <Folder Include="src\assets\Routes\deprecado\landing\" />
   </ItemGroup>
 </Project>
