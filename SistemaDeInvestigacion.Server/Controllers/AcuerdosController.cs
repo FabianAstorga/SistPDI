@@ -271,17 +271,9 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 if (picture == null)
                     return BadRequest("No se pudo parsear el SVG.");
 
-                var rect = picture.CullRect;
-                int width = Math.Max(1, (int)Math.Ceiling(rect.Width));
-                int height = Math.Max(1, (int)Math.Ceiling(rect.Height));
+                
 
-                if (width <= 1 || height <= 1)
-                {
-                    width = 1200;
-                    height = 800;
-                }
-
-                using var bitmap = new SKBitmap(width, height, SKColorType.Rgba8888, SKAlphaType.Premul);
+                using var bitmap = new SKBitmap(800, 600, SKColorType.Rgba8888, SKAlphaType.Premul);
                 using var canvas = new SKCanvas(bitmap);
                 canvas.Clear(SKColors.Transparent);
                 canvas.DrawPicture(picture);

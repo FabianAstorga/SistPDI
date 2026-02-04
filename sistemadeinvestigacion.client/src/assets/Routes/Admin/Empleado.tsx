@@ -289,7 +289,7 @@ const ModalGestionFuncionario = ({ item, onClose, onRefresh, isAdmin }: any) => 
                     <div className="w-8 h-1 bg-blue-500 mb-6" />
                     <p className="text-blue-200/40 text-[10px] font-black uppercase tracking-[0.2em] leading-relaxed mb-10">Validación institucional de identidad digital.</p>
 
-                    {(isNew || isAdmin) && (
+                    {isNew && (
                         <button
                             onClick={handleSave}
                             disabled={saving || !canSubmit}

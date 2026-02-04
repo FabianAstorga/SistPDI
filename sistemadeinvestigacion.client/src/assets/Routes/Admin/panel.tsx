@@ -163,11 +163,9 @@ export default function Panel() {
                                 </h2>
                                 <h1 className="text-5xl md:text-8xl font-black text-white uppercase leading-none mb-6">
                                     {isLoggedIn ? 'PANEL ' : 'ACUERDOS '}
-                                    <span className="text-blue-500">{isLoggedIn ? 'ADMINISTADOR' : currentYear}</span>
+                                    <span className="text-blue-500">{isLoggedIn ? 'ADMINISTRADOR' : currentYear}</span>
                                 </h1>
-                                <p className="text-lg text-white/70 font-medium mb-10 max-w-2xl mx-auto">
-                                    {isLoggedIn ? 'Gestiona y revisa todos los convenios vigentes.' : 'Accede a los convenios y beneficios exclusivos.'}
-                                </p>
+                                
                             </motion.div>
                         </AnimatePresence>
                         <div className="flex flex-col md:flex-row gap-4 justify-center">
@@ -395,19 +393,19 @@ const ModalDetalle = React.memo(({ data, onClose }: any) => {
 
                             <form onSubmit={handleSendComentario} className="bg-slate-50 p-10 border border-slate-200 shadow-xl mb-24 relative">
                                 <div className="absolute -top-4 left-10 bg-[#002855] text-white text-[10px] font-black px-6 py-2 uppercase tracking-widest shadow-lg">
-                                    Añadir Feedback
+                                    Agregar comentario
                                 </div>
                                 <div className="flex flex-col md:flex-row gap-8">
                                     <div className="w-full md:w-1/3">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Identificación</label>
                                         <input
-                                            type="text" placeholder="NOMBRE / UNIDAD" value={nombreInput}
+                                            type="text" placeholder="NOMBRE" value={nombreInput}
                                             onChange={(e) => setNombreInput(e.target.value)}
                                             className="w-full bg-white border-2 border-slate-100 px-4 py-4 text-xs font-bold outline-none focus:border-[#002855] transition-all uppercase"
                                         />
                                     </div>
                                     <div className="flex-1">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Mensaje Institucional</label>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Contenido comentario</label>
                                         <div className="relative">
                                             <input
                                                 type="text" placeholder="Escriba su opinión..." value={nuevoComentario}
@@ -438,7 +436,7 @@ const ModalDetalle = React.memo(({ data, onClose }: any) => {
                                                 <div className="flex items-center gap-4 mb-3">
                                                     <span className="text-sm font-black text-[#002855] uppercase tracking-wide">{c.nombreUsuario || "Anónimo"}</span>
                                                     <div className="h-1 w-1 bg-slate-300 rounded-full" />
-                                                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic">Oficial</span>
+                                                    
                                                 </div>
                                                 <p className="text-base md:text-lg text-slate-600 leading-relaxed font-medium">
                                                     {c.comentario}

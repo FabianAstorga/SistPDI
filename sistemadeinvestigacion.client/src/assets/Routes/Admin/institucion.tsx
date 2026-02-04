@@ -141,7 +141,7 @@ export default function Institucion() {
                         </div>
                         <h2 className="text-3xl font-black uppercase tracking-tighter mb-2">Nueva <br /><span className="text-blue-400">Institución</span></h2>
                         <div className="w-8 h-1 bg-blue-500 mb-6" />
-                        <p className="text-blue-200/40 text-[10px] font-black uppercase tracking-[0.2em]">Registro centralizado de entidades colaboradoras</p>
+                        <p className="text-blue-200/40 text-[10px] font-black uppercase tracking-[0.2em]">Formulario para crear una nueva empresa</p>
                     </div>
 
                     {/* FORMULARIO */}

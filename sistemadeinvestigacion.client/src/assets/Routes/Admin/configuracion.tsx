@@ -157,8 +157,7 @@ export default function ConfiguracionPersonal() {
                                     <div className="w-full h-full rounded-sm bg-slate-900 overflow-hidden relative shadow-inner flex items-center justify-center">
                                         {logoPreview ? <img src={logoPreview} alt="Perfil" className="w-full h-full object-cover" /> : <span className="text-4xl font-black text-blue-400 tracking-tighter select-none">{initials}</span>}
                                         <label className="absolute inset-0 bg-[#002855]/90 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center cursor-pointer p-4">
-                                            <Camera size={24} className="text-white" /><span className="text-[9px] text-white font-black uppercase tracking-widest leading-tight">Cambiar Imagen</span>
-                                            <input type="file" className="hidden" onChange={handleFoto} accept="image/*" />
+                                            
                                         </label>
                                     </div>
                                 </div>
@@ -225,8 +224,8 @@ export default function ConfiguracionPersonal() {
                                         <div className="flex items-center gap-3 text-[#002855] border-b border-slate-100 pb-4"><Info size={18} /><h3 className="text-xs font-black uppercase tracking-[0.2em]">Metadatos</h3></div>
                                         <div className="bg-slate-50 border border-slate-200 p-4 rounded-sm space-y-3 shadow-inner">
                                             <div className="flex justify-between items-center"><span className="text-[8px] font-black text-slate-400 uppercase">ID Persona</span><span className="text-[10px] font-bold text-[#002855]">#{formData.idPersona}</span></div>
-                                            <div className="flex justify-between items-center"><span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Fecha Alta</span><span className="text-[10px] font-bold text-slate-600">{formData.fechaCreacion ? new Date(formData.fechaCreacion).toLocaleDateString() : '---'}</span></div>
-                                            <div className="flex justify-between items-center"><span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Sincronización</span><span className="text-[10px] font-bold text-slate-600">{new Date(formData.fechaActualizacion).toLocaleTimeString()}</span></div>
+                                            <div className="flex justify-between items-center"><span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Fecha Creacion</span><span className="text-[10px] font-bold text-slate-600">{formData.fechaCreacion ? new Date(formData.fechaCreacion).toLocaleDateString() : '---'}</span></div>
+                                            <div className="flex justify-between items-center"><span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Ultima actualizacion</span><span className="text-[10px] font-bold text-slate-600">{new Date(formData.fechaActualizacion).toLocaleTimeString()}</span></div>
                                         </div>
                                     </div>
                                     <button onClick={handleSave} disabled={saving || !canSave} className="mt-8 w-full py-5 bg-[#002855] text-white font-black uppercase text-[10px] tracking-[0.3em] flex items-center justify-center gap-4 hover:bg-blue-600 transition-all active:scale-95 shadow-xl disabled:bg-slate-300 rounded-full shrink-0">
