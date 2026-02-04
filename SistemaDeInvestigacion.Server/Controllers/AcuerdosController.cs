@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using SistemaDeInvestigacion.Server.Data;
 using SistemaDeInvestigacion.Server.Dtos;
 using SistemaDeInvestigacion.Server.Models;
+using SistemaDeInvestigacion.Server.Servicios;
 using SkiaSharp;
 using Svg.Skia;
 using System.IO;
@@ -18,13 +19,15 @@ namespace SistemaDeInvestigacion.Server.Controllers
         private readonly IConfiguration _configuration;
         private readonly IWebHostEnvironment _env;
         private readonly AuthMailService _authMailService;
+        private readonly SvgRenderService _svgService;
 
-        public AcuerdosController(ApplicationDbContext context, IConfiguration configuration, IWebHostEnvironment env, AuthMailService authMailService)
+        public AcuerdosController(ApplicationDbContext context, IConfiguration configuration, IWebHostEnvironment env, AuthMailService authMailService, SvgRenderService svgService)
         {
             _context = context;
             _configuration = configuration;
             _env = env;
             _authMailService = authMailService;
+            _svgService = svgService;
         }
 
         [HttpGet("{id}")]
@@ -107,39 +110,14 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
             try
             {
-                var svgText = acuerdos.svgEditado.Trim();
-                using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(svgText));
-                var skSvg = new SKSvg();
-                var picture = skSvg.Load(stream);
+                // Usamos el servicio que tiene la lógica de tamaños corregida
+                byte[] imageData = _svgService.RenderToPng(acuerdos.svgEditado);
 
-                if (picture == null)
-                    return BadRequest("No se pudo parsear el SVG.");
-
-                var rect = picture.CullRect;
-                int width = Math.Max(1, (int)Math.Ceiling(rect.Width));
-                int height = Math.Max(1, (int)Math.Ceiling(rect.Height));
-
-                if (width <= 1 || height <= 1)
-                {
-                    width = 1200;
-                    height = 800;
-                }
-
-                using var bitmap = new SKBitmap(width, height, SKColorType.Rgba8888, SKAlphaType.Premul);
-                using var canvas = new SKCanvas(bitmap);
-                canvas.Clear(SKColors.Transparent);
-                canvas.DrawPicture(picture);
-                canvas.Flush();
-
-                using var image = SKImage.FromBitmap(bitmap);
-                using var data = image.Encode(SKEncodedImageFormat.Png, 100);
-
-                await using var outputStream = System.IO.File.OpenWrite(rutaArchivoFisica);
-                data.SaveTo(outputStream);
+                await System.IO.File.WriteAllBytesAsync(rutaArchivoFisica, imageData);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Error procesando SVG: {ex.Message}");
+                return StatusCode(500, $"Error procesando SVG con el servicio: {ex.Message}");
             }
 
 
@@ -271,9 +249,17 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 if (picture == null)
                     return BadRequest("No se pudo parsear el SVG.");
 
-                
+                var rect = picture.CullRect;
+                int width = Math.Max(1, (int)Math.Ceiling(rect.Width));
+                int height = Math.Max(1, (int)Math.Ceiling(rect.Height));
 
-                using var bitmap = new SKBitmap(800, 600, SKColorType.Rgba8888, SKAlphaType.Premul);
+                if (width <= 1 || height <= 1)
+                {
+                    width = 1200;
+                    height = 800;
+                }
+
+                using var bitmap = new SKBitmap(width, height, SKColorType.Rgba8888, SKAlphaType.Premul);
                 using var canvas = new SKCanvas(bitmap);
                 canvas.Clear(SKColors.Transparent);
                 canvas.DrawPicture(picture);

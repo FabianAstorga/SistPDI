@@ -21,26 +21,36 @@ namespace SistemaDeInvestigacion.Server.Servicios
 
             var rect = picture.CullRect;
 
+            // 1. Forzamos un tamaño mínimo y validamos dimensiones
             int width = (int)Math.Ceiling(rect.Width);
             int height = (int)Math.Ceiling(rect.Height);
 
-            // Fallback si el CullRect viene raro
-            if (width < 2 || height < 2 || !float.IsFinite(rect.Width) || !float.IsFinite(rect.Height))
+            // Si Skia detecta un tamaño ínfimo o erróneo (típico en textos con foreignObject)
+            if (width < 50 || height < 50 || !float.IsFinite(rect.Width) || !float.IsFinite(rect.Height))
             {
                 width = fallbackW;
                 height = fallbackH;
+                // Reiniciamos el rect para evitar offsets negativos impredecibles
                 rect = new SKRect(0, 0, width, height);
             }
 
-            int outW = width + padding * 2;
-            int outH = height + padding * 2;
+            // 2. AÑADIMOS HOLGURA EXTRA AL LIENZO (Margen de seguridad)
+            // Esto evita que se corte el "tope" (top) o el "pie" (bottom) por renderizado de fuentes
+            int extraMargin = 50;
+            int outW = width + (padding * 2) + extraMargin;
+            int outH = height + (padding * 2) + extraMargin;
 
             using var bitmap = new SKBitmap(outW, outH, SKColorType.Rgba8888, SKAlphaType.Premul);
             using var canvas = new SKCanvas(bitmap);
             canvas.Clear(SKColors.Transparent);
 
-            // ✅ CLAVE: compensar origen del CullRect y sumar padding
-            canvas.Translate(padding - rect.Left, padding - rect.Top);
+            // 3. CAMBIO CLAVE EN LA TRASLACIÓN:
+            // Compensamos el origen del CullRect, sumamos el padding y 
+            // centramos el extraMargin para dar aire en todos los lados.
+            float translateX = padding - rect.Left + (extraMargin / 2f);
+            float translateY = padding - rect.Top + (extraMargin / 2f);
+
+            canvas.Translate(translateX, translateY);
 
             canvas.DrawPicture(picture);
             canvas.Flush();

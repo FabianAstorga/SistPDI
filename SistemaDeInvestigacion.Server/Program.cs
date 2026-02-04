@@ -51,7 +51,7 @@ builder.Services.AddAuthentication(options =>
 
 
 // ===== OPCIÓN 3: SOLO ESTO =====
-
+builder.Services.AddScoped<SvgRenderService>();
 
 builder.Services.AddControllers(options =>
 {
