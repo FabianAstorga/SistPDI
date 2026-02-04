@@ -37,15 +37,14 @@ modificar empresas
 //gestionar usuarios
 //crear modificar asignar rol
 
-notificar por correo
-seleccionar lista de destinatarios
+//notificar por correo
+//seleccionar lista de destinatarios
 //resumen o texto completo
 
 paginacion
 
-Cifrado Dimanico
-Hacer las peticiones para modificar segun el rol
-configurar el HABILITADO para darle ciertas funciones a un usuario adentro del sistema
+//Hacer las peticiones para modificar segun el rol
+//configurar el HABILITADO para darle ciertas funciones a un usuario adentro del sistema
 cambiar el cifrado de estatico a dinamico
 
 Front-end

@@ -17,12 +17,14 @@ namespace SistemaDeInvestigacion.Server.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
         private readonly IWebHostEnvironment _env;
+        private readonly AuthMailService _authMailService;
 
-        public AcuerdosController(ApplicationDbContext context, IConfiguration configuration, IWebHostEnvironment env)
+        public AcuerdosController(ApplicationDbContext context, IConfiguration configuration, IWebHostEnvironment env, AuthMailService authMailService)
         {
             _context = context;
             _configuration = configuration;
             _env = env;
+            _authMailService = authMailService;
         }
 
         [HttpGet("{id}")]
@@ -169,6 +171,47 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
             _context.AcuerdosUserTemplates.Add(NewDatos);
             await _context.SaveChangesAsync();
+
+            try
+            {
+                var query = _context.Funcionarios.AsQueryable();
+
+                if (acuerdos.idsUnidades != null && acuerdos.idsUnidades.Contains(0))
+                {
+                    Console.WriteLine("Notificando a toda la institución.");
+                }
+                else if (acuerdos.idsUnidades != null && acuerdos.idsUnidades.Any())
+                {
+                    query = query.Where(f => acuerdos.idsUnidades.Contains(f.idUnidad));
+                }
+                else
+                {
+                    query = query.Where(f => false);
+                }
+
+                var destinatarios = await query
+                    .Select(f => new { f.CorreoElectronico, f.NombreCompleto })
+                    .ToListAsync();
+
+                if (destinatarios.Any())
+                {
+
+                    var SvgContenido = acuerdos.svgEditado;
+                    var emailTasks = destinatarios.Select(func =>
+                        _authMailService.SendMailAcuerdo(
+                            func.CorreoElectronico,
+                            NewAcuerdo.Titulo,
+                            NewAcuerdo.Descripcion,
+                            rutaArchivoFisica
+                        ));
+
+                    await Task.WhenAll(emailTasks);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en proceso de notificaciones: {ex.Message}");
+            }
 
             return Ok(new { Message = "Acuerdo Creado", Url = NewAcuerdo.ImagenUrl });
         }

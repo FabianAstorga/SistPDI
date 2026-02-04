@@ -8,6 +8,7 @@
         public required DateTime fechaVencimiento { get; set; }
         public required int idCategoria { get; set; }
         public required int idEmpresa { get; set; }
+        public List<int>? idsUnidades { get; set; }
         public required string svgEditado { get; set; }
         public string? svgOriginal { get; set; }
     }

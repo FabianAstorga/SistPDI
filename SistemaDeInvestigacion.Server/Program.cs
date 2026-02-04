@@ -99,6 +99,7 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddScoped<AuthMailService>();
 var app = builder.Build();
 
 app.UseDefaultFiles();
