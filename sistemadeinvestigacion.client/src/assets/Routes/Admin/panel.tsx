@@ -5,23 +5,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Navbar } from "../../components/Navbar";
 import { LoginDrawer } from "./LoginDrawer";
-import { X, RefreshCw, Send, MessageSquare, AlertCircle, Hash, Calendar } from 'lucide-react';
-
-/** * PANEL UNIFICADO V4.9 - PDI Intranet 2026
- * Optimizaciones: Grid estructural 4x6 en Modal, Feedback funcional y Estética Industrial.
- */
-
+import { X, RefreshCw, Send, MessageSquare, Trash2 } from 'lucide-react';
 const API_BASE = 'http://localhost:5091';
-const PDI_LOGO_URL = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQF7ZHFE9xX50BEWjSmAriqYIdJwxiPAMD1cA&s";
+const PDI_LOGO_URL = "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png";
 const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
-
 const resolveBackendUrl = (path?: string | null) => {
     if (!path) return null;
     const s = String(path).trim();
     if (!s || /^https?:\/\//i.test(s)) return s || null;
     return `${API_BASE}${s.startsWith('/') ? s : `/${s}`}`;
 };
-
 const normalizeAcuerdo = (a: any) => ({
     id: Number(a?.idAcuerdo ?? a?.id ?? 0),
     titulo: String(a?.titulo ?? ''),
@@ -33,20 +26,17 @@ const normalizeAcuerdo = (a: any) => ({
     estado: a?.estado || "Activo",
     idEmpresa: a?.idEmpresa
 });
-
 const FADE_VARIANT = {
     initial: { opacity: 0, y: 15 },
     animate: { opacity: 1, y: 0 },
     exit: { opacity: 0, y: -15 }
 };
-
 export default function Panel() {
     const navigate = useNavigate();
     const location = useLocation();
     const carouselRef = useRef<HTMLElement | null>(null);
     const listSectionRef = useRef<HTMLElement | null>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
-
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isLoginOpen, setIsLoginOpen] = useState(false);
     const [userName, setUserName] = useState("");
@@ -56,15 +46,12 @@ export default function Panel() {
     const [modalData, setModalData] = useState<any | null>(null);
     const [inputSearch, setInputSearch] = useState("");
     const currentYear = useMemo(() => new Date().getFullYear(), []);
-
     const handleCloseModal = useCallback(() => setModalData(null), []);
     const handleOpenModal = useCallback((item: any) => setModalData(item), []);
-
     useEffect(() => {
         document.body.style.overflow = 'hidden';
         return () => { document.body.style.overflow = 'unset'; };
     }, []);
-
     const fetchData = useCallback(async () => {
         if (abortControllerRef.current) abortControllerRef.current.abort();
         abortControllerRef.current = new AbortController();
@@ -86,7 +73,6 @@ export default function Panel() {
             setLoading(false);
         }
     }, []);
-
     const checkSession = useCallback(() => {
         const token = localStorage.getItem('token');
         const userJson = localStorage.getItem('user');
@@ -103,29 +89,23 @@ export default function Panel() {
         }
         fetchData();
     }, [location.pathname, navigate, fetchData]);
-
     useEffect(() => {
         checkSession();
         return () => { abortControllerRef.current?.abort(); };
     }, [checkSession]);
-
     const [emblaRef, emblaApi] = useEmblaCarousel(
         { loop: true, align: "center", duration: 25 },
         [Autoplay({ delay: 5000, stopOnInteraction: false })]
     );
-
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
-
     const onSelect = useCallback(() => {
         if (!emblaApi) return;
         setSelectedIndex(emblaApi.selectedScrollSnap());
     }, [emblaApi]);
-
     const scrollTo = useCallback((index: number) => {
         if (emblaApi) emblaApi.scrollTo(index);
     }, [emblaApi]);
-
     useEffect(() => {
         if (!emblaApi) return;
         onSelect();
@@ -136,12 +116,10 @@ export default function Panel() {
             emblaApi.off("select", onSelect).off("reInit", onSelect);
         };
     }, [emblaApi, mejores, onSelect]);
-
     const filtered = useMemo(() => {
         const q = inputSearch.toLowerCase();
         return acuerdos.filter(a => a.titulo.toLowerCase().includes(q));
     }, [inputSearch, acuerdos]);
-
     return (
         <div className="fixed inset-0 overflow-hidden bg-white font-sans text-slate-900 selection:bg-[#002855] selection:text-white">
             <AnimatePresence>
@@ -151,7 +129,6 @@ export default function Panel() {
                     </motion.div>
                 )}
             </AnimatePresence>
-
             <div className="h-full overflow-y-auto snap-y snap-mandatory scroll-smooth overflow-x-hidden custom-list-scroll">
                 <section className={`snap-start w-full h-screen flex flex-col items-center justify-center px-6 relative bg-[#002855] transition-all duration-700 ${isLoggedIn ? 'pt-16' : ''}`}>
                     <div className="absolute inset-0 bg-cover bg-center opacity-40 animate-pulse-slow pointer-events-none" style={{ backgroundImage: `url(${HERO_BG})` }} />
@@ -164,8 +141,7 @@ export default function Panel() {
                                 <h1 className="text-5xl md:text-8xl font-black text-white uppercase leading-none mb-6">
                                     {isLoggedIn ? 'PANEL ' : 'ACUERDOS '}
                                     <span className="text-blue-500">{isLoggedIn ? 'ADMINISTRADOR' : currentYear}</span>
-                                </h1>
-                                
+                                </h1>                       
                             </motion.div>
                         </AnimatePresence>
                         <div className="flex flex-col md:flex-row gap-4 justify-center">
@@ -178,11 +154,9 @@ export default function Panel() {
                         </div>
                     </div>
                 </section>
-
                 <section ref={carouselRef} className="snap-start w-full h-screen flex flex-col justify-center bg-slate-200 relative overflow-hidden transition-colors duration-500">
                     <div className="max-w-7xl mx-auto w-full px-6 mb-2 text-center">
-                        <h2 className="text-3xl md:text-4xl font-black text-[#002855] uppercase tracking-tighter">Acuerdos Destacados</h2>
-                        
+                        <h2 className="text-3xl md:text-4xl font-black text-[#002855] uppercase tracking-tighter">Ultimos Acuerdos</h2>             
                     </div>
                     <div className="w-full relative px-4 overflow-visible">
                         <div className="embla overflow-visible" ref={emblaRef}>
@@ -195,7 +169,6 @@ export default function Panel() {
                     </div>
                     <CarouselDots snaps={scrollSnaps} selectedIndex={selectedIndex} onDotClick={scrollTo} />
                 </section>
-
                 <section ref={listSectionRef} className="snap-start w-full h-screen bg-[#002855] text-white py-12 px-6 flex items-center overflow-hidden">
                     <div className="max-w-6xl mx-auto w-full flex flex-col h-[80vh]">
                         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
@@ -219,15 +192,12 @@ export default function Panel() {
                     </div>
                 </section>
             </div>
-
             <AnimatePresence>
                 {modalData && (
                     <ModalDetalle data={modalData} onClose={handleCloseModal} />
                 )}
             </AnimatePresence>
-
             <LoginDrawer isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} onLoginSuccess={checkSession} />
-
             <style>{`
                 .custom-list-scroll::-webkit-scrollbar { width: 5px; }
                 .custom-list-scroll::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.1); border-radius: 10px; }
@@ -237,7 +207,6 @@ export default function Panel() {
         </div>
     );
 }
-
 const CarouselDots = React.memo(({ snaps, selectedIndex, onDotClick }: any) => (
     <div className="flex justify-center gap-3 mt-8">
         {snaps.map((_: any, i: number) => (
@@ -249,7 +218,6 @@ const CarouselDots = React.memo(({ snaps, selectedIndex, onDotClick }: any) => (
         ))}
     </div>
 ));
-
 const ListItem = React.memo(({ item, onOpen }: any) => (
     <div onClick={onOpen} className="group flex items-center gap-6 bg-white p-4 rounded-xl cursor-pointer shadow-xl text-slate-900 hover:translate-x-2 transition-transform">
         <div className="w-20 h-20 bg-slate-100 rounded-lg overflow-hidden shrink-0 border border-slate-200">
@@ -265,14 +233,35 @@ const ListItem = React.memo(({ item, onOpen }: any) => (
         </div>
     </div>
 ));
-
 const ModalDetalle = React.memo(({ data, onClose }: any) => {
     const [comentarios, setComentarios] = useState<any[]>([]);
     const [loadingComentarios, setLoadingComentarios] = useState(true);
     const [nuevoComentario, setNuevoComentario] = useState("");
     const [nombreInput, setNombreInput] = useState("");
     const [isSending, setIsSending] = useState(false);
+    const userObj = JSON.parse(localStorage.getItem('user') || '{}');
+    const isAdmin = Number(userObj.rol) === 1
+    const handleDelete = async (idComentario: number) => {
+        if (!window.confirm("¿Estás seguro de que deseas eliminar este comentario?")) return;
 
+        try {
+            const res = await fetch(`${API_BASE}/api/Comentarios/eliminar/${idComentario}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+
+            if (res.ok) {
+                // Filtramos el comentario borrado del estado local para que desaparezca de inmediato
+                setComentarios(prev => prev.filter(c => (c.idComentario ?? c.id) !== idComentario));
+            } else {
+                alert("Error al intentar eliminar el comentario.");
+            }
+        } catch (e) {
+            console.error("Error deleting comment:", e);
+        }
+    };
     const fetchComentarios = useCallback(async () => {
         try {
             setLoadingComentarios(true);
@@ -287,7 +276,6 @@ const ModalDetalle = React.memo(({ data, onClose }: any) => {
             setLoadingComentarios(false);
         }
     }, [data.id]);
-
     useEffect(() => {
         const userJson = localStorage.getItem('user');
         if (userJson) {
@@ -298,7 +286,6 @@ const ModalDetalle = React.memo(({ data, onClose }: any) => {
         }
         fetchComentarios();
     }, [fetchComentarios]);
-
     const handleSendComentario = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!nuevoComentario.trim() || isSending) return;
@@ -436,7 +423,15 @@ const ModalDetalle = React.memo(({ data, onClose }: any) => {
                                                 <div className="flex items-center gap-4 mb-3">
                                                     <span className="text-sm font-black text-[#002855] uppercase tracking-wide">{c.nombreUsuario || "Anónimo"}</span>
                                                     <div className="h-1 w-1 bg-slate-300 rounded-full" />
-                                                    
+                                                    {isAdmin && (
+                                                        <button
+                                                            onClick={() => handleDelete(c.idComentario ?? c.id)}
+                                                            className="p-2 text-red-500 hover:bg-red-100 rounded-full transition-all active:scale-90"
+                                                            title="Eliminar comentario"
+                                                        >
+                                                            <Trash2 size={18} />
+                                                        </button>
+                                                    )}
                                                 </div>
                                                 <p className="text-base md:text-lg text-slate-600 leading-relaxed font-medium">
                                                     {c.comentario}
@@ -463,7 +458,6 @@ const ModalDetalle = React.memo(({ data, onClose }: any) => {
         </div>
     );
 });
-
 const CarouselItem = React.memo(({ item, isActive, onClick }: any) => (
     <div className="embla__slide flex-[0_0_90%] md:flex-[0_0_42%] px-4">
         <motion.div
