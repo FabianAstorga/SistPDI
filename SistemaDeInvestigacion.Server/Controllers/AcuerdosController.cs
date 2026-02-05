@@ -200,7 +200,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             Console.WriteLine("Llege hasta aca");
 
             var template = await _context.AcuerdosUserTemplates
-                    .FirstOrDefaultAsync(t => t.IdUsuario == user && t.IdAcuerdo == idAcuerdo);
+                    .FirstOrDefaultAsync(t => t.IdAcuerdo == idAcuerdo);
 
             if (template.IdSvg == null) {
                 return BadRequest("test: null");
@@ -220,15 +220,16 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
             if (editAcuerdoDto.idCategoria.HasValue) acuerdo.IdCategoria = editAcuerdoDto.idCategoria;
 
-            if (editAcuerdoDto.fechaVencimiento.HasValue) acuerdo.FechaVencimiento = editAcuerdoDto.fechaVencimiento;
+            if (editAcuerdoDto.fechaVencimiento.HasValue)
+                acuerdo.FechaVencimiento = DateTime.SpecifyKind(editAcuerdoDto.fechaVencimiento.Value, DateTimeKind.Utc);
 
-            acuerdo.FechaActualizacion = DateTime.Now;
+
+            acuerdo.FechaActualizacion = DateTime.UtcNow;
 
             var svgFuente = await _context.SvgTemplates.FindAsync(template.IdSvg);
             Console.Write(svgFuente.SvgEditado);
 
 
-            //crear el svg a imagen
             string fileName = $"acuerdo_{Guid.NewGuid().ToString().Substring(0, 8)}.png";
 
             string rutaCarpetaFisica = Path.Combine(_env.ContentRootPath, "media", "acuerdosmedia", acuerdo.IdAcuerdo.ToString());
@@ -240,7 +241,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
             string rutaArchivoFisica = Path.Combine(rutaCarpetaFisica, fileName);
             try
             {
-                // USAR EL SERVICIO AQUÍ TAMBIÉN (Antes tenías el código manual de SKCanvas)
                 byte[] imageData = _svgService.RenderToPng(svgFuente.SvgEditado);
                 await System.IO.File.WriteAllBytesAsync(rutaArchivoFisica, imageData);
             }
@@ -253,16 +253,18 @@ namespace SistemaDeInvestigacion.Server.Controllers
             await _context.SaveChangesAsync();
 
 
-            /*
+            
             _context.Acuerdos.Update(acuerdo);
             await _context.SaveChangesAsync();
-            */
+            
 
             var NewSvg = new SvgTemplate
             {
                 SvgOriginal = svgFuente.SvgEditado,
                 SvgEditado = editAcuerdoDto.svg_editado,
-                FechaCreacion = DateTime.UtcNow
+                FechaCreacion = DateTime.UtcNow,
+                IdEstado = svgFuente.IdEstado
+                
             };
 
             _context.SvgTemplates.Update(NewSvg);

@@ -46,6 +46,13 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return empresas;
         }
 
+        [HttpGet("listado")]
+        public async Task<ActionResult<IEnumerable<Empresas>>> GetListado()
+        {
+            var empresas = await _context.Empresas.ToListAsync();
+            return empresas;
+        }
+
 
         [Authorize]
         [HttpPost("crear")]
@@ -103,13 +110,25 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
         }
 
-        [HttpPatch("Deshabilitar/{idEmpresa}")]
+        [HttpPatch("alternar/{idEmpresa}")]
         public async Task<ActionResult> deshabilitarEmpresa(int idEmpresa)
         {
             var empresa = await _context.Empresas.FindAsync(idEmpresa);
-            empresa.IdEstado = 2;
-            await _context.SaveChangesAsync();
-            return NoContent();
+            if (empresa.IdEstado == 1)
+            {
+                empresa.IdEstado = 2;
+                await _context.SaveChangesAsync();
+                return NoContent();
+            }
+
+            if (empresa.IdEstado == 2)
+            {
+                empresa.IdEstado = 1;
+                await _context.SaveChangesAsync();
+                return NoContent();
+            }
+
+            return BadRequest("Error en el alternado de la empresa");
         }
 
 /*

@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace SistemaDeInvestigacion.Server.Controllers
 {
-    [Authorize]
+
     [Route("api/[controller]")]
     public class SvgController : Controller
     {
@@ -22,19 +22,15 @@ namespace SistemaDeInvestigacion.Server.Controllers
             _configuration = configuration;
         }
 
-        
-
-        [Authorize]
         [HttpGet("obtenerTemplates")]
         public async Task<ActionResult<IEnumerable<SvgTemplate>>> ObtenerTemplates()
         {
             var listaSvg = await _context.SvgTemplates
-                .Where(s => s.IdEstado == 1)
+                .Where(s => s.IdEstado == 3)
                 .ToListAsync();
             return Ok(listaSvg);
         }
 
-        [Authorize]
         [HttpGet("obtenerBorradores")]
         public async Task<ActionResult<IEnumerable<SvgTemplate>>> ObtenerBorradores()
         {
@@ -49,7 +45,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return Ok(listaSvg);
         }
 
-        [Authorize]
         [HttpGet("devolverSvg")]
         public async Task<ActionResult<IEnumerable<SvgTemplate>>> devolverSvg(int idSvg)
         {
@@ -58,7 +53,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return Ok(listaSvg.SvgEditado);
         }
 
-        [Authorize]
         [HttpPost("crear")]
         public async Task<IActionResult> CrearSvg([FromBody] CreateSvgDto createSvgDto)
         {

@@ -100,6 +100,7 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddScoped<AuthMailService>();
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 var app = builder.Build();
 
 app.UseDefaultFiles();
