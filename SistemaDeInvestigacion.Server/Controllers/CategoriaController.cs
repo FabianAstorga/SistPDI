@@ -25,11 +25,12 @@ namespace SistemaDeInvestigacion.Server.Controllers
             _configuration = configuration;
         }
 
-        [Authorize]
         [HttpGet()]
         public async Task<ActionResult<IEnumerable<Categoria>>> GetCategoria()
         {
-            var categorias = await _context.Categoria.ToListAsync();
+            var categorias = await _context.Categoria
+                .Where(a => a.IdEstado == 1)
+                .ToListAsync();
             if (categorias == null) return StatusCode(404, "No hay ninguna Categoria");
             return categorias;
         }
@@ -45,6 +46,15 @@ namespace SistemaDeInvestigacion.Server.Controllers
             _context.Categoria.Add(NewCategoria);
             await _context.SaveChangesAsync();
             return (Ok("Categoria creada Correctamente"));
+        }
+
+        [HttpPatch("eliminar/{idCategoria}")]
+        public async Task<ActionResult<Categoria>> AlternarCategoria(int idCategoria)
+        {
+            var categoria = await _context.Categoria.FindAsync(idCategoria);
+            categoria.IdEstado = 2;
+            await _context.SaveChangesAsync();
+            return (NoContent());
         }
 
     }

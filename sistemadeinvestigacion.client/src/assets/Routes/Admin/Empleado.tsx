@@ -287,7 +287,7 @@ const ModalGestionFuncionario = ({ item, onClose, onRefresh, isAdmin }: any) => 
                     <div className="w-12 h-12 bg-blue-600 flex items-center justify-center mb-8 shadow-lg border border-white/10"><Fingerprint size={24} /></div>
                     <h2 className="text-3xl font-black uppercase mb-2 leading-none">{isNew ? 'Registrar' : isLinked ? 'Editar' : 'Alta de'}<br /><span className="text-blue-400">{isNew ? 'Personal' : isLinked ? 'Usuario' : 'Acceso'}</span></h2>
                     <div className="w-8 h-1 bg-blue-500 mb-6" />
-                    <p className="text-blue-200/40 text-[10px] font-black uppercase tracking-[0.2em] leading-relaxed mb-10">Validación institucional de identidad digital.</p>
+                    <p className="text-blue-200/40 text-[10px] font-black uppercase tracking-[0.2em] leading-relaxed mb-10">Configuracion credenciales.</p>
 
                     {isNew && (
                         <button

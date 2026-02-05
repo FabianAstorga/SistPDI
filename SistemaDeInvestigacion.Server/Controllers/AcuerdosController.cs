@@ -58,14 +58,13 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return Ok(acuerdoslista);
         }
 
-        [HttpGet("pendientes")]
-        public async Task<ActionResult<IEnumerable<Acuerdo>>> GetPendientes()
+        [HttpGet("Listado")]
+        public async Task<ActionResult<IEnumerable<Acuerdo>>> GetListado()
         {
-            var acuerdosPendientes = await _context.Acuerdos
-                .Where(acuerdos => acuerdos.IdEstado == 1)
-                .ToListAsync();
-            return Ok(acuerdosPendientes);
+            var acuerdoslista = await _context.Acuerdos.ToListAsync();
+            return Ok(acuerdoslista);
         }
+
 
         [Authorize]
         [HttpPost("crear")]
@@ -273,15 +272,27 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
         }
 
-        [HttpPatch("deshabilitar/{idAcuerdo}")]
-        public async Task<ActionResult<Acuerdo>> deshabilitarAcuerdo(int idAcuerdo)
+        [HttpPatch("alternar/{idAcuerdo}")]
+        public async Task<ActionResult<Acuerdo>> alternarAcuerdo(int idAcuerdo)
         {
-            var acuerdo = await _context.Acuerdos.FindAsync(idAcuerdo);
-            acuerdo.IdEstado = 2;
-            await _context.SaveChangesAsync();
-            return NoContent();
+            var acuerdoData = await _context.Acuerdos.FindAsync(idAcuerdo);
+            if (acuerdoData.IdEstado == 1)
+            {
+                acuerdoData.IdEstado = 2;
+                await _context.SaveChangesAsync();
+                return NoContent();
+            }
+
+            if (acuerdoData.IdEstado == 2)
+            {
+                acuerdoData.IdEstado = 1;
+                await _context.SaveChangesAsync();
+                return NoContent();
+            }
+
+            return BadRequest("Error en el alternado de la empresa");
         }
 
-        
+
     }
 }

@@ -39,7 +39,9 @@ namespace SistemaDeInvestigacion.Server.Controllers
         [HttpGet()]
         public async Task<ActionResult<IEnumerable<Empresas>>> GetEmpresas()
         {
-            var empresas = await _context.Empresas.ToListAsync();
+            var empresas = await _context.Empresas
+                .Where(empresas => empresas.IdEstado == 1)
+                .ToListAsync();
             if (empresas == null) return StatusCode(404, "No hay ninguna Empresa");
             return empresas;
         }
@@ -52,7 +54,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             string dbroute = null;
             if (createEmpresaDto.logo != null && createEmpresaDto.logo.Length > 0)
             {
- 
+
                 string carpetaImagenes = Path.Combine(_env.ContentRootPath, "LogosMedia");
                 Console.WriteLine("Carpeta:", carpetaImagenes);
                 if (!Directory.Exists(carpetaImagenes))
@@ -74,12 +76,12 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
                 dbroute = $"/imagenes/{filename}";
 
-                }
+            }
 
             Console.WriteLine("Nombre del archivo: ", dbroute);
             var newEmpresa = new Empresas
             {
-                
+
                 Nombre = createEmpresaDto.nombre,
                 Descripcion = createEmpresaDto.descripcion,
                 Logo = dbroute,
@@ -97,9 +99,19 @@ namespace SistemaDeInvestigacion.Server.Controllers
             {
                 message = "Empresa creada correctamente"
             });
-        
-            
-            }
+
+
+        }
+
+        [HttpPatch("Deshabilitar/{idEmpresa}")]
+        public async Task<ActionResult> deshabilitarEmpresa(int idEmpresa)
+        {
+            var empresa = await _context.Empresas.FindAsync(idEmpresa);
+            empresa.IdEstado = 2;
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
 /*
         [HttpPatch("Editar/{idEmpresa}")]
         public async Task<ActionResult> EditEmpresa

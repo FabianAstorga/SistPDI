@@ -9,27 +9,27 @@ Base de datos:
 // -Normalizar Estado en SVG
 // -Agregar ESTADO a USERS
 // Agregar una tabla COMENTARIOS para acuerdos
-//agregar tabla de olvidar contraseña
+// agregar tabla de olvidar contraseña
 
 Crear una base de datos para las claves de cifrado
 
 Back-end
 
-//hacer peticiones que permitan modificar acuerdos
-//se puede:
-//modificar titulo
-//descripcion
-//resumen
-//categoria se puede editar
-//la imagen se puede modificar
+// hacer peticiones que permitan modificar acuerdos
+// se puede:
+// modificar titulo
+// descripcion
+// resumen
+// categoria se puede editar
+// la imagen se puede modificar
 
 
-//recuperacion de contraseña
-//Insertar comentarios
-//ver comentarios
+// recuperacion de contraseña
+// Insertar comentarios
+// ver comentarios 
 
 
-//modificar empleados
+// modificar empleados
 modificar empresas
 
 //eliminar acuerdos (confirmacion previa)

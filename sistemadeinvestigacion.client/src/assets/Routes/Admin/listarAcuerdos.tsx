@@ -16,7 +16,7 @@ import { Navbar } from '../../components/Navbar';
 
 const API_BASE = 'http://localhost:5091';
 const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
-const PDI_LOGO_URL = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQF7ZHFE9xX50BEWjSmAriqYIdJwxiPAMD1cA&s";
+const PDI_LOGO_URL = "https://tse2.mm.bing.net/th/id/OIP.v3_2lDKLaxi3QIOKETrd0wHaEK?rs=1&pid=ImgDetMain&o=7&rm=3";
 
 const resolveBackendUrl = (path?: string | null) => {
     if (!path) return null;
