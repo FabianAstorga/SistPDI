@@ -22,6 +22,8 @@ namespace SistemaDeInvestigacion.Server.Controllers
             _configuration = configuration;
         }
 
+        //obtiene los templates del svg
+        [Authorize]
         [HttpGet("obtenerTemplates")]
         public async Task<ActionResult<IEnumerable<SvgTemplate>>> ObtenerTemplates()
         {
@@ -31,6 +33,8 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return Ok(listaSvg);
         }
 
+        //obtiene los borradores de CADA USUARIO
+        [Authorize]
         [HttpGet("obtenerBorradores")]
         public async Task<ActionResult<IEnumerable<SvgTemplate>>> ObtenerBorradores()
         {
@@ -46,6 +50,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
         }
 
         [HttpGet("devolverSvg")]
+        [Authorize]
         public async Task<ActionResult<IEnumerable<SvgTemplate>>> devolverSvg(int idSvg)
         {
             var listaSvg = await _context.SvgTemplates.FirstOrDefaultAsync(s => s.Id == idSvg);
@@ -53,14 +58,16 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return Ok(listaSvg.SvgEditado);
         }
 
-        [HttpPost("crear")]
+        //crea un template
+        [Authorize]
+        [HttpPost("crearTemplate")]
         public async Task<IActionResult> CrearSvg([FromBody] CreateSvgDto createSvgDto)
         {
             var userId = User.GetUserId();
             var svgNuevo = new SvgTemplate
             {
                 SvgOriginal = createSvgDto.svg_original,
-                IdEstado = 1,
+                IdEstado = 3,
                 SvgEditado = null,
                 FechaCreacion = DateTime.UtcNow,
                 FechaActualizacion = null

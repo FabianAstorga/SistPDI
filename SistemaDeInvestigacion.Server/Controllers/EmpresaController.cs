@@ -10,9 +10,10 @@ using SistemaDeInvestigacion.Server.Models;
 
 namespace SistemaDeInvestigacion.Server.Controllers
 {
+
+
     [Route("api/[controller]")]
     [ApiController]
-
     public class EmpresaController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -26,6 +27,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             _env = env;
         }
 
+        //retorna detalles de una empresa
         [Authorize]
         [HttpGet("{idEmpresa}")]
         public async Task<ActionResult<Empresas>> GetEmpresa(int IdEmpresa)
@@ -35,6 +37,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return empresa;
         }
 
+        //retorna lista de empresas HABILITADAS
         [Authorize]
         [HttpGet()]
         public async Task<ActionResult<IEnumerable<Empresas>>> GetEmpresas()
@@ -46,6 +49,8 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return empresas;
         }
 
+        //retorna lista de empresas GENERAL
+        [Authorize]
         [HttpGet("listado")]
         public async Task<ActionResult<IEnumerable<Empresas>>> GetListado()
         {
@@ -53,7 +58,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return empresas;
         }
 
-
+        //permite crear una empresa
         [Authorize]
         [HttpPost("crear")]
         public async Task<ActionResult<Acuerdo>> PublicarInstitucion([FromForm] CreateEmpresaDto createEmpresaDto)
@@ -110,6 +115,8 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
         }
 
+        //alterna una empresa (de habilitado a deshabilitado y viceversa)
+        [Authorize]
         [HttpPatch("alternar/{idEmpresa}")]
         public async Task<ActionResult> deshabilitarEmpresa(int idEmpresa)
         {
@@ -131,15 +138,62 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return BadRequest("Error en el alternado de la empresa");
         }
 
-/*
-        [HttpPatch("Editar/{idEmpresa}")]
-        public async Task<ActionResult> EditEmpresa
+        //permite editar una empresa
+        [Authorize]
+        [HttpPatch("editar/{idEmpresa}")]
+        public async Task<ActionResult> EditEmpresa(int idEmpresa, EditEmpresaDto editEmpresaDto)
         {
+            var newData = editEmpresaDto;
+            var dataBDEmpresa = await _context.Empresas.FindAsync(idEmpresa);
 
+            if (newData.nombre != null) {dataBDEmpresa.Nombre = newData.nombre;}
+
+            if (newData.email != null) {dataBDEmpresa.Email = newData.email;}
+
+            if (newData.direccion != null) {dataBDEmpresa.Direccion = newData.direccion;}
+
+            if (newData.sitioWeb != null) {dataBDEmpresa.SitioWeb = newData.sitioWeb;}
+
+            if (newData.descripcion != null) {dataBDEmpresa.Descripcion = newData.descripcion;}
+
+            if (newData.telefono.HasValue) { dataBDEmpresa.Telefono = newData.telefono;}
+
+            string dbroute = null;
+
+            if (newData.logo != null && newData.logo.Length > 0)
+            {
+
+                string carpetaImagenes = Path.Combine(_env.ContentRootPath, "LogosMedia");
+                Console.WriteLine("Carpeta:", carpetaImagenes);
+                if (!Directory.Exists(carpetaImagenes))
+                {
+                    Directory.CreateDirectory(carpetaImagenes);
+                }
+
+                string extension = Path.GetExtension(newData.logo.FileName);
+                string name = dataBDEmpresa.Nombre.Replace(" ", "_").ToLower();
+                string filename = $"logo-{name}{extension}";
+                string routecomplete = Path.Combine(carpetaImagenes, filename);
+                Console.WriteLine($"{routecomplete}");
+
+
+                using (var stream = new FileStream(routecomplete, FileMode.Create))
+                {
+                    await newData.logo.CopyToAsync(stream);
+                }
+
+                dbroute = $"/imagenes/{filename}";
+
+                dataBDEmpresa.Logo = dbroute;
+            }
+
+            _context.Empresas.Update(dataBDEmpresa);
+            Console.WriteLine("testeo de nombre del archivo ===== ", dbroute);
+            return Ok();
         }
-*/
-            
+
     }
+            
+}
 
    
-}

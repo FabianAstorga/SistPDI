@@ -30,14 +30,27 @@ namespace SistemaDeInvestigacion.Server.Controllers
             _svgService = svgService;
         }
 
+
+        //Muestra el detalle de un acuerdo
         [HttpGet("{id}")]
         public async Task<ActionResult<Acuerdo>> GetAcuerdos(int id)
         {
-            var acuerdos = await _context.Acuerdos.FindAsync(id);
+            var acuerdos = await _context.Acuerdos
+                .Where(a => a.IdAcuerdo == id)
+                .Select(a => new {
+                    DatosAcuerdo = a,
+                    IdSvg = _context.AcuerdosUserTemplates
+                                .Where(t => t.IdAcuerdo == a.IdAcuerdo)
+                                .Select(t => t.IdSvg)
+                                .FirstOrDefault()
+                })
+                .FirstOrDefaultAsync();
             if (acuerdos == null) return StatusCode(404, "No hay ningún Acuerdo");
-            return acuerdos;
+            return Ok(acuerdos);
         }
 
+
+        //lista ultimos 10 acuerdos
         [HttpGet("mejores")]
         public async Task<ActionResult<IEnumerable<Acuerdo>>> GetMejores()
         {
@@ -49,6 +62,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return Ok(acuerdos);
         }
 
+        //lista los acuerdos habilitados
         [HttpGet()]
         public async Task<ActionResult<IEnumerable<Acuerdo>>> GetAcuerdos()
         {
@@ -58,14 +72,16 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return Ok(acuerdoslista);
         }
 
-        [HttpGet("Listado")]
+        //lista TODOS los acuerdos (Habilitados y no habilitados)
+        [Authorize]
+        [HttpGet("listado")]
         public async Task<ActionResult<IEnumerable<Acuerdo>>> GetListado()
         {
             var acuerdoslista = await _context.Acuerdos.ToListAsync();
             return Ok(acuerdoslista);
         }
 
-
+        //crea un acuerdo
         [Authorize]
         [HttpPost("crear")]
         public async Task<ActionResult<Acuerdo>> PublicarAcuerdo([FromForm] createAcuerdoDto AcuerdoDto)
@@ -77,12 +93,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 return BadRequest("svgEditado es requerido.");
 
             var userRole = User.GetUserRole();
-            var habilitado = false;
-
-            if (userRole == 1)
-            {
-                habilitado = true;
-            }
+            if (userRole == null) {return BadRequest("Usuario no tiene un rol definido");};
 
             var NewAcuerdo = new Acuerdo
             {
@@ -99,19 +110,15 @@ namespace SistemaDeInvestigacion.Server.Controllers
             await _context.SaveChangesAsync();
 
             string fileName = $"acuerdo_{Guid.NewGuid().ToString().Substring(0, 8)}.png";
-
             string rutaCarpetaFisica = Path.Combine(_env.ContentRootPath, "media", "acuerdosmedia", NewAcuerdo.IdAcuerdo.ToString());
 
             if (!Directory.Exists(rutaCarpetaFisica))
                 Directory.CreateDirectory(rutaCarpetaFisica);
-
             string rutaArchivoFisica = Path.Combine(rutaCarpetaFisica, fileName);
 
             try
             {
-                // Usamos el servicio que tiene la lógica de tamaños corregida
                 byte[] imageData = _svgService.RenderToPng(acuerdos.svgEditado);
-
                 await System.IO.File.WriteAllBytesAsync(rutaArchivoFisica, imageData);
             }
             catch (Exception ex)
@@ -119,12 +126,9 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 return StatusCode(500, $"Error procesando SVG con el servicio: {ex.Message}");
             }
 
-
             NewAcuerdo.ImagenUrl = $"/media/acuerdosmedia/{NewAcuerdo.IdAcuerdo}/{fileName}";
 
             await _context.SaveChangesAsync();
-
-
 
             var NewSvg = new SvgTemplate
             {
@@ -193,6 +197,8 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return Ok(new { Message = "Acuerdo Creado", Url = NewAcuerdo.ImagenUrl });
         }
 
+        //Edita un acuerdo
+        [Authorize]
         [HttpPatch("editar/{idAcuerdo}")]
         public async Task<IActionResult> PutAcuerdo(int idAcuerdo, [FromForm] editAcuerdoDto editAcuerdoDto)
         {
@@ -270,10 +276,20 @@ namespace SistemaDeInvestigacion.Server.Controllers
             _context.SvgTemplates.Update(NewSvg);
             await _context.SaveChangesAsync();
 
+            var infoSvgAcuerdo = _context.AcuerdosUserTemplates
+                .Where(a => a.IdAcuerdo == idAcuerdo) .FirstOrDefault();
+               
+            infoSvgAcuerdo.IdSvg = NewSvg.Id;
+
+            _context.AcuerdosUserTemplates.Update(infoSvgAcuerdo);
+            await _context.SaveChangesAsync();
+
             return NoContent();
 
         }
 
+        //Alterna acuerdo (habilitado pasa a deshabilitado y viceversa)
+        [Authorize]
         [HttpPatch("alternar/{idAcuerdo}")]
         public async Task<ActionResult<Acuerdo>> alternarAcuerdo(int idAcuerdo)
         {

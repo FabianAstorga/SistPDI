@@ -19,6 +19,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             _configuration = configuration;
         }
 
+        //obtiene comentarios
         [HttpGet("{idAcuerdo}")]
         public async Task<ActionResult<IEnumerable<Comentarios>>> getComentarios(int idAcuerdo)
         {
@@ -28,6 +29,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return Ok(comentarios);
         }
 
+        //crea comentarios
         [HttpPost("crear")]
         public async Task<ActionResult<Comentarios>> createComentario([FromForm] CreateComentarioDto createComentarioDto)
         {
@@ -47,7 +49,9 @@ namespace SistemaDeInvestigacion.Server.Controllers
             await _context.SaveChangesAsync();
             return Ok("Comentario creado Correctamente");
         }
- 
+
+        //elimina comentarios
+        [Authorize]
         [HttpDelete("eliminar/{idComentario}")]
         public async Task<ActionResult<Comentarios>> deleteComentario(int idComentario){
             var comentariosData = await _context.Comentarios.FindAsync(idComentario);

@@ -25,7 +25,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             _context = context;
             _configuration = configuration;
         }
-
+        //logea al sistema
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto loginRequest)
         {
@@ -37,8 +37,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
             var userAuth = await _context.Users
                 .Include(u => u.Funcionarios)
                 .FirstOrDefaultAsync(u => u.Funcionarios != null && u.Funcionarios.CorreoElectronico == loginRequest.Email);
-
-        
 
             if (userAuth == null)
             {
@@ -91,7 +89,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             });
         }
 
-
+//Envia correo de recuperacion de contraseña
         [HttpPost("enviar")]
         public async Task<IActionResult> recuperarContrasena([FromForm] RequireMail updatePassDto)
         {
@@ -125,6 +123,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return Ok();
         }
 
+//comprueba el codigo enviado por el correo
         [HttpPost("comprobar")]
         public async Task<IActionResult> comprobarCorreo([FromForm] UpdatePassDto updatePassDto)
         {

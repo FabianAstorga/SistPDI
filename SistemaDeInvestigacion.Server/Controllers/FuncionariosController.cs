@@ -1,12 +1,14 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SistemaDeInvestigacion.Server.Data;
 using SistemaDeInvestigacion.Server.Dtos;
 using SistemaDeInvestigacion.Server.Models;
-using Microsoft.EntityFrameworkCore;
 
 namespace SistemaDeInvestigacion.Server.Controllers
 {
     [Route("api/[controller]")]
+    [Authorize]
     [ApiController]
     public class FuncionariosController : Controller
     {
@@ -19,6 +21,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             _configuration = configuration;
         }
 
+        //obtiene empleados
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Funcionarios>>> GetEmpleados()
         {
@@ -26,7 +29,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             Console.WriteLine("ola");
             return await _context.Funcionarios.ToListAsync();
         }
-
+        //obtiene detalles de un empleado en especifico
         [HttpGet("{idPersona}")]
         public async Task<ActionResult> TenerUsuario(int idPersona)
         {
@@ -60,6 +63,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
         }
 
+        //crea un empleado
         [HttpPost("crear")]
         public async Task<ActionResult> crearUsuario(createEmpleadoDto createEmpleadoDto)
         {
@@ -68,7 +72,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
             if (userRole is not( 1 or 2))
             {
-                return BadRequest("Usuario no es SuperAdministrador");
+                return BadRequest("Usuario no está habilitado para Agregar");
             }
 
             var empleadoDto = createEmpleadoDto;
@@ -78,9 +82,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 CorreoElectronico = empleadoDto.CorreoElectronico,
                 Rut = empleadoDto.rut,
                 NombreCompleto = empleadoDto.NombreCompleto,
-
-                //esto es momentaneo
-                idUnidad = 1
+                idUnidad = empleadoDto.idUnidad
             };
 
             _context.Funcionarios.Add(newEmpleado);
@@ -89,6 +91,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
         }
 
+        //edita un empleado
         [HttpPatch("editar")]
         public async Task<ActionResult> ActualizarEmpleado([FromBody] editEmpleadoDto dto)
         {

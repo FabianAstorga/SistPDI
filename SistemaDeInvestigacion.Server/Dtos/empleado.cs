@@ -15,6 +15,9 @@ namespace SistemaDeInvestigacion.Server.Dtos
         [Required]
         public required string NombreCompleto { get; set; }
 
+        [Required]
+        public required int idUnidad { get; set; }
+
     }
 
     public class editEmpleadoDto

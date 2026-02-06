@@ -25,7 +25,22 @@ namespace SistemaDeInvestigacion.Server.Controllers
             _configuration = configuration;
         }
 
-        [HttpGet()]
+        //Obtiene datos de UNA categoria
+
+
+        [HttpGet("categoria/{idCategoria}")]
+        public async Task<ActionResult<Categoria>> GetCategoria(int idCategoria)
+        {
+            var CategoriaData = await _context.Categoria.FindAsync(idCategoria);
+            if (CategoriaData == null) { 
+                return StatusCode(404, "No hay ninguna Categoria"); 
+            };
+            return CategoriaData;
+        }
+
+        //obtiene categorias HABILITADAS
+        [Authorize]
+        [HttpGet("categorias")]
         public async Task<ActionResult<IEnumerable<Categoria>>> GetCategoria()
         {
             var categorias = await _context.Categoria
@@ -35,7 +50,19 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return categorias;
         }
 
-        [HttpPost]
+        //obtiene TODAS las categorias
+        [Authorize]
+        [HttpGet("lista")]
+        public async Task<ActionResult<IEnumerable<Categoria>>> GetCategoriaListada()
+        {
+            var categorias = await _context.Categoria.ToListAsync();
+            if (categorias == null) return StatusCode(404, "No hay ninguna Categoria");
+            return categorias;
+        }
+
+        //crea una categoria nueva
+        [Authorize]
+        [HttpPost("crear")]
         public async Task<ActionResult<Categoria>> CreateCategoria([FromForm] CreateCategoriaDto createCategoriaDto)
         {
             var NewCategoria = new Categoria {
@@ -45,16 +72,42 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
             _context.Categoria.Add(NewCategoria);
             await _context.SaveChangesAsync();
-            return (Ok("Categoria creada Correctamente"));
+            return (Ok("Categoria creada Correctamente."));
         }
 
-        [HttpPatch("eliminar/{idCategoria}")]
+        //Modifica una categoria existente
+        [Authorize]
+        [HttpPatch("modificar/{idCategoria}")]
+        public async Task<ActionResult<Categoria>> AlternarCategoria(int idCategoria, EditCategoriaDto editCategoriaDto)
+        {
+            var newCategoria = editCategoriaDto;
+            var categoria = await _context.Categoria.FindAsync(idCategoria);
+            categoria.TipoCategoria = newCategoria.DetalleCategoria;
+            await _context.SaveChangesAsync();
+            return (Ok(new { message = "Categoria actualizada Correctamente."}));
+        }
+
+        //Alterna una categoria
+        [Authorize]
+        [HttpPatch("alternar/{idCategoria}")]
         public async Task<ActionResult<Categoria>> AlternarCategoria(int idCategoria)
         {
-            var categoria = await _context.Categoria.FindAsync(idCategoria);
-            categoria.IdEstado = 2;
-            await _context.SaveChangesAsync();
-            return (NoContent());
+            var categoriaData = await _context.Categoria.FindAsync(idCategoria);
+            if (categoriaData.IdEstado == 1)
+            {
+                categoriaData.IdEstado = 2;
+                await _context.SaveChangesAsync();
+                return NoContent();
+            }
+
+            if (categoriaData.IdEstado == 2)
+            {
+                categoriaData.IdEstado = 1;
+                await _context.SaveChangesAsync();
+                return NoContent();
+            }
+
+            return BadRequest("Error en el alternado de la categoria");
         }
 
     }

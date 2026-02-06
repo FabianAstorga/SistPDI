@@ -25,23 +25,36 @@ namespace SistemaDeInvestigacion.Server.Controllers
             _configuration = configuration;
         }
 
+        //obtiene las unidades
         [HttpGet]
+        [Authorize]
         public async Task<ActionResult<Unidad>> GetUnidades()
         {
-            var listaUnidades = _context.Unidades.ToListAsync();
+            var listaUnidades = await _context.Unidades.ToListAsync();
             return Ok(listaUnidades);
         }
 
-        /*
+        //crea una unidad
+        [Authorize]
         [HttpPost]
-        public async Task<Action<Unidad>> PostUnidad(CreateUnidadDto createUnidadDto)
+        public async Task<IActionResult> PostUnidad(CreateUnidadDto createUnidadDto)
         {
             var newUnidad = new Unidad { Nombre = createUnidadDto.Nombre };
             _context.Unidades.Add(newUnidad);
             await _context.SaveChangesAsync();
-            return Ok();
+            return Ok(new { Message = "Unidad Creada Correctamente" });
 
         }
-        */
+        //borra una unidad
+        [Authorize]
+        [HttpDelete("borrar/{IdUnidad}")]
+        public async Task<IActionResult> DeleteUnidad(int IdUnidad)
+        {
+            var UnidadData = await _context.Unidades.FindAsync(IdUnidad);
+            _context.Unidades.Remove(UnidadData);
+            await _context.SaveChangesAsync();
+            return Ok(new { Message = "Unidad Eliminada Correctamente"});
+
+        }
     }
 }

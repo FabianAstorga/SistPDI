@@ -23,14 +23,13 @@ Back-end
 // categoria se puede editar
 // la imagen se puede modificar
 
-
 // recuperacion de contraseña
 // Insertar comentarios
 // ver comentarios 
 
 
 // modificar empleados
-modificar empresas
+//modificar empresas
 
 //eliminar acuerdos (confirmacion previa)
 
@@ -41,11 +40,11 @@ modificar empresas
 //seleccionar lista de destinatarios
 //resumen o texto completo
 
-paginacion
-
 //Hacer las peticiones para modificar segun el rol
 //configurar el HABILITADO para darle ciertas funciones a un usuario adentro del sistema
 cambiar el cifrado de estatico a dinamico
+Reformar peticiones de get de acuerdos (Peticiones generales y con svg)
+Revisar uso de websocket
 
 Front-end
 Abstraer los datos de acuerdo al svg
