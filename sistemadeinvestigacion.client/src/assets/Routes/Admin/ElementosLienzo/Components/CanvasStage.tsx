@@ -97,7 +97,7 @@ export const CanvasStage: React.FC<Props> = memo(({ model, svgId = 'lienzo-svg' 
 
     return (
         <main
-            className="flex-1 overflow-auto bg-gray-200 flex items-center justify-center p-12"
+            className="flex-1 overflow-auto bg-transparent flex items-center justify-center p-12"
             onClick={(e) => {
                 // Solo limpiar si se hace click exactamente en el fondo gris
                 if (e.target === e.currentTarget) {

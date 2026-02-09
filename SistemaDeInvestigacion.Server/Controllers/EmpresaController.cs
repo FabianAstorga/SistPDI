@@ -188,6 +188,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             }
 
             _context.Empresas.Update(dataBDEmpresa);
+            await _context.SaveChangesAsync();
             Console.WriteLine("testeo de nombre del archivo ===== ", dbroute);
             return Ok();
         }

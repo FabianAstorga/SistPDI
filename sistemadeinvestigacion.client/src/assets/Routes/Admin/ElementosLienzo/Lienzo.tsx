@@ -3,36 +3,34 @@ import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../../../components/Navbar';
 import { useLienzoModel } from './Hooks/useLienzoModel';
 
-// Importaciones memoizadas para evitar re-renders en cascada
 import { LeftToolbar } from './Components/LeftToolbar';
 import { CanvasStage } from './Components/CanvasStage';
 import { RightPanel } from './Components/RightPanel';
 
-// Memoizamos los componentes hijos para que solo reaccionen a sus props específicas
 const MemoizedLeftToolbar = memo(LeftToolbar);
 const MemoizedCanvasStage = memo(CanvasStage);
 const MemoizedRightPanel = memo(RightPanel);
 
+const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
+
 export const Lienzo = () => {
     const navigate = useNavigate();
-
-    // Inyectamos la navegación al hook. 
-    // Asegúrate de que useLienzoModel use useCallback internamente para sus funciones.
     const model = useLienzoModel((path: string) => navigate(path));
 
-    // 1. Separación de Referencias (No provocan re-render, pero deben pasarse limpias)
     const { fileInputRef, svgRef, idCapaDibujoActual, ...modelData } = model;
 
-    // 2. Memoización del título para evitar cálculos en el render principal
-    const displayTitle = useMemo(() => (
-        modelData.tituloAcuerdo || 'No Acuerdo seleccionado'
-    ), [modelData.tituloAcuerdo]);
-
     return (
-        <div className="h-screen bg-gray-50 flex flex-col overflow-hidden font-sans antialiased text-gray-900">
+        /* Eliminamos cualquier rastro de gris con bg-[#002855] */
+        /* overflow-hidden asegura que no aparezcan barras de scroll en el body */
+        <div className="h-screen w-full bg-[#002855] flex flex-col overflow-hidden font-sans antialiased text-white relative">
             <Navbar />
 
-            {/* Input oculto: se mantiene fuera del flujo principal de renderizado del lienzo */}
+            {/* Marca de agua de fondo */}
+            <div
+                className="fixed inset-0 z-0 pointer-events-none opacity-5"
+                style={{ backgroundImage: `url(${HERO_BG})`, backgroundSize: 'cover' }}
+            />
+
             <input
                 type="file"
                 ref={fileInputRef}
@@ -41,33 +39,26 @@ export const Lienzo = () => {
                 onChange={model.subirImagen}
             />
 
-            <div className="flex flex-1 pt-16 overflow-hidden flex-col">
-                {/* Header del Lienzo */}
-                <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-center">
-                    <div className="px-4 py-2 border-2 border-[#D4AF37] rounded-md">
-                        <h1 className="text-sm font-black text-gray-800 uppercase tracking-tight truncate max-w-[70vw] text-center">
-                            {displayTitle}
-                        </h1>
-                    </div>
-                </div>
+            {/* Contenedor de herramientas y canvas */}
+            <div className="flex flex-1 pt-16 relative z-10 overflow-hidden">
 
-                <div className="flex flex-1 overflow-hidden">
-                    {/* Toolbar Izquierda: Solo recibe lo necesario para herramientas */}
-                    <MemoizedLeftToolbar
-                        model={{ ...modelData, fileInputRef, idCapaDibujoActual }}
-                    />
+                {/* Toolbar Izquierda: Ahora sobre fondo azul */}
+                <MemoizedLeftToolbar
+                    model={{ ...modelData, fileInputRef, idCapaDibujoActual }}
+                />
 
-                    {/* Stage Central: El área más pesada, aislada por referencia de SVG */}
+                {/* Área del Canvas: Única zona blanca, sin márgenes ni sombras grises */}
+                <div className="flex-1 bg-transparent overflow-hidden relative">
                     <MemoizedCanvasStage
                         model={{ ...modelData, svgRef }}
                         svgId="lienzo-svg"
                     />
-
-                    {/* Panel Derecho: Limpio de referencias al DOM, solo datos y estados */}
-                    <MemoizedRightPanel
-                        model={modelData}
-                    />
                 </div>
+
+                {/* Panel Derecho: Ahora sobre fondo azul */}
+                <MemoizedRightPanel
+                    model={modelData}
+                />
             </div>
         </div>
     );
