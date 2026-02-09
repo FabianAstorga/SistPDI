@@ -16,6 +16,7 @@ import { pick, readUserNameFromLocalStorage, safeJson } from '../Utils/lienzo.st
 import { guardarAcuerdoFinal } from '../Utils/lienzo.http';
 
 export const useLienzoModel = (navigate: (path: string) => void): LienzoModel => {
+    // --- ESTADOS BASE ---
     const [elementos, setElementos] = useState<any[]>([]);
     const [seleccionadoId, setSeleccionadoId] = useState<number | null>(null);
     const [seleccionadosIds, setSeleccionadosIds] = useState<number[]>([]);
@@ -26,16 +27,17 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
     const [grosorLapiz, setGrosorLapiz] = useState(3);
     const [dibujando, setDibujando] = useState(false);
 
+    // --- ESTADOS DE MODO Y METADATOS ---
+    const [modo, setModo] = useState<{ tipo: number, id?: number } | null>(null);
     const [tituloAcuerdo, setTituloAcuerdo] = useState('No acuerdo seleccionado');
     const [autorNombre, setAutorNombre] = useState('—');
-
     const [modoPuntos, setModoPuntos] = useState(false);
     const [dragHandle, setDragHandle] = useState<DragHandle>(null);
 
+    // --- REFS ---
     const idCapaDibujoActual = useRef<number | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const svgRef = useRef<SVGSVGElement | null>(null);
-
     const creandoTrazoId = useRef<number | null>(null);
     const creandoTrazoStartWorld = useRef<Pt | null>(null);
 
@@ -43,6 +45,7 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
     const seleccionadosIdsRef = useRef(seleccionadosIds);
     const modoPuntosRef = useRef(modoPuntos);
 
+    // --- EFECTOS DE SINCRONIZACIÓN ---
     useEffect(() => {
         herramientaActivaRef.current = herramientaActiva;
         seleccionadosIdsRef.current = seleccionadosIds;
@@ -52,79 +55,58 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
     const seleccionado = elementos.find((el) => el.id === seleccionadoId);
     const modoSeleccionActivo = (herramientaActiva === null || herramientaActiva === 'multiseleccion') && !modoPuntos;
 
-    // --- EFECTO DE CARGA INICIAL (temp_acuerdo) ---
+    // --- CARGA INICIAL SEGÚN MODO ---
     useEffect(() => {
-        const temp = localStorage.getItem('temp_acuerdo');
-        if (temp) {
-            try {
-                const parsed = safeJson(temp);
-                if (parsed) {
-                    // 1. Setear metadatos
-                    const titulo = String(pick(parsed, ['Titulo', 'titulo'], 'No acuerdo seleccionado') || 'No acuerdo seleccionado');
-                    setTituloAcuerdo(titulo.trim().length > 0 ? titulo : 'No acuerdo seleccionado');
-                    setAutorNombre(readUserNameFromLocalStorage());
+        const modoRaw = localStorage.getItem('modo');
+        const modoParsed = modoRaw ? JSON.parse(modoRaw) : { tipo: 1 };
+        setModo(modoParsed);
 
-                    // 2. Generar elementos iniciales si el lienzo está vacío
-                    setElementos((prev) => {
-                        if (prev.length > 0) return prev; // Evita sobrescribir si ya hay trabajo
+        if (modoParsed.tipo === 3) {
+            // MODO 3: EDICIÓN (Lee de temp_cambio)
+            const tempCambio = localStorage.getItem('temp_cambio');
+            if (tempCambio) {
+                const data = JSON.parse(tempCambio);
+                setTituloAcuerdo(data.titulo || 'Editando Acuerdo');
+                setElementos(data.elementos || []);
+                setAutorNombre(readUserNameFromLocalStorage());
+            }
+        } else if (modoParsed.tipo === 2) {
+            // MODO 2: TEMPLATE (Lienzo limpio)
+            setTituloAcuerdo("Nueva Plantilla");
+            setElementos([]);
+            setAutorNombre(readUserNameFromLocalStorage());
+        } else {
+            // MODO 1: CREACIÓN (Lee de temp_acuerdo)
+            const temp = localStorage.getItem('temp_acuerdo');
+            if (temp) {
+                try {
+                    const parsed = safeJson(temp);
+                    if (parsed) {
+                        const titulo = String(pick(parsed, ['Titulo', 'titulo'], 'Nuevo Acuerdo'));
+                        setTituloAcuerdo(titulo);
+                        setAutorNombre(readUserNameFromLocalStorage());
 
-                        const ahora = Date.now();
-                        const descBreve = String(pick(parsed, ['Descripcion', 'descripcion'], 'Sin descripción breve'));
-                        const descDetalle = String(pick(parsed, ['DetallesDescripcion', 'detallesDescripcion'], ''));
+                        setElementos((prev) => {
+                            if (prev.length > 0) return prev;
+                            const ahora = Date.now();
+                            const descBreve = String(pick(parsed, ['Descripcion', 'descripcion'], 'Sin descripción breve'));
+                            const descDetalle = String(pick(parsed, ['DetallesDescripcion', 'detallesDescripcion'], ''));
 
-                        console.log("[Carga Inicial] Generando elementos desde temp_acuerdo");
-
-                        return [
-                            {
-                                id: ahora,
-                                type: 'texto',
-                                text: titulo,
-                                x: 50, y: 50,
-                                width: 500, height: 100,
-                                fill: '#003385',
-                                fontSize: 32,
-                                fontFamily: 'Arial',
-                                fontWeight: 'bold',
-                                rotation: 0,
-                                flipX: false,
-                                saturation: 1
-                            },
-                            {
-                                id: ahora + 1,
-                                type: 'texto',
-                                text: descBreve,
-                                x: 50, y: 120,
-                                width: 500, height: 80,
-                                fill: '#1e293b',
-                                fontSize: 18,
-                                fontFamily: 'Arial',
-                                rotation: 0,
-                                flipX: false,
-                                saturation: 1
-                            },
-                            {
-                                id: ahora + 2,
-                                type: 'texto',
-                                text: descDetalle,
-                                x: 50, y: 180,
-                                width: 600, height: 500,
-                                fill: '#64748b',
-                                fontSize: 14,
-                                fontFamily: 'Arial',
-                                rotation: 0,
-                                flipX: false,
-                                saturation: 1
-                            }
-                        ];
-                    });
+                            return [
+                                { id: ahora, type: 'texto', text: titulo, x: 50, y: 50, width: 500, height: 100, fill: '#003385', fontSize: 32, fontFamily: 'Arial', fontWeight: 'bold', rotation: 0, flipX: false, saturation: 1 },
+                                { id: ahora + 1, type: 'texto', text: descBreve, x: 50, y: 120, width: 500, height: 80, fill: '#1e293b', fontSize: 18, fontFamily: 'Arial', rotation: 0, flipX: false, saturation: 1 },
+                                { id: ahora + 2, type: 'texto', text: descDetalle, x: 50, y: 180, width: 600, height: 500, fill: '#64748b', fontSize: 14, fontFamily: 'Arial', rotation: 0, flipX: false, saturation: 1 }
+                            ];
+                        });
+                    }
+                } catch (error) {
+                    console.error("[Carga Inicial] Error:", error);
                 }
-            } catch (error) {
-                console.error("[Carga Inicial] Error procesando temp_acuerdo:", error);
             }
         }
     }, []);
 
-    // ... (Mantener efectos de mouseup/blur para dibujando y dragHandle igual que antes)
+    // --- MANEJADORES DE EVENTOS ---
     useEffect(() => {
         const stopAll = () => setDibujando(false);
         window.addEventListener('mouseup', stopAll);
@@ -188,14 +170,8 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
             const reader = new FileReader();
             reader.onload = (f) => {
                 const nuevo = {
-                    id: Date.now(),
-                    type: 'imagen',
-                    x: 50, y: 50,
-                    width: 200, height: 200,
-                    rotation: 0,
-                    flipX: false,
-                    url: f.target?.result,
-                    saturation: 1
+                    id: Date.now(), type: 'imagen', x: 50, y: 50, width: 200, height: 200,
+                    rotation: 0, flipX: false, url: f.target?.result, saturation: 1
                 };
                 setElementos((prev) => [...prev, nuevo]);
                 setSeleccionadoId(nuevo.id);
@@ -210,52 +186,36 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
         if (!isEditablePolygon(base.type)) return base;
         const w = base.width || 120;
         const h = base.height || 120;
-        if (Array.isArray(base.pointsArr) && base.pointsArr.length >= 3) {
-            return { ...base, pointsArr: base.pointsArr };
-        }
+        if (Array.isArray(base.pointsArr) && base.pointsArr.length >= 3) return { ...base, pointsArr: base.pointsArr };
         const pts = getBasePolygonPoints(base.type, w, h);
         return { ...base, pointsArr: pts };
     };
 
     const manejarClickLienzo = (e: any) => {
         if (modoPuntos) return;
-
         const target = e.target as HTMLElement;
         const esObjeto = target.closest('[data-elid]') || target.closest('[data-editor="1"]');
-
         if (esObjeto) return;
         if (isStrokeType(herramientaActiva || '')) return;
         if (herramientaActiva === 'lapiz') return;
-
         if (!herramientaActiva || herramientaActiva === 'multiseleccion') {
             limpiarSeleccion();
             return;
         }
-
         if (herramientaActiva === 'goma') {
-            const target = e.target as any;
-            const idStr = target?.dataset?.elid;
+            const targetEl = e.target as any;
+            const idStr = targetEl?.dataset?.elid;
             if (idStr) eliminarElemento(Number(idStr));
             return;
         }
-
         const rect = e.currentTarget.getBoundingClientRect();
         const baseNuevo = {
-            id: Date.now(),
-            type: herramientaActiva,
-            x: e.clientX - rect.left - 50,
-            y: e.clientY - rect.top - 50,
-            width: herramientaActiva === 'texto' ? 250 : 120,
-            height: 120,
-            fill: colorGlobal,
-            rotation: 0,
-            flipX: false,
-            fontSize: 16,
-            fontFamily: 'Arial',
-            text: herramientaActiva === 'texto' ? 'Escribe aquí tu texto...' : '',
-            saturation: 1
+            id: Date.now(), type: herramientaActiva,
+            x: e.clientX - rect.left - 50, y: e.clientY - rect.top - 50,
+            width: herramientaActiva === 'texto' ? 250 : 120, height: 120,
+            fill: colorGlobal, rotation: 0, flipX: false, fontSize: 16,
+            fontFamily: 'Arial', text: herramientaActiva === 'texto' ? 'Escribe aquí...' : '', saturation: 1
         };
-
         const nuevo = ensurePolygonPoints(baseNuevo);
         setElementos((prev) => [...prev, nuevo]);
         setSeleccionadoId(nuevo.id);
@@ -271,57 +231,27 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
             creandoTrazoId.current = id;
             creandoTrazoStartWorld.current = start;
             setDibujando(true);
-
             const nuevo: any = {
-                id,
-                type: herramientaActiva,
-                x: start.x, y: start.y,
-                width: 1, height: 1,
-                rotation: 0, flipX: false,
-                stroke: colorGlobal,
-                strokeWidth: Math.max(1, grosorLapiz),
-                pointsArr: herramientaActiva === 'curva'
-                    ? [{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }]
-                    : [{ x: 0, y: 0 }, { x: 0, y: 0 }]
+                id, type: herramientaActiva, x: start.x, y: start.y, width: 1, height: 1,
+                rotation: 0, flipX: false, stroke: colorGlobal, strokeWidth: Math.max(1, grosorLapiz),
+                pointsArr: herramientaActiva === 'curva' ? [{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }] : [{ x: 0, y: 0 }, { x: 0, y: 0 }]
             };
-
             setElementos((prev) => [...prev, nuevo]);
             setSeleccionadoId(id);
             setSeleccionadosIds([id]);
             return;
         }
-
         if (herramientaActiva !== 'lapiz') return;
-
         setDibujando(true);
         const rect = e.currentTarget.getBoundingClientRect();
         const moveCommand = `M ${e.clientX - rect.left} ${e.clientY - rect.top}`;
-
         const ultimaCapa = elementos[elementos.length - 1];
         if (idCapaDibujoActual.current && ultimaCapa?.id === idCapaDibujoActual.current) {
-            setElementos((prev) =>
-                prev.map((el) =>
-                    el.id === idCapaDibujoActual.current
-                        ? { ...el, points: (el.points || '') + ' ' + moveCommand, strokeWidth: grosorLapiz }
-                        : el
-                )
-            );
+            setElementos((prev) => prev.map((el) => el.id === idCapaDibujoActual.current ? { ...el, points: (el.points || '') + ' ' + moveCommand, strokeWidth: grosorLapiz } : el));
         } else {
             const id = Date.now();
             idCapaDibujoActual.current = id;
-            setElementos((prev) => [
-                ...prev,
-                {
-                    id,
-                    type: 'lapiz',
-                    x: 0, y: 0,
-                    width: canvasSize.w, height: canvasSize.h,
-                    fill: colorGlobal,
-                    rotation: 0,
-                    points: moveCommand,
-                    strokeWidth: grosorLapiz
-                }
-            ]);
+            setElementos((prev) => [...prev, { id, type: 'lapiz', x: 0, y: 0, width: canvasSize.w, height: canvasSize.h, fill: colorGlobal, rotation: 0, points: moveCommand, strokeWidth: grosorLapiz }]);
         }
     };
 
@@ -330,56 +260,39 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
             const id = creandoTrazoId.current;
             const el = elementos.find((x) => x.id === id);
             if (!el || !isStrokeType(el.type)) return;
-
             const startWorld = creandoTrazoStartWorld.current;
             const endWorld = svgPointFromMouse(svgRef.current, e.clientX, e.clientY);
-
             let ptsWorld: Pt[] = [];
             if (el.type === 'curva') {
                 const mx = (startWorld.x + endWorld.x) / 2;
                 const my = (startWorld.y + endWorld.y) / 2;
                 const dx = endWorld.x - startWorld.x;
                 const dy = endWorld.y - startWorld.y;
-                const control: Pt = { x: mx - dy * 0.15, y: my + dx * 0.15 };
-                ptsWorld = [startWorld, control, endWorld];
+                ptsWorld = [startWorld, { x: mx - dy * 0.15, y: my + dx * 0.15 }, endWorld];
             } else {
                 ptsWorld = [startWorld, endWorld];
             }
-
             const { x, y, w, h, ptsLocal } = normalizePtsToLocal(ptsWorld);
-
-            setElementos((prev) =>
-                prev.map((item) => (item.id === id ? { ...item, x, y, width: w, height: h, pointsArr: ptsLocal } : item))
-            );
+            setElementos((prev) => prev.map((item) => (item.id === id ? { ...item, x, y, width: w, height: h, pointsArr: ptsLocal } : item)));
             return;
         }
-
         if (!dibujando || !idCapaDibujoActual.current) return;
         const rect = e.currentTarget.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         if (x < 0 || y < 0 || x > rect.width || y > rect.height) return;
-
         const nextPoint = `L ${x} ${y}`;
-        setElementos((prev) =>
-            prev.map((el) => (el.id === idCapaDibujoActual.current ? { ...el, points: (el.points || '') + ' ' + nextPoint } : el))
-        );
+        setElementos((prev) => prev.map((el) => (el.id === idCapaDibujoActual.current ? { ...el, points: (el.points || '') + ' ' + nextPoint } : el)));
     };
 
     const clonarElemento = () => {
         if (!seleccionado) return;
-        const nuevoBase = {
-            ...seleccionado,
-            id: Date.now(),
-            x: (seleccionado.x || 0) + 20,
-            y: (seleccionado.y || 0) + 20
-        };
+        const nuevoBase = { ...seleccionado, id: Date.now(), x: (seleccionado.x || 0) + 20, y: (seleccionado.y || 0) + 20 };
         const nuevo = Array.isArray(nuevoBase.pointsArr) && nuevoBase.pointsArr.length >= 2
             ? { ...nuevoBase, pointsArr: clonePts(nuevoBase.pointsArr) }
             : isEditablePolygon(nuevoBase.type)
                 ? { ...nuevoBase, pointsArr: Array.isArray(nuevoBase.pointsArr) ? clonePts(nuevoBase.pointsArr) : getBasePolygonPoints(nuevoBase.type, nuevoBase.width || 120, nuevoBase.height || 120) }
                 : nuevoBase;
-
         setElementos((prev) => [...prev, nuevo]);
         setSeleccionadoId(nuevo.id);
         setSeleccionadosIds([nuevo.id]);
@@ -390,18 +303,10 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
         if (herramientaActivaRef.current === 'multiseleccion') {
             const currentIds = seleccionadosIdsRef.current;
             const setSel = new Set(currentIds.includes(id) ? currentIds : [...currentIds, id]);
-            setElementos((prev) =>
-                prev.map((el) =>
-                    setSel.has(el.id)
-                        ? { ...el, x: (el.x || 0) + dx, y: (el.y || 0) + dy }
-                        : el
-                )
-            );
+            setElementos((prev) => prev.map((el) => setSel.has(el.id) ? { ...el, x: (el.x || 0) + dx, y: (el.y || 0) + dy } : el));
             return;
         }
-        setElementos((prev) =>
-            prev.map((el) => el.id === id ? { ...el, x: (el.x || 0) + dx, y: (el.y || 0) + dy } : el)
-        );
+        setElementos((prev) => prev.map((el) => el.id === id ? { ...el, x: (el.x || 0) + dx, y: (el.y || 0) + dy } : el));
     }, []);
 
     const alTerminarArrastre = useCallback((id: number, x: number, y: number) => {
@@ -450,85 +355,57 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
         const blob = new Blob([clean], { type: 'image/svg+xml;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url;
-        a.download = `lienzo_${Date.now()}.svg`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
+        a.href = url; a.download = `lienzo_${Date.now()}.svg`;
+        document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     };
 
+    // --- GUARDADO FINAL ---
     const manejarGuardadoFinal = async () => {
-        await guardarAcuerdoFinal({ elementos, canvasSize, navigate });
+        if (!modo) {
+            console.error("Modo no definido");
+            return;
+        }
+        // Inyectamos el objeto modo aquí para que lienzo.http.ts lo reciba
+        await guardarAcuerdoFinal({ elementos, canvasSize, navigate, modo });
     };
 
     const startDragPoint = (e: any, elId: number, idx: number) => {
-        e.stopPropagation();
-        e.preventDefault();
-        setDragHandle({ elId, idx });
+        e.stopPropagation(); e.preventDefault(); setDragHandle({ elId, idx });
     };
 
     const onSvgMouseMove = (e: any) => {
-        if (herramientaActiva === 'lapiz' || (dibujando && creandoTrazoId.current)) {
-            dibujar(e);
-            return;
-        }
+        if (herramientaActiva === 'lapiz' || (dibujando && creandoTrazoId.current)) { dibujar(e); return; }
         if (!modoPuntos || !dragHandle || !svgRef.current) return;
         const el = elementos.find((x) => x.id === dragHandle.elId);
         if (!el || (!isEditableByPoints(el) && !isEditablePolygon(el.type))) return;
-
         const pWorld = svgPointFromMouse(svgRef.current, e.clientX, e.clientY);
         const local = applyInverseElTransformToPoint(pWorld, el);
-        const w = el.width || 120;
-        const h = el.height || 120;
-        const x = clamp(local.x, 0, w);
-        const y = clamp(local.y, 0, h);
-
-        setElementos((prev) =>
-            prev.map((item) => {
-                if (item.id !== el.id) return item;
-                const basePts = Array.isArray(item.pointsArr) && item.pointsArr.length >= 2
-                    ? clonePts(item.pointsArr)
-                    : isEditablePolygon(item.type) ? getBasePolygonPoints(item.type, w, h) : [];
-                if (!basePts[dragHandle!.idx]) return item;
-                basePts[dragHandle!.idx] = { x, y };
-                return { ...item, pointsArr: basePts };
-            })
-        );
+        setElementos((prev) => prev.map((item) => {
+            if (item.id !== el.id) return item;
+            const basePts = Array.isArray(item.pointsArr) && item.pointsArr.length >= 2 ? clonePts(item.pointsArr) : (isEditablePolygon(item.type) ? getBasePolygonPoints(item.type, item.width || 120, item.height || 120) : []);
+            if (!basePts[dragHandle!.idx]) return item;
+            basePts[dragHandle!.idx] = { x: clamp(local.x, 0, item.width || 120), y: clamp(local.y, 0, item.height || 120) };
+            return { ...item, pointsArr: basePts };
+        }));
     };
 
     const onSvgMouseUp = () => {
-        if (dibujando && creandoTrazoId.current) {
-            creandoTrazoId.current = null;
-            creandoTrazoStartWorld.current = null;
-            setDibujando(false);
-            return;
-        }
-        if (herramientaActiva === 'lapiz') {
-            setDibujando(false);
-            return;
-        }
+        if (dibujando && creandoTrazoId.current) { creandoTrazoId.current = null; creandoTrazoStartWorld.current = null; setDibujando(false); return; }
+        if (herramientaActiva === 'lapiz') { setDibujando(false); return; }
         setDragHandle(null);
     };
 
     const redimensionarElemento = useCallback((id: number, width: number, height: number) => {
-        setElementos((prev) =>
-            prev.map((el) => {
-                if (el.id !== id) return el;
-                const oldW = el.width || 120;
-                const oldH = el.height || 120;
-                const next: any = { ...el, width, height };
-                if (Array.isArray(el.pointsArr) && el.pointsArr.length >= 2) {
-                    const sx = oldW > 0 ? width / oldW : 1;
-                    const sy = oldH > 0 ? height / oldH : 1;
-                    next.pointsArr = el.pointsArr.map((p: Pt) => ({
-                        x: clamp(p.x * sx, 0, width),
-                        y: clamp(p.y * sy, 0, height)
-                    }));
-                }
-                return next;
-            })
-        );
+        setElementos((prev) => prev.map((el) => {
+            if (el.id !== id) return el;
+            const oldW = el.width || 120; const oldH = el.height || 120;
+            const next: any = { ...el, width, height };
+            if (Array.isArray(el.pointsArr) && el.pointsArr.length >= 2) {
+                const sx = oldW > 0 ? width / oldW : 1; const sy = oldH > 0 ? height / oldH : 1;
+                next.pointsArr = el.pointsArr.map((p: Pt) => ({ x: clamp(p.x * sx, 0, width), y: clamp(p.y * sy, 0, height) }));
+            }
+            return next;
+        }));
     }, []);
 
     const fontsDisponibles = ['Arial', 'Helvetica', 'Verdana', 'Tahoma', 'Georgia', 'Times New Roman', 'Courier New'];
@@ -541,16 +418,14 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
         return isEditablePolygon(seleccionado.type) || (Array.isArray(seleccionado.pointsArr) && seleccionado.pointsArr.length >= 2);
     }, [seleccionado]);
 
-    useEffect(() => {
-        if (modoPuntos && !canEditPoints) setModoPuntos(false);
-    }, [modoPuntos, canEditPoints]);
+    useEffect(() => { if (modoPuntos && !canEditPoints) setModoPuntos(false); }, [modoPuntos, canEditPoints]);
 
     const sidebarBtnClass = (active: boolean) => `p-4 rounded-lg transition-all duration-200 flex items-center justify-center ${active ? 'bg-[#003385] text-white shadow-md' : 'text-gray-500 hover:bg-gray-100'}`;
     const controlLabel = 'text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 block';
     const inputStyle = 'w-full bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2';
 
     return {
-        elementos, seleccionadoId, seleccionadosIds, seleccionado, herramientaActiva, menuFigurasOpen, canvasSize, colorGlobal, grosorLapiz, dibujando, tituloAcuerdo, autorNombre, modoPuntos, dragHandle, fileInputRef, svgRef, idCapaDibujoActual, modoSeleccionActivo, fontsDisponibles, presetsLienzo, FIGURAS, tiposConSaturacion, canEditPoints, sidebarBtnClass, controlLabel, inputStyle,
+        elementos, seleccionadoId, seleccionadosIds, seleccionado, herramientaActiva, menuFigurasOpen, canvasSize, colorGlobal, grosorLapiz, dibujando, tituloAcuerdo, autorNombre, modoPuntos, dragHandle, fileInputRef, svgRef, idCapaDibujoActual, modoSeleccionActivo, fontsDisponibles, presetsLienzo, FIGURAS, tiposConSaturacion, canEditPoints, sidebarBtnClass, controlLabel, inputStyle, modo,
         setElementos, setSeleccionadoId, setSeleccionadosIds, setHerramientaActiva, setMenuFigurasOpen, setCanvasSize, setColorGlobal, setGrosorLapiz, setModoPuntos,
         actualizarAtributo, manejarCambioColor, eliminarElemento, limpiarSeleccion, seleccionarElementoCanvas, seleccionarElementoDesdeCapas, subirImagen, manejarClickLienzo, iniciarDibujo, dibujar, clonarElemento, alArrastrando, alTerminarArrastre, moverCapa, moverCapaExtremo, descargarSVG, manejarGuardadoFinal, startDragPoint, onSvgMouseMove, onSvgMouseUp, redimensionarElemento
     };

@@ -6,7 +6,6 @@
         return null;
     }
 };
-
 export const pick = (obj: any, keys: string[], fallback: any = undefined) => {
     for (const k of keys) {
         const v = obj?.[k];
@@ -14,14 +13,11 @@ export const pick = (obj: any, keys: string[], fallback: any = undefined) => {
     }
     return fallback;
 };
-
 export const toBool = (v: any) => v === true || String(v).toLowerCase() === 'true';
-
 export const toInt = (v: any, def = 0) => {
     const n = Number(v);
     return Number.isFinite(n) ? Math.trunc(n) : def;
 };
-
 export const readUserNameFromLocalStorage = () => {
     const candidates = ['usuario', 'user', 'userName', 'username', 'nombreUsuario', 'nombre', 'author', 'autor'];
     for (const key of candidates) {

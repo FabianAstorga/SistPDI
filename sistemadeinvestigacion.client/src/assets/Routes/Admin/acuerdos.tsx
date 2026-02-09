@@ -3,23 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from "framer-motion";
 import { Navbar } from '../../components/Navbar';
 import { Settings2, ArrowRight, Building2, Calendar, FileText, Info, X } from 'lucide-react';
-
-/** * PANEL ACUERDOS V5.0 - PDI Intranet 2026
- * Fix: AbortController dinámico, Desacoplamiento de Modal y Estabilización de Formulario.
- */
-
 const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
-
-// 1. Estilos estáticos fuera del componente para evitar recreación de strings en cada render
 const LABEL_STYLE = "text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 flex items-center gap-2";
 const INPUT_STYLE = "w-full bg-slate-100 border-b border-slate-200 text-slate-900 px-4 py-4 outline-none focus:border-[#002855] focus:bg-white transition-all duration-300 font-semibold text-sm";
-
 const getOneYearFromNow = () => {
     const date = new Date();
     date.setFullYear(date.getFullYear() + 1);
     return date.toISOString().slice(0, 16);
 };
-
 export default function Acuerdos() {
     const navigate = useNavigate();
     const [empresas, setEmpresas] = useState<any[]>([]);
@@ -33,8 +24,6 @@ export default function Acuerdos() {
         fechaVencimiento: getOneYearFromNow(),
         idEmpresa: '' as string | number,
     });
-
-    // 2. Fetch con limpieza profunda de controladores
     const fetchEmpresas = useCallback(async (selectNewest = false) => {
         if (abortControllerRef.current) abortControllerRef.current.abort();
         abortControllerRef.current = new AbortController();
@@ -57,13 +46,10 @@ export default function Acuerdos() {
             if (e.name !== 'AbortError') console.error("Fetch Empresas Error:", e);
         }
     }, [formData.idEmpresa]);
-
     useEffect(() => {
         fetchEmpresas();
         return () => abortControllerRef.current?.abort();
     }, [fetchEmpresas]);
-
-    // 3. Manejadores memoizados para evitar basura en el heap
     const handleSelectChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
         const val = e.target.value;
         if (val === "NEW_COMPANY") {
@@ -76,35 +62,34 @@ export default function Acuerdos() {
     const handleSubmit = useCallback((e: React.FormEvent) => {
         e.preventDefault();
         localStorage.setItem('temp_acuerdo', JSON.stringify({ ...formData, estado: 'ACTIVO' }));
+        const modoLienzo = {
+            tipo: 1,
+            nombre: "Modo creacion"
+        };
+        localStorage.setItem('modo', JSON.stringify(modoLienzo));
         navigate('/lienzo');
     }, [formData, navigate]);
 
     const closeModal = useCallback(() => setIsModalOpen(false), []);
     const handleCreated = useCallback(() => fetchEmpresas(true), [fetchEmpresas]);
-
     return (
         <div className="h-screen w-full bg-[#002855] font-sans text-white overflow-hidden flex flex-col">
             <Navbar />
-
-            {/* Modal desacoplado para liberar memoria cuando no está abierto */}
             <ModalNuevaEmpresa
                 isOpen={isModalOpen}
                 onClose={closeModal}
                 onCreated={handleCreated}
             />
-
             <div className="fixed inset-0 z-0 pointer-events-none">
                 <div className="absolute inset-0 bg-cover bg-center opacity-10" style={{ backgroundImage: `url(${HERO_BG})` }} />
                 <div className="absolute inset-0 bg-gradient-to-b from-[#002855] via-transparent to-[#002855]" />
             </div>
-
             <main className="relative z-10 flex-1 flex items-center justify-center p-6 mt-4">
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="w-full max-w-6xl h-[85vh] flex shadow-[0_40px_100px_rgba(0,0,0,0.6)] rounded-sm overflow-hidden"
                 >
-                    {/* Panel lateral estático */}
                     <div className="hidden md:flex w-72 bg-[#002855] p-10 flex-col justify-start border-y border-l border-white/10 shrink-0">
                         <div className="w-12 h-12 bg-blue-600 flex items-center justify-center mb-8 shadow-lg border border-white/10">
                             <Settings2 size={24} />
@@ -117,8 +102,6 @@ export default function Acuerdos() {
                             Ingresa un nuevo acuerdo con fecha de vencimiento calculada para un año
                         </p>
                     </div>
-
-                    {/* Formulario optimizado */}
                     <form onSubmit={handleSubmit} className="flex-1 flex flex-col bg-white border-y border-r border-white/10 overflow-hidden relative">
                         <div className="flex-1 p-10 md:p-14 overflow-y-auto custom-list-scroll text-slate-900">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
@@ -132,7 +115,6 @@ export default function Acuerdos() {
                                         required
                                     />
                                 </div>
-
                                 <div className="space-y-1">
                                     <label className={LABEL_STYLE}><Building2 size={12} /> Empresa </label>
                                     <select
@@ -148,7 +130,6 @@ export default function Acuerdos() {
                                         <option value="NEW_COMPANY" className="font-bold text-blue-600">+ Empresa</option>
                                     </select>
                                 </div>
-
                                 <div className="space-y-1">
                                     <label className={LABEL_STYLE}><Calendar size={12} /> Fecha Término</label>
                                     <input
@@ -159,7 +140,6 @@ export default function Acuerdos() {
                                         required
                                     />
                                 </div>
-
                                 <div className="md:col-span-2">
                                     <label className={LABEL_STYLE}><FileText size={12} /> Descripción breve</label>
                                     <textarea
@@ -180,7 +160,6 @@ export default function Acuerdos() {
                                 </div>
                             </div>
                         </div>
-
                         <div className="absolute bottom-10 right-10">
                             <button type="submit" className="h-16 w-16 rounded-full bg-[#002855] text-white flex items-center justify-center hover:bg-blue-600 hover:scale-110 shadow-2xl transition-all duration-300 group">
                                 <ArrowRight size={28} className="group-hover:translate-x-1 transition-transform" />
@@ -192,20 +171,15 @@ export default function Acuerdos() {
         </div>
     );
 }
-
-// 4. Modal memoizado para evitar re-renders cuando escribes en el formulario principal
 const ModalNuevaEmpresa = memo(({ isOpen, onClose, onCreated }: { isOpen: boolean, onClose: () => void, onCreated: () => void }) => {
     const [nombre, setNombre] = useState('');
     const [loading, setLoading] = useState(false);
     const modalAbortRef = useRef<AbortController | null>(null);
-
     const handleSave = async () => {
         if (!nombre || loading) return;
         setLoading(true);
-
         if (modalAbortRef.current) modalAbortRef.current.abort();
         modalAbortRef.current = new AbortController();
-
         try {
             const token = localStorage.getItem('token');
             const res = await fetch('http://localhost:5091/api/Empresa', {
@@ -225,7 +199,6 @@ const ModalNuevaEmpresa = memo(({ isOpen, onClose, onCreated }: { isOpen: boolea
             setLoading(false);
         }
     };
-
     return (
         <AnimatePresence>
             {isOpen && (
