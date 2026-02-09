@@ -13,9 +13,10 @@ import {
 } from 'lucide-react';
 import { Virtuoso } from 'react-virtuoso';
 import { Navbar } from '../../components/Navbar';
+import { useSignalR } from '../../../context/SignalRContext';
 
 /** * LISTAR ACUERDOS V12.0 - PDI Intranet 2026
- * Fix: Implementación de PATCH con FormData (Multipart)
+ * Fix: Implementación de PATCH con FormData (Multipart) + SignalR Real-time
  */
 
 const API_BASE = 'http://localhost:5091';
@@ -39,6 +40,9 @@ export default function ListarAcuerdos() {
     const [search, setSearch] = useState("");
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
+
+    // --- INTEGRACIÓN SIGNALR ---
+    const { connection } = useSignalR();
 
     const fetchData = useCallback(async () => {
         if (abortControllerRef.current) abortControllerRef.current.abort();
@@ -64,6 +68,22 @@ export default function ListarAcuerdos() {
         fetchData();
         return () => abortControllerRef.current?.abort();
     }, [fetchData]);
+
+    // --- LISTENER DE SIGNALR ---
+    useEffect(() => {
+        if (connection) {
+            const handleUpdate = () => {
+                console.log("⚡ SignalR: Recibida actualización de acuerdos. Recargando...");
+                fetchData();
+            };
+
+            connection.on("RecibirActualizacionAcuerdos", handleUpdate);
+
+            return () => {
+                connection.off("RecibirActualizacionAcuerdos", handleUpdate);
+            };
+        }
+    }, [connection, fetchData]);
 
     const rows = useMemo(() => {
         const query = search.toLowerCase();
@@ -182,12 +202,9 @@ const ModalConfiguracion = ({ id, empresas, onClose, onSuccess }: { id: number, 
             formData.append('svg_editado', data.svg_editado || '');
 
             if (data.fechaVencimiento) {
-                // MÉTODO SEGURO: Convertir a ISO pero manteniendo el valor visual del input
-                // Esto evita que PostgreSQL se queje del "Kind=Local"
                 const dateObj = new Date(data.fechaVencimiento);
                 const isoDate = dateObj.toISOString();
                 formData.append('fechaVencimiento', isoDate);
-                console.log("Fecha enviada al servidor:", isoDate);
             }
 
             const res = await fetch(url, {
@@ -200,12 +217,11 @@ const ModalConfiguracion = ({ id, empresas, onClose, onSuccess }: { id: number, 
             });
 
             if (res.ok) {
-                console.log("¡Éxito!");
                 onSuccess();
             } else {
                 const errText = await res.text();
                 console.error("Detalle del error:", errText);
-                alert("Error 500: El servidor sigue teniendo problemas con las fechas internas.");
+                alert("Error al actualizar.");
             }
         } catch (e) {
             console.error(e);

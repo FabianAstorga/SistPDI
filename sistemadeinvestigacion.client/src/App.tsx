@@ -4,7 +4,7 @@ import {  Route, Routes } from 'react-router-dom'
 import React from 'react'
 //import Login from './assets/Routes/Admin/login'
 import Panel from './assets/Routes/Admin/panel'
-
+import { SignalRProvider } from './context/SignalRContext';
 import Configuracion from './assets/Routes/Admin/configuracion';
 import Acuerdos from './assets/Routes/Admin/acuerdos';
 import Institucion from './assets/Routes/Admin/institucion';
@@ -17,6 +17,7 @@ import { Lienzo } from './assets/Routes/Admin/ElementosLienzo/Lienzo';
 
 function App() {
     return (
+        <SignalRProvider>
         <Routes>
             <Route path="/" element={<Panel />} />
 
@@ -33,7 +34,8 @@ function App() {
                 <Route path="/institucionList" element={<InstitucionList/>} />
 
             </Route>
-        </Routes>
+            </Routes>
+        </SignalRProvider>
     )
 }
 export default App
