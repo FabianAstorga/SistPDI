@@ -52,7 +52,6 @@ public class AuthMailService
 
         var builder = new BodyBuilder();
 
-        // Verificamos que el archivo exista antes de intentar adjuntarlo para evitar excepciones
         if (File.Exists(rutaArchivo))
         {
             var imagen = builder.LinkedResources.Add(rutaArchivo);

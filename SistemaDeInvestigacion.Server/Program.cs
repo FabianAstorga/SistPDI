@@ -11,6 +11,7 @@ using System.Text.Json.Serialization;
 using Microsoft.Extensions.FileProviders;
 using SistemaDeInvestigacion.Server.Servicios;
 using MailKit.Net.Smtp;
+using SistemaDeInvestigacion.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -101,6 +102,7 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddScoped<AuthMailService>();
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+builder.Services.AddSignalR();
 var app = builder.Build();
 
 app.UseDefaultFiles();
@@ -162,5 +164,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapFallbackToFile("/index.html");
+
+app.MapHub<AcuerdosHub>("/acuerdosHub");
 
 app.Run();

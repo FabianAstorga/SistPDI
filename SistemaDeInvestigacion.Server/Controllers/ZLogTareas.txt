@@ -44,7 +44,8 @@ Back-end
 //configurar el HABILITADO para darle ciertas funciones a un usuario adentro del sistema
 cambiar el cifrado de estatico a dinamico
 Reformar peticiones de get de acuerdos (Peticiones generales y con svg)
-Revisar uso de websocket
+// Revisar uso de websocket
+// Implementar websocket
 
 Front-end
 Abstraer los datos de acuerdo al svg

@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using SistemaDeInvestigacion.Hubs;
 using SistemaDeInvestigacion.Server.Data;
 using SistemaDeInvestigacion.Server.Dtos;
 using SistemaDeInvestigacion.Server.Models;
@@ -20,14 +22,16 @@ namespace SistemaDeInvestigacion.Server.Controllers
         private readonly IWebHostEnvironment _env;
         private readonly AuthMailService _authMailService;
         private readonly SvgRenderService _svgService;
+        private readonly IHubContext<AcuerdosHub> _hubContext;
 
-        public AcuerdosController(ApplicationDbContext context, IConfiguration configuration, IWebHostEnvironment env, AuthMailService authMailService, SvgRenderService svgService)
+        public AcuerdosController(ApplicationDbContext context, IConfiguration configuration, IWebHostEnvironment env, AuthMailService authMailService, SvgRenderService svgService, IHubContext<AcuerdosHub> hubContext)
         {
             _context = context;
             _configuration = configuration;
             _env = env;
             _authMailService = authMailService;
             _svgService = svgService;
+            _hubContext = hubContext;
         }
 
 
@@ -148,8 +152,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 IdSvg = NewSvg.Id
             };
 
-            Console.WriteLine(NewSvg.Id);
-
             _context.AcuerdosUserTemplates.Add(NewDatos);
             await _context.SaveChangesAsync();
 
@@ -193,7 +195,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             {
                 Console.WriteLine($"Error en proceso de notificaciones: {ex.Message}");
             }
-
+            await _hubContext.Clients.All.SendAsync("RecibirActualizacionAcuerdos");
             return Ok(new { Message = "Acuerdo Creado", Url = NewAcuerdo.ImagenUrl });
         }
 
@@ -281,9 +283,10 @@ namespace SistemaDeInvestigacion.Server.Controllers
                
             infoSvgAcuerdo.IdSvg = NewSvg.Id;
 
+
             _context.AcuerdosUserTemplates.Update(infoSvgAcuerdo);
             await _context.SaveChangesAsync();
-
+            await _hubContext.Clients.All.SendAsync("RecibirActualizacionAcuerdos");
             return NoContent();
 
         }
@@ -298,6 +301,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             {
                 acuerdoData.IdEstado = 2;
                 await _context.SaveChangesAsync();
+                await _hubContext.Clients.All.SendAsync("RecibirActualizacionAcuerdos");
                 return NoContent();
             }
 
@@ -305,6 +309,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             {
                 acuerdoData.IdEstado = 1;
                 await _context.SaveChangesAsync();
+                await _hubContext.Clients.All.SendAsync("RecibirActualizacionAcuerdos");
                 return NoContent();
             }
 
