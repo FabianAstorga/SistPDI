@@ -97,7 +97,7 @@ export default function Institucion() {
             Object.entries(formData).forEach(([key, val]) => fd.append(key, val.trim()));
             if (logoFile) fd.append('logo', logoFile);
 
-            const res = await fetch('http://172.25.7.102:5091/api/Empresa/crear', {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/Empresa/crear`, {
                 method: 'POST',
                 headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
                 body: fd,

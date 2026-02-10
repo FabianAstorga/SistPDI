@@ -12,7 +12,7 @@ import { useSignalR } from "../../../context/SignalRContext";
  * Real-time ready with SignalR
  */
 
-const API_BASE = 'http://172.25.7.102:5091';
+const API_BASE = import.meta.env.VITE_API_URL;
 const PDI_LOGO_URL = "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png";
 const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
 

@@ -20,7 +20,7 @@ import { Navbar } from '../../components/Navbar';
  * Fix: Envío de textos por Query Params y Logo por Body (Multipart).
  */
 
-const API_BASE = 'http://172.25.7.102:5091';
+const API_BASE = import.meta.env.VITE_API_URL;
 const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
 
 const LABEL_STYLE = "text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 flex items-center gap-2";

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { authService } from '../Services/authService';
 import { X, Mail, Lock, ArrowRight, KeyRound, ArrowLeft, RefreshCw } from 'lucide-react';
 
-const API_BASE = 'http://localhost:5091';
+const API_BASE = import.meta.env.VITE_API_URL;
 
 interface LoginDrawerProps {
     isOpen: boolean;

@@ -32,7 +32,7 @@ export default function Acuerdos() {
         idEmpresa: '' as string | number,
     });
 
-    // Fetch de empresas habilitadas
+    // Fetch de empresas habilitadas}
     const fetchEmpresas = useCallback(async () => {
         if (abortControllerRef.current) abortControllerRef.current.abort();
         abortControllerRef.current = new AbortController();
@@ -40,7 +40,7 @@ export default function Acuerdos() {
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://172.25.7.102:5091/api/Empresa', {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/Empresa`, {
                 headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
                 signal: abortControllerRef.current.signal
             });

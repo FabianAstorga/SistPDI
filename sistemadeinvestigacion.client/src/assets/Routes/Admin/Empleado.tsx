@@ -26,7 +26,7 @@ import {
     Plus
 } from 'lucide-react';
 
-const API_BASE = 'http://localhost:5091';
+const API_BASE = import.meta.env.VITE_API_URL;
 const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
 
 const cleanRut = (r: string) => String(r || "").replace(/[^0-9kK]/g, '').toLowerCase();
