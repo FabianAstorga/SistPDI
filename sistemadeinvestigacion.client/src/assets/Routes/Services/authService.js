@@ -1,4 +1,4 @@
-﻿const API_URL = 'http://localhost:5091/api';
+﻿const API_URL = 'http://172.25.7.102:5091/api';
 
 export const authService = {
 

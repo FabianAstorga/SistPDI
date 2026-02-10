@@ -405,7 +405,7 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
                 next.pointsArr = el.pointsArr.map((p: Pt) => ({ x: clamp(p.x * sx, 0, width), y: clamp(p.y * sy, 0, height) }));
             }
             return next;
-        }));
+        }));    
     }, []);
 
     const fontsDisponibles = ['Arial', 'Helvetica', 'Verdana', 'Tahoma', 'Georgia', 'Times New Roman', 'Courier New'];

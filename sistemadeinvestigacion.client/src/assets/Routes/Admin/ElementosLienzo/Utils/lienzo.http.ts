@@ -62,13 +62,13 @@ export const guardarAcuerdoFinal = async (params: {
     const acuerdoBase = safeJson(storageRaw) || {};
 
     // Configuración dinámica de URL y Método
-    let url = 'http://localhost:5091/api/Acuerdos/crear';
+    let url = 'http://172.25.7.102:5091/api/Acuerdos/crear';
     let method = 'POST';
 
     if (modo.tipo === 2) {
-        url = 'http://localhost:5091/api/Templates/crear-template';
+        url = 'http://172.25.7.102:5091/api/Templates/crear-template';
     } else if (modo.tipo === 3 && modo.id) {
-        url = `http://localhost:5091/api/Acuerdos/editar/${modo.id}`;
+        url = `http://172.25.7.102:5091/api/Acuerdos/editar/${modo.id}`;
         method = 'PUT'; // O el método que use tu API para actualización
     }
 

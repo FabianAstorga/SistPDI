@@ -19,7 +19,7 @@ import { useSignalR } from '../../../context/SignalRContext';
  * Fix: Implementación de PATCH con FormData (Multipart) + SignalR Real-time
  */
 
-const API_BASE = 'http://localhost:5091';
+const API_BASE = 'http://172.25.7.102:5091';
 const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
 const PLACEHOLDER_IMG = "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png";
 

@@ -40,7 +40,7 @@ export default function Acuerdos() {
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:5091/api/Empresa', {
+            const res = await fetch('http://172.25.7.102:5091/api/Empresa', {
                 headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
                 signal: abortControllerRef.current.signal
             });

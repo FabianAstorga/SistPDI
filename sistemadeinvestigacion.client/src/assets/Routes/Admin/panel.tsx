@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState, memo } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 import { motion, AnimatePresence } from "framer-motion";
@@ -6,15 +6,23 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Navbar } from "../../components/Navbar";
 import { LoginDrawer } from "./LoginDrawer";
 import { X, RefreshCw, Send, MessageSquare, Trash2 } from 'lucide-react';
-const API_BASE = 'http://localhost:5091';
+import { useSignalR } from "../../../context/SignalRContext";
+
+/** * PANEL PRINCIPAL V13.0 - PDI Intranet 2026
+ * Real-time ready with SignalR
+ */
+
+const API_BASE = 'http://172.25.7.102:5091';
 const PDI_LOGO_URL = "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png";
 const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
+
 const resolveBackendUrl = (path?: string | null) => {
     if (!path) return null;
     const s = String(path).trim();
-    if (!s || /^https?:\/\//i.test(s)) return s || null;
+    if (!s || /^http?:\/\//i.test(s)) return s || null;
     return `${API_BASE}${s.startsWith('/') ? s : `/${s}`}`;
 };
+
 const normalizeAcuerdo = (a: any) => ({
     id: Number(a?.idAcuerdo ?? a?.id ?? 0),
     titulo: String(a?.titulo ?? ''),
@@ -26,17 +34,20 @@ const normalizeAcuerdo = (a: any) => ({
     estado: a?.estado || "Activo",
     idEmpresa: a?.idEmpresa
 });
+
 const FADE_VARIANT = {
     initial: { opacity: 0, y: 15 },
     animate: { opacity: 1, y: 0 },
     exit: { opacity: 0, y: -15 }
 };
+
 export default function Panel() {
     const navigate = useNavigate();
     const location = useLocation();
     const carouselRef = useRef<HTMLElement | null>(null);
     const listSectionRef = useRef<HTMLElement | null>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
+
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isLoginOpen, setIsLoginOpen] = useState(false);
     const [userName, setUserName] = useState("");
@@ -45,13 +56,19 @@ export default function Panel() {
     const [loading, setLoading] = useState(true);
     const [modalData, setModalData] = useState<any | null>(null);
     const [inputSearch, setInputSearch] = useState("");
+
+    // --- SIGNALR CONNECTION ---
+    const { connection } = useSignalR();
+
     const currentYear = useMemo(() => new Date().getFullYear(), []);
     const handleCloseModal = useCallback(() => setModalData(null), []);
     const handleOpenModal = useCallback((item: any) => setModalData(item), []);
+
     useEffect(() => {
         document.body.style.overflow = 'hidden';
         return () => { document.body.style.overflow = 'unset'; };
     }, []);
+
     const fetchData = useCallback(async () => {
         if (abortControllerRef.current) abortControllerRef.current.abort();
         abortControllerRef.current = new AbortController();
@@ -73,6 +90,19 @@ export default function Panel() {
             setLoading(false);
         }
     }, []);
+
+    // --- SOCKET LISTENER ---
+    useEffect(() => {
+        if (connection) {
+            const handleRefresh = () => {
+                console.log("⚡ SignalR: Actualización de datos recibida.");
+                fetchData();
+            };
+            connection.on("RecibirActualizacionAcuerdos", handleRefresh);
+            return () => { connection.off("RecibirActualizacionAcuerdos", handleRefresh); };
+        }
+    }, [connection, fetchData]);
+
     const checkSession = useCallback(() => {
         const token = localStorage.getItem('token');
         const userJson = localStorage.getItem('user');
@@ -89,37 +119,43 @@ export default function Panel() {
         }
         fetchData();
     }, [location.pathname, navigate, fetchData]);
+
     useEffect(() => {
         checkSession();
         return () => { abortControllerRef.current?.abort(); };
     }, [checkSession]);
+
     const [emblaRef, emblaApi] = useEmblaCarousel(
         { loop: true, align: "center", duration: 25 },
         [Autoplay({ delay: 5000, stopOnInteraction: false })]
     );
+
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
+
     const onSelect = useCallback(() => {
         if (!emblaApi) return;
         setSelectedIndex(emblaApi.selectedScrollSnap());
     }, [emblaApi]);
+
     const scrollTo = useCallback((index: number) => {
         if (emblaApi) emblaApi.scrollTo(index);
     }, [emblaApi]);
+
     useEffect(() => {
         if (!emblaApi) return;
         onSelect();
         setScrollSnaps(emblaApi.scrollSnapList());
         emblaApi.on("select", onSelect).on("reInit", onSelect);
         if (mejores.length > 0) emblaApi.reInit();
-        return () => {
-            emblaApi.off("select", onSelect).off("reInit", onSelect);
-        };
+        return () => { emblaApi.off("select", onSelect).off("reInit", onSelect); };
     }, [emblaApi, mejores, onSelect]);
+
     const filtered = useMemo(() => {
         const q = inputSearch.toLowerCase();
         return acuerdos.filter(a => a.titulo.toLowerCase().includes(q));
     }, [inputSearch, acuerdos]);
+
     return (
         <div className="fixed inset-0 overflow-hidden bg-white font-sans text-slate-900 selection:bg-[#002855] selection:text-white">
             <AnimatePresence>
@@ -141,7 +177,7 @@ export default function Panel() {
                                 <h1 className="text-5xl md:text-8xl font-black text-white uppercase leading-none mb-6">
                                     {isLoggedIn ? 'PANEL ' : 'ACUERDOS '}
                                     <span className="text-blue-500">{isLoggedIn ? 'ADMINISTRADOR' : currentYear}</span>
-                                </h1>                       
+                                </h1>
                             </motion.div>
                         </AnimatePresence>
                         <div className="flex flex-col md:flex-row gap-4 justify-center">
@@ -156,7 +192,7 @@ export default function Panel() {
                 </section>
                 <section ref={carouselRef} className="snap-start w-full h-screen flex flex-col justify-center bg-slate-200 relative overflow-hidden transition-colors duration-500">
                     <div className="max-w-7xl mx-auto w-full px-6 mb-2 text-center">
-                        <h2 className="text-3xl md:text-4xl font-black text-[#002855] uppercase tracking-tighter">Ultimos Acuerdos</h2>             
+                        <h2 className="text-3xl md:text-4xl font-black text-[#002855] uppercase tracking-tighter">Ultimos Acuerdos</h2>
                     </div>
                     <div className="w-full relative px-4 overflow-visible">
                         <div className="embla overflow-visible" ref={emblaRef}>
@@ -193,9 +229,7 @@ export default function Panel() {
                 </section>
             </div>
             <AnimatePresence>
-                {modalData && (
-                    <ModalDetalle data={modalData} onClose={handleCloseModal} />
-                )}
+                {modalData && <ModalDetalle data={modalData} onClose={handleCloseModal} />}
             </AnimatePresence>
             <LoginDrawer isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} onLoginSuccess={checkSession} />
             <style>{`
@@ -207,18 +241,16 @@ export default function Panel() {
         </div>
     );
 }
-const CarouselDots = React.memo(({ snaps, selectedIndex, onDotClick }: any) => (
+
+const CarouselDots = memo(({ snaps, selectedIndex, onDotClick }: any) => (
     <div className="flex justify-center gap-3 mt-8">
         {snaps.map((_: any, i: number) => (
-            <button
-                key={i}
-                onClick={() => onDotClick(i)}
-                className={`h-2 rounded-full transition-all ${i === selectedIndex ? 'w-10 bg-[#002855]' : 'w-2 bg-slate-300'}`}
-            />
+            <button key={i} onClick={() => onDotClick(i)} className={`h-2 rounded-full transition-all ${i === selectedIndex ? 'w-10 bg-[#002855]' : 'w-2 bg-slate-300'}`} />
         ))}
     </div>
 ));
-const ListItem = React.memo(({ item, onOpen }: any) => (
+
+const ListItem = memo(({ item, onOpen }: any) => (
     <div onClick={onOpen} className="group flex items-center gap-6 bg-white p-4 rounded-xl cursor-pointer shadow-xl text-slate-900 hover:translate-x-2 transition-transform">
         <div className="w-20 h-20 bg-slate-100 rounded-lg overflow-hidden shrink-0 border border-slate-200">
             <img loading="lazy" src={resolveBackendUrl(item.imagenUrl) || PDI_LOGO_URL} className="w-full h-full object-cover" alt="" />
@@ -233,35 +265,27 @@ const ListItem = React.memo(({ item, onOpen }: any) => (
         </div>
     </div>
 ));
-const ModalDetalle = React.memo(({ data, onClose }: any) => {
+
+const ModalDetalle = memo(({ data, onClose }: any) => {
     const [comentarios, setComentarios] = useState<any[]>([]);
     const [loadingComentarios, setLoadingComentarios] = useState(true);
     const [nuevoComentario, setNuevoComentario] = useState("");
     const [nombreInput, setNombreInput] = useState("");
     const [isSending, setIsSending] = useState(false);
     const userObj = JSON.parse(localStorage.getItem('user') || '{}');
-    const isAdmin = Number(userObj.rol) === 1
+    const isAdmin = Number(userObj.rol) === 1;
+
     const handleDelete = async (idComentario: number) => {
         if (!window.confirm("¿Estás seguro de que deseas eliminar este comentario?")) return;
-
         try {
             const res = await fetch(`${API_BASE}/api/Comentarios/eliminar/${idComentario}`, {
                 method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
-
-            if (res.ok) {
-                // Filtramos el comentario borrado del estado local para que desaparezca de inmediato
-                setComentarios(prev => prev.filter(c => (c.idComentario ?? c.id) !== idComentario));
-            } else {
-                alert("Error al intentar eliminar el comentario.");
-            }
-        } catch (e) {
-            console.error("Error deleting comment:", e);
-        }
+            if (res.ok) setComentarios(prev => prev.filter(c => (c.idComentario ?? c.id) !== idComentario));
+        } catch (e) { console.error("Error deleting comment:", e); }
     };
+
     const fetchComentarios = useCallback(async () => {
         try {
             setLoadingComentarios(true);
@@ -270,12 +294,10 @@ const ModalDetalle = React.memo(({ data, onClose }: any) => {
                 const json = await res.json();
                 setComentarios(Array.isArray(json) ? [...json].reverse() : []);
             }
-        } catch (e) {
-            console.error("Error al cargar comentarios", e);
-        } finally {
-            setLoadingComentarios(false);
-        }
+        } catch (e) { console.error("Error al cargar comentarios", e); }
+        finally { setLoadingComentarios(false); }
     }, [data.id]);
+
     useEffect(() => {
         const userJson = localStorage.getItem('user');
         if (userJson) {
@@ -286,6 +308,7 @@ const ModalDetalle = React.memo(({ data, onClose }: any) => {
         }
         fetchComentarios();
     }, [fetchComentarios]);
+
     const handleSendComentario = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!nuevoComentario.trim() || isSending) return;
@@ -294,82 +317,41 @@ const ModalDetalle = React.memo(({ data, onClose }: any) => {
         formData.append('idAcuerdo', String(data.id));
         formData.append('Comentario', nuevoComentario.trim());
         formData.append('NombreUsuario', nombreInput.trim() || "Anónimo");
-
         try {
             const res = await fetch(`${API_BASE}/api/Comentarios/crear`, { method: 'POST', body: formData });
             if (res.ok) {
                 setNuevoComentario("");
                 await fetchComentarios();
             }
-        } catch (e) {
-            console.error("Error al enviar", e);
-        } finally {
-            setIsSending(false);
-        }
+        } catch (e) { console.error("Error al enviar", e); }
+        finally { setIsSending(false); }
     };
 
     return (
         <div className="fixed inset-0 z-[9999] flex justify-center p-0 md:p-10 overflow-y-auto bg-[#001a35]/90 backdrop-blur-sm custom-list-scroll">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 z-[-1]" />
-
-            <motion.div
-                initial={{ scale: 0.98, opacity: 0, y: 20 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.98, opacity: 0, y: 20 }}
-                className="bg-white w-full max-w-7xl h-fit rounded-none shadow-2xl relative mb-10 overflow-hidden"
-            >
+            <motion.div initial={{ scale: 0.98, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.98, opacity: 0, y: 20 }} className="bg-white w-full max-w-7xl h-fit rounded-none shadow-2xl relative mb-10 overflow-hidden">
                 <header className="px-8 py-8 border-b border-slate-100 flex items-center justify-between bg-white z-20">
                     <div className="flex-1 min-w-0 pr-6">
-                        <h2 className="text-2xl md:text-5xl font-black text-[#002855] uppercase leading-none truncate tracking-tighter">
-                            {data.titulo}
-                        </h2>
+                        <h2 className="text-2xl md:text-5xl font-black text-[#002855] uppercase leading-none truncate tracking-tighter">{data.titulo}</h2>
                     </div>
                     <div className="flex items-center gap-8 shrink-0">
-                        <div className="hidden md:flex flex-col text-right">
-                            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest italic mb-1">ID REGISTRO: {data.id}</span>
-                            {data.fechaVencimiento && (
-                                <span className="text-xs md:text-sm font-black text-red-600 bg-red-50 px-3 py-1 uppercase tracking-tight border border-red-100">
-                                    VENCE: {new Date(data.fechaVencimiento).toLocaleDateString()}
-                                </span>
-                            )}
-                        </div>
-                        <button onClick={onClose} className="p-2 bg-slate-50 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all rounded-full">
-                            <X size={32} />
-                        </button>
+                        <button onClick={onClose} className="p-2 bg-slate-50 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all rounded-full"><X size={32} /></button>
                     </div>
                 </header>
-
                 <main className="bg-white">
-                    {/* SECCIÓN CUERPO PARALELO */}
                     <div className="flex flex-col md:flex-row items-stretch">
-                        {/* 1. IMAGEN: Con object-contain para que no se recorte y fondo oscuro para contraste */}
                         <div className="w-full md:w-1/2 bg-white flex items-center justify-center p-4 border-r border-slate-200">
-                            <img
-                                src={resolveBackendUrl(data.imagenUrl) || PDI_LOGO_URL}
-                                className="max-w-full max-h-[550px] object-contain"
-                                alt={data.titulo}
-                            />
+                            <img src={resolveBackendUrl(data.imagenUrl) || PDI_LOGO_URL} className="max-w-full max-h-[550px] object-contain" alt={data.titulo} />
                         </div>
-
-                        {/* 2. DESCRIPCIÓN: Con altura máxima y scroll interno para no deformar el modal */}
                         <div className="w-full md:w-1/2 bg-slate-50 flex flex-col max-h-[600px]">
                             <div className="p-8 md:p-20 overflow-y-auto custom-list-scroll">
-                                <h4 className="text-xs font-black uppercase tracking-[0.4em] text-blue-600 mb-6 border-b-4 border-blue-600 w-fit pb-2">
-                                    Detalles de acuerdo
-                                </h4>
-                                <p className="text-2xl text-[#002855] font-black italic leading-tight mb-8">
-                                    "{data.descripcion}"
-                                </p>
-                                <div className="prose prose-slate max-w-none">
-                                    <p className="text-base md:text-lg text-slate-600 leading-relaxed whitespace-pre-wrap font-medium">
-                                        {data.detallesDescripcion || "Información institucional en proceso de actualización por el departamento encargado."}
-                                    </p>
-                                </div>
+                                <h4 className="text-xs font-black uppercase tracking-[0.4em] text-blue-600 mb-6 border-b-4 border-blue-600 w-fit pb-2">Detalles de acuerdo</h4>
+                                <p className="text-2xl text-[#002855] font-black italic leading-tight mb-8">"{data.descripcion}"</p>
+                                <p className="text-base md:text-lg text-slate-600 leading-relaxed whitespace-pre-wrap font-medium">{data.detallesDescripcion || "Información institucional en proceso de actualización."}</p>
                             </div>
                         </div>
                     </div>
-
-                    {/* SECCIÓN COMENTARIOS */}
                     <section className="bg-white p-8 md:p-24 border-t border-slate-100">
                         <div className="max-w-4xl mx-auto">
                             <div className="flex items-center gap-4 mb-16">
@@ -377,88 +359,46 @@ const ModalDetalle = React.memo(({ data, onClose }: any) => {
                                 <h3 className="text-3xl font-black uppercase tracking-tighter text-[#002855]">Comentarios</h3>
                                 <div className="h-1 flex-1 bg-slate-100 ml-4" />
                             </div>
-
                             <form onSubmit={handleSendComentario} className="bg-slate-50 p-10 border border-slate-200 shadow-xl mb-24 relative">
-                                <div className="absolute -top-4 left-10 bg-[#002855] text-white text-[10px] font-black px-6 py-2 uppercase tracking-widest shadow-lg">
-                                    Agregar comentario
-                                </div>
+                                <div className="absolute -top-4 left-10 bg-[#002855] text-white text-[10px] font-black px-6 py-2 uppercase tracking-widest shadow-lg">Agregar comentario</div>
                                 <div className="flex flex-col md:flex-row gap-8">
                                     <div className="w-full md:w-1/3">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Identificación</label>
-                                        <input
-                                            type="text" placeholder="NOMBRE" value={nombreInput}
-                                            onChange={(e) => setNombreInput(e.target.value)}
-                                            className="w-full bg-white border-2 border-slate-100 px-4 py-4 text-xs font-bold outline-none focus:border-[#002855] transition-all uppercase"
-                                        />
+                                        <input type="text" placeholder="NOMBRE" value={nombreInput} onChange={(e) => setNombreInput(e.target.value)} className="w-full bg-white border-2 border-slate-100 px-4 py-4 text-xs font-bold outline-none focus:border-[#002855] transition-all uppercase" />
                                     </div>
-                                    <div className="flex-1">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Contenido comentario</label>
-                                        <div className="relative">
-                                            <input
-                                                type="text" placeholder="Escriba su opinión..." value={nuevoComentario}
-                                                onChange={(e) => setNuevoComentario(e.target.value)}
-                                                className="w-full bg-white border-2 border-slate-100 pl-6 pr-16 py-4 text-xs font-bold outline-none focus:border-[#002855] transition-all"
-                                            />
-                                            <button
-                                                disabled={!nuevoComentario.trim() || isSending}
-                                                className="absolute right-3 top-1/2 -translate-y-1/2 p-3 text-[#002855] hover:text-blue-600 disabled:opacity-20 transition-all"
-                                            >
-                                                {isSending ? <RefreshCw className="animate-spin" /> : <Send />}
-                                            </button>
-                                        </div>
+                                    <div className="flex-1 relative">
+                                        <input type="text" placeholder="Escriba su opinión..." value={nuevoComentario} onChange={(e) => setNuevoComentario(e.target.value)} className="w-full bg-white border-2 border-slate-100 pl-6 pr-16 py-4 text-xs font-bold outline-none focus:border-[#002855] transition-all" />
+                                        <button disabled={!nuevoComentario.trim() || isSending} className="absolute right-3 top-1/2 -translate-y-1/2 p-3 text-[#002855] hover:text-blue-600 disabled:opacity-20 transition-all">
+                                            {isSending ? <RefreshCw className="animate-spin" /> : <Send />}
+                                        </button>
                                     </div>
                                 </div>
                             </form>
-
                             <div className="divide-y divide-slate-100">
-                                {loadingComentarios ? (
-                                    <div className="flex justify-center py-24"><RefreshCw className="animate-spin text-blue-600" size={40} /></div>
-                                ) : comentarios.length > 0 ? (
-                                    comentarios.map((c, idx) => (
-                                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} key={idx} className="py-12 flex gap-10 items-start group">
-                                            <div className="shrink-0 w-14 h-14 bg-[#002855] text-white flex items-center justify-center text-lg font-black uppercase shadow-lg">
-                                                {(c.nombreUsuario || "A")[0].toUpperCase()}
+                                {loadingComentarios ? <div className="flex justify-center py-24"><RefreshCw className="animate-spin text-blue-600" size={40} /></div> : comentarios.map((c, idx) => (
+                                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} key={idx} className="py-12 flex gap-10 items-start group">
+                                        <div className="shrink-0 w-14 h-14 bg-[#002855] text-white flex items-center justify-center text-lg font-black uppercase shadow-lg">{(c.nombreUsuario || "A")[0].toUpperCase()}</div>
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-4 mb-3">
+                                                <span className="text-sm font-black text-[#002855] uppercase tracking-wide">{c.nombreUsuario || "Anónimo"}</span>
+                                                {isAdmin && <button onClick={() => handleDelete(c.idComentario ?? c.id)} className="p-2 text-red-500 hover:bg-red-100 rounded-full transition-all"><Trash2 size={18} /></button>}
                                             </div>
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-4 mb-3">
-                                                    <span className="text-sm font-black text-[#002855] uppercase tracking-wide">{c.nombreUsuario || "Anónimo"}</span>
-                                                    <div className="h-1 w-1 bg-slate-300 rounded-full" />
-                                                    {isAdmin && (
-                                                        <button
-                                                            onClick={() => handleDelete(c.idComentario ?? c.id)}
-                                                            className="p-2 text-red-500 hover:bg-red-100 rounded-full transition-all active:scale-90"
-                                                            title="Eliminar comentario"
-                                                        >
-                                                            <Trash2 size={18} />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                                <p className="text-base md:text-lg text-slate-600 leading-relaxed font-medium">
-                                                    {c.comentario}
-                                                </p>
-                                            </div>
-                                        </motion.div>
-                                    ))
-                                ) : (
-                                    <div className="text-center py-24 bg-slate-50 border-2 border-dashed border-slate-200">
-                                        <p className="text-sm font-black text-slate-300 uppercase tracking-[0.5em]">Sin actividad reciente</p>
-                                    </div>
-                                )}
+                                            <p className="text-base md:text-lg text-slate-600 leading-relaxed font-medium">{c.comentario}</p>
+                                        </div>
+                                    </motion.div>
+                                ))}
                             </div>
                         </div>
                     </section>
                 </main>
-
                 <footer className="p-12 bg-slate-50 flex justify-center border-t border-slate-100">
-                    <button onClick={onClose} className="px-16 py-5 bg-[#002855] text-white font-black uppercase tracking-[0.3em] text-sm hover:bg-blue-800 transition-all shadow-2xl active:scale-95">
-                        cerrar acuerdo
-                    </button>
+                    <button onClick={onClose} className="px-16 py-5 bg-[#002855] text-white font-black uppercase tracking-[0.3em] text-sm hover:bg-blue-800 transition-all shadow-2xl active:scale-95">cerrar acuerdo</button>
                 </footer>
             </motion.div>
         </div>
     );
 });
-const CarouselItem = React.memo(({ item, isActive, onClick }: any) => (
+
+const CarouselItem = memo(({ item, isActive, onClick }: any) => (
     <div className="embla__slide flex-[0_0_90%] md:flex-[0_0_42%] px-4">
         <motion.div
             onClick={isActive ? onClick : undefined}
