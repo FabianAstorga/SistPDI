@@ -8,15 +8,27 @@ using SistemaDeInvestigacion.Server.Data;
 using SistemaDeInvestigacion.Server.Servicios;
 using System.Text;
 using System.Text.Json.Serialization;
-using Microsoft.Extensions.FileProviders;
-using SistemaDeInvestigacion.Server.Servicios;
 using MailKit.Net.Smtp;
 using SistemaDeInvestigacion.Hubs;
+using DotNetEnv;
+
+Env.Load();
+var originsString = Environment.GetEnvironmentVariable("ALLOWED_ORIGINS");
+var allowedOrigins = originsString.Split(',')
+                                  .Select(o => o.Trim())
+                                  .ToArray();
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
+
+var urlDelEnv = Environment.GetEnvironmentVariable("APP_URL");
+
+if (!string.IsNullOrEmpty(urlDelEnv))
+{
+    builder.WebHost.UseUrls(urlDelEnv);
+}
 
 const string MANUAL_SHARED_KEY = "XJP2-KEP8-3LNS-8A01-7DO1";
 
@@ -50,8 +62,6 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-
-// ===== OPCIÓN 3: SOLO ESTO =====
 builder.Services.AddScoped<SvgRenderService>();
 
 builder.Services.AddControllers(options =>
@@ -63,8 +73,6 @@ builder.Services.AddControllers(options =>
     options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
     options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
 });
-// ===============================
-
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -93,7 +101,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("http://localhost:5173", "https://localhost:5174", "http://172.25.7.102:5173")
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();

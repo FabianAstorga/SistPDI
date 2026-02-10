@@ -68,7 +68,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
             {
 
                 string carpetaImagenes = Path.Combine(_env.ContentRootPath, "LogosMedia");
-                Console.WriteLine("Carpeta:", carpetaImagenes);
                 if (!Directory.Exists(carpetaImagenes))
                 {
                     Directory.CreateDirectory(carpetaImagenes);
@@ -78,7 +77,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 string name = createEmpresaDto.nombre.Replace(" ", "_").ToLower();
                 string filename = $"logo-{name}{extension}";
                 string routecomplete = Path.Combine(carpetaImagenes, filename);
-                Console.WriteLine($"{routecomplete}");
 
 
                 using (var stream = new FileStream(routecomplete, FileMode.Create))
@@ -90,7 +88,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
             }
 
-            Console.WriteLine("Nombre del archivo: ", dbroute);
             var newEmpresa = new Empresas
             {
 
@@ -164,7 +161,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
             {
 
                 string carpetaImagenes = Path.Combine(_env.ContentRootPath, "LogosMedia");
-                Console.WriteLine("Carpeta:", carpetaImagenes);
                 if (!Directory.Exists(carpetaImagenes))
                 {
                     Directory.CreateDirectory(carpetaImagenes);
@@ -174,9 +170,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 string name = dataBDEmpresa.Nombre.Replace(" ", "_").ToLower();
                 string filename = $"logo-{name}{extension}";
                 string routecomplete = Path.Combine(carpetaImagenes, filename);
-                Console.WriteLine($"{routecomplete}");
-
-
                 using (var stream = new FileStream(routecomplete, FileMode.Create))
                 {
                     await newData.logo.CopyToAsync(stream);
@@ -189,7 +182,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
             _context.Empresas.Update(dataBDEmpresa);
             await _context.SaveChangesAsync();
-            Console.WriteLine("testeo de nombre del archivo ===== ", dbroute);
             return Ok();
         }
 
