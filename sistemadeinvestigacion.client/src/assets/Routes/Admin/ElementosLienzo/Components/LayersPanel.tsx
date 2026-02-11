@@ -46,11 +46,14 @@ const LayerRow = memo(({
             </div>
 
             {/* Acciones (Solo visibles al hacer hover) */}
-            <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
+            <div className="flex items-center space-x-1 ml-2 shrink-0">
                 <button
                     onClick={(e) => { e.stopPropagation(); onMoveExtreme(id, 'top'); }}
                     disabled={isTop}
-                    className={`p-1 rounded-md ${isTop ? 'text-gray-200' : 'text-gray-300 hover:text-gray-700 hover:bg-gray-100'}`}
+                    className={`p-1 rounded-md transition-all ${isTop
+                            ? 'text-gray-200'
+                            : 'text-black hover:bg-black/10 hover:scale-110'
+                        }`}
                     title="Llevar al Tope"
                 >
                     <ChevronsUp size={14} />
@@ -59,7 +62,10 @@ const LayerRow = memo(({
                 <button
                     onClick={(e) => { e.stopPropagation(); onMove(id, 'up'); }}
                     disabled={isTop}
-                    className={`p-1 rounded-md ${isTop ? 'text-gray-200' : 'text-gray-300 hover:text-gray-700 hover:bg-gray-100'}`}
+                    className={`p-1 rounded-md transition-all ${isTop
+                            ? 'text-gray-200'
+                            : 'text-black hover:bg-black/10 hover:scale-110'
+                        }`}
                     title="Subir"
                 >
                     <ChevronUp size={14} />
@@ -68,7 +74,10 @@ const LayerRow = memo(({
                 <button
                     onClick={(e) => { e.stopPropagation(); onMove(id, 'down'); }}
                     disabled={isBottom}
-                    className={`p-1 rounded-md ${isBottom ? 'text-gray-200' : 'text-gray-300 hover:text-gray-700 hover:bg-gray-100'}`}
+                    className={`p-1 rounded-md transition-all ${isBottom
+                            ? 'text-gray-200'
+                            : 'text-black hover:bg-black/10 hover:scale-110'
+                        }`}
                     title="Bajar"
                 >
                     <ChevronDown size={14} />
@@ -77,7 +86,10 @@ const LayerRow = memo(({
                 <button
                     onClick={(e) => { e.stopPropagation(); onMoveExtreme(id, 'bottom'); }}
                     disabled={isBottom}
-                    className={`p-1 rounded-md ${isBottom ? 'text-gray-200' : 'text-gray-300 hover:text-gray-700 hover:bg-gray-100'}`}
+                    className={`p-1 rounded-md transition-all ${isBottom
+                            ? 'text-gray-200'
+                            : 'text-black hover:bg-black/10 hover:scale-110'
+                        }`}
                     title="Al Fondo"
                 >
                     <ChevronsDown size={14} />
@@ -85,7 +97,7 @@ const LayerRow = memo(({
 
                 <button
                     onClick={(e) => { e.stopPropagation(); onDelete(id); }}
-                    className="p-1 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-md"
+                    className="p-1 text-black hover:text-red-600 hover:bg-red-50 rounded-md transition-all hover:scale-110"
                     title="Eliminar"
                 >
                     <Trash2 size={14} />
@@ -107,11 +119,7 @@ export const LayersPanel: React.FC<Props> = memo(({
     const selectedSet = useMemo(() => new Set(seleccionadosIds), [seleccionadosIds]);
 
     return (
-        <div className="pt-6 border-t border-gray-100">
-            <label className={`${controlLabel} flex items-center text-blue-600 mb-2`}>
-                <Layers size={12} className="mr-2" /> Jerarquía de Capas ({elementos.length})
-            </label>
-
+        <div>
             <div className="max-h-60 overflow-y-auto pr-1 flex flex-col-reverse space-y-1 space-y-reverse custom-scrollbar">
                 {elementos.map((el, idx) => {
                     const id = Number(el.id);

@@ -146,6 +146,7 @@ export const guardarAcuerdoFinal = async (params: {
             // Limpieza de estados temporales
             localStorage.removeItem(storageKey);
             localStorage.removeItem('modo');
+            localStorage.removeItem('template_svg');
 
             navigate('/panel');
             return;
