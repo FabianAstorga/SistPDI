@@ -8,10 +8,14 @@ export const readResponseBody = async (res: Response) => {
         return { kind: 'text' as const, data: text, raw: text };
     }
 };
+
 const sanitizeSvgString = (svgString: string): string => {
     try {
         const parser = new DOMParser();
         const doc = parser.parseFromString(svgString, 'image/svg+xml');
+        console.log("[HTTP] 🧹 Iniciando sanitización del SVG...");
+        const nodosEditor = doc.querySelectorAll('[data-editor="1"]');
+        console.log(`[HTTP] 🗑️ Eliminando ${nodosEditor.length} elementos de interfaz (manejadores/nodos)`);   
         const svg = doc.querySelector('svg');
         if (!svg) return svgString;
         svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
@@ -23,6 +27,8 @@ const sanitizeSvgString = (svgString: string): string => {
         doc.querySelectorAll('[data-elid]').forEach((n) => {
             n.removeAttribute('data-elid');
         });
+        const resultadoFinal = new XMLSerializer().serializeToString(svg);
+        console.log("[HTTP] ✅ SVG Sanitizado listo para enviar/descargar. Tamaño caracteres:", resultadoFinal.length);
         return new XMLSerializer().serializeToString(svg);
     } catch {
         return svgString;
@@ -49,30 +55,16 @@ export const guardarAcuerdoFinal = async (params: {
     const { navigate, modo } = params;
     const token = localStorage.getItem('token');
 
-    // 1. Determinar fuente de datos y Endpoint según el Modo
+    // Determinamos la fuente de datos
     const storageKey = modo.tipo === 3 ? 'temp_cambio' : 'temp_acuerdo';
     const storageRaw = localStorage.getItem(storageKey);
 
-    // En Modo 2 (Template), permitimos que storageRaw sea nulo si no hay datos previos
     if (!token || (!storageRaw && modo.tipo !== 2)) {
         alert('Error: Faltan datos o la sesión expiró.');
         return;
     }
 
-    const acuerdoBase = safeJson(storageRaw) || {};
-
-    // Configuración dinámica de URL y Método
-    let url = `${import.meta.env.VITE_API_URL}/api/Acuerdos/crear`;
-    let method = 'POST';
-
-    if (modo.tipo === 2) {
-        url = `${import.meta.env.VITE_API_URL}/api/Templates/crear-template`;
-    } else if (modo.tipo === 3 && modo.id) {
-        url = `${import.meta.env.VITE_API_URL}/api/Acuerdos/editar/${modo.id}`;
-        method = 'PUT'; // O el método que use tu API para actualización
-    }
-
-    // 2. Obtención y limpieza del SVG
+    // 1. Obtención y limpieza del SVG
     const maybeFn = params.getSvgString;
     const rawSvgString =
         typeof maybeFn === 'function'
@@ -83,44 +75,67 @@ export const guardarAcuerdoFinal = async (params: {
         alert("Error: No se encontró el SVG del lienzo.");
         return;
     }
-    const svgEditado = sanitizeSvgString(rawSvgString);
+    const svgFinal = sanitizeSvgString(rawSvgString);
 
-    // 3. Armar objeto final (Payload)
-    // Para el Modo 2, si acuerdoBase está vacío, usamos valores por defecto
-    const acuerdoFinalObj: any = {
-        titulo: String(pick(acuerdoBase, ['Titulo', 'titulo'], modo.tipo === 2 ? 'Nuevo Template' : '') || '').trim(),
-        descripcion: String(pick(acuerdoBase, ['Descripcion', 'descripcion'], modo.tipo === 2 ? 'Descripción de plantilla' : '') || '').trim(),
-        detallesDescripcion: String(pick(acuerdoBase, ['DetallesDescripcion', 'detallesDescripcion'], '') || '').trim(),
-        fechaVencimiento: (() => {
-            const raw = pick(acuerdoBase, ['FechaVencimiento', 'fechaVencimiento'], null);
-            return raw ? new Date(raw).toISOString() : new Date().toISOString();
-        })(),
-        estado: String(pick(acuerdoBase, ['Estado', 'estado'], 'ACTIVO') || 'ACTIVO'),
-        idEmpresa: toInt(pick(acuerdoBase, ['IdEmpresa', 'idEmpresa'], 0), 0),
-        svgEditado: svgEditado,
-        svgOriginal: ''
+    // 2. Configuración dinámica según Modo
+    let url = `${import.meta.env.VITE_API_URL}/api/Acuerdos/crear`;
+    let method = 'POST';
+    let body: any = null;
+    let headers: Record<string, string> = {
+        Authorization: `Bearer ${token}`
     };
 
-    // Validaciones (Excepto para templates que podrían ser más flexibles)
-    if (modo.tipo !== 2 && (!acuerdoFinalObj.titulo || !acuerdoFinalObj.idEmpresa)) {
-        alert('Error: El acuerdo debe tener título y empresa seleccionada.');
-        return;
-    }
+    if (modo.tipo === 2) {
+        // --- LÓGICA MODO 2: TEMPLATE (JSON) ---
+        url = `${import.meta.env.VITE_API_URL}/api/Svg/crearTemplate`;
+        headers['Content-Type'] = 'application/json';
+        body = JSON.stringify({
+            svg_original: svgFinal,
+            estado: true
+        });
+    } else {
+        // --- LÓGICA MODOS 1 Y 3: ACUERDOS (FormData) ---
+        if (modo.tipo === 3 && modo.id) {
+            url = `${import.meta.env.VITE_API_URL}/api/Acuerdos/editar/${modo.id}`;
+            method = 'PUT';
+        }
 
-    // 4. Preparar FormData
-    const fd = new FormData();
-    Object.entries(acuerdoFinalObj).forEach(([k, v]) => {
-        if (v === undefined || v === null) return;
-        fd.append(k, String(v));
-    });
+        const acuerdoBase = safeJson(storageRaw) || {};
+        const acuerdoFinalObj: any = {
+            titulo: String(pick(acuerdoBase, ['Titulo', 'titulo'], '') || '').trim(),
+            descripcion: String(pick(acuerdoBase, ['Descripcion', 'descripcion'], '') || '').trim(),
+            detallesDescripcion: String(pick(acuerdoBase, ['DetallesDescripcion', 'detallesDescripcion'], '') || '').trim(),
+            fechaVencimiento: (() => {
+                const raw = pick(acuerdoBase, ['FechaVencimiento', 'fechaVencimiento'], null);
+                return raw ? new Date(raw).toISOString() : new Date().toISOString();
+            })(),
+            estado: String(pick(acuerdoBase, ['Estado', 'estado'], 'ACTIVO') || 'ACTIVO'),
+            idEmpresa: toInt(pick(acuerdoBase, ['IdEmpresa', 'idEmpresa'], 0), 0),
+            svgEditado: svgFinal,
+            svgOriginal: ''
+        };
+
+        if (!acuerdoFinalObj.titulo || !acuerdoFinalObj.idEmpresa) {
+            alert('Error: El acuerdo debe tener título y empresa seleccionada.');
+            return;
+        }
+
+        const fd = new FormData();
+        Object.entries(acuerdoFinalObj).forEach(([k, v]) => {
+            if (v === undefined || v === null) return;
+            fd.append(k, String(v));
+        });
+        body = fd;
+        // El navegador gestiona el Content-Type para FormData automáticamente
+    }
 
     console.log(`[HTTP] Enviando a ${url} con método ${method}. Modo: ${modo.tipo}`);
 
     try {
         const resAcuerdo = await fetch(url, {
             method: method,
-            headers: { Authorization: `Bearer ${token}` },
-            body: fd
+            headers: headers,
+            body: body
         });
 
         const acuerdoBody = await readResponseBody(resAcuerdo);
@@ -137,7 +152,7 @@ export const guardarAcuerdoFinal = async (params: {
         }
 
         console.error('Error API:', acuerdoBody);
-        alert('Error al guardar. Revisa la consola.');
+        alert(`Error al guardar: ${acuerdoBody.data?.message || 'Revisa la consola.'}`);
     } catch (error) {
         console.error('Error inesperado:', error);
         alert('Error de conexión con el servidor.');

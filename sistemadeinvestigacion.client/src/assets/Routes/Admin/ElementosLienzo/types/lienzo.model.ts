@@ -1,5 +1,6 @@
 ﻿import type React from 'react';
 import type { CanvasSize, Elemento, Herramienta } from './lienzo.types';
+
 export type LienzoModel = {
     fileInputRef: React.RefObject<HTMLInputElement>;
     svgRef: React.RefObject<SVGSVGElement>;
@@ -31,10 +32,15 @@ export type LienzoModel = {
     presetsLienzo: CanvasSize[];
     FIGURAS: any[];
     tiposConSaturacion: Set<string>;
+
     subirImagen: (e: any) => void;
     manejarGuardadoFinal: () => Promise<void>;
     descargarSVG: () => void;
-    manejarClickLienzo: (e: any) => void;
+
+    crearGrupoElemento: (e: any) => void;
+    transformarGrupoPosicion: (id: number, dx: number, dy: number) => void;
+    transformarGrupoEscala: (id: number, width: number, height: number) => void;
+
     iniciarDibujo: (e: any) => void;
     onSvgMouseMove: (e: any) => void;
     onSvgMouseUp: () => void;
@@ -43,10 +49,11 @@ export type LienzoModel = {
     actualizarAtributo: (id: number, cambios: any) => void;
     manejarCambioColor: (nuevoColor: string) => void;
     eliminarElemento: (id: number) => void;
-    alArrastrando: (id: number, dx: number, dy: number) => void;
-    redimensionarElemento: (id: number, width: number, height: number) => void;
+
     clonarElemento: () => void;
     moverCapa: (id: number, direction: 'up' | 'down') => void;
     moverCapaExtremo: (id: number, direction: 'top' | 'bottom') => void;
     startDragPoint: (e: any, elId: number, idx: number) => void;
+
+    generarMetadatosNuevoElemento: (tipo: string) => { id: number; name: string; templateKey: string; };
 };

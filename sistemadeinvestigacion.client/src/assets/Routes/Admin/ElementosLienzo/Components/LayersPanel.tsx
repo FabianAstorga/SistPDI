@@ -1,5 +1,5 @@
 ﻿import React, { useMemo, memo } from 'react';
-import { ChevronDown, ChevronUp, ChevronsDown, ChevronsUp, Trash2, Layers } from 'lucide-react';
+import { ChevronDown, ChevronUp, ChevronsDown, ChevronsUp, Trash2, Layers, Database } from 'lucide-react';
 
 type Props = {
     elementos: any[];
@@ -11,23 +11,9 @@ type Props = {
     controlLabel: string;
 };
 
-// 1. Extraemos funciones puras fuera del componente para evitar recrearlas
-const getElColor = (el: any) => el?.stroke || el?.fill || '#000000';
+const getElColor = (el: any) => el?.stroke || el?.fill || '#3b82f6';
 
-const EL_LABELS: Record<string, string> = {
-    rectangulo: 'Rectángulo', circulo: 'Círculo', triangulo: 'Triángulo',
-    rombo: 'Rombo', hexagono: 'Hexágono', octagono: 'Octágono',
-    estrella: 'Estrella', texto: 'Texto', imagen: 'Imagen',
-    lapiz: 'Lápiz', linea: 'Línea', flecha: 'Flecha', curva: 'Curva'
-};
-
-const getElLabel = (el: any) => {
-    const t = String(el?.type || '').toLowerCase();
-    return EL_LABELS[t] || t || 'Elemento';
-};
-
-// 2. Componente de fila individual memoizado
-// Solo se re-renderiza si cambian sus propiedades específicas o su estado de selección
+// Componente de fila individual memoizado
 const LayerRow = memo(({
     el, isSelected, isTop, isBottom, onSelect, onMove, onMoveExtreme, onDelete
 }: any) => {
@@ -39,14 +25,28 @@ const LayerRow = memo(({
             className={`group p-2.5 rounded-lg flex items-center justify-between cursor-pointer border transition-all ${isSelected ? 'bg-blue-50 border-blue-200 shadow-sm' : 'bg-white border-transparent hover:bg-gray-50'
                 }`}
         >
-            <div className="flex items-center space-x-2 truncate">
+            <div className="flex items-center space-x-2 truncate flex-1">
+                {/* Indicador de Color/Tipo */}
                 <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: getElColor(el) }} />
-                <span className="text-[10px] font-bold text-gray-600 uppercase truncate pr-2">
-                    {getElLabel(el)}
-                </span>
+
+                <div className="flex flex-col truncate">
+                    {/* NOMBRE SEMÁNTICO (La Verdad del Grupo) */}
+                    <span className={`text-[10px] font-bold uppercase truncate ${isSelected ? 'text-blue-700' : 'text-gray-600'}`}>
+                        {el.name || el.type || 'Elemento'}
+                    </span>
+
+                    {/* INDICADOR DE TEMPLATE (Si existe templateKey) */}
+                    {el.templateKey && (
+                        <div className="flex items-center text-[8px] text-blue-500 mt-0.5">
+                            <Database size={8} className="mr-1" />
+                            <span className="truncate">{el.templateKey}</span>
+                        </div>
+                    )}
+                </div>
             </div>
 
-            <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {/* Acciones (Solo visibles al hacer hover) */}
+            <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
                 <button
                     onClick={(e) => { e.stopPropagation(); onMoveExtreme(id, 'top'); }}
                     disabled={isTop}
@@ -104,13 +104,12 @@ export const LayersPanel: React.FC<Props> = memo(({
     eliminarElemento,
     controlLabel
 }) => {
-    // 3. Optimizamos el acceso a índices con un Set para los seleccionados (Búsqueda O(1))
     const selectedSet = useMemo(() => new Set(seleccionadosIds), [seleccionadosIds]);
 
     return (
         <div className="pt-6 border-t border-gray-100">
             <label className={`${controlLabel} flex items-center text-blue-600 mb-2`}>
-                <Layers size={12} className="mr-2" /> Capas ({elementos.length})
+                <Layers size={12} className="mr-2" /> Jerarquía de Capas ({elementos.length})
             </label>
 
             <div className="max-h-60 overflow-y-auto pr-1 flex flex-col-reverse space-y-1 space-y-reverse custom-scrollbar">
