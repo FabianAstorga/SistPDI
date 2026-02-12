@@ -1,16 +1,13 @@
 ﻿import React, { useMemo, useState, memo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Layers,
-    Eraser,
     Shapes,
     Pencil,
     Type,
     ImageIcon as LucideImageIcon,
     MousePointer2,
     Save,
-    Download,
-    ChevronRight
+    Download
 } from 'lucide-react';
 
 type Props = {
@@ -77,7 +74,6 @@ export const LeftToolbar: React.FC<Props> = memo(({ model }) => {
         cerrarMenus();
     }, [setHerramientaActiva, setModoPuntos, limpiarSeleccion, idCapaDibujoActual, cerrarMenus]);
 
-    // Estilo unificado para botones de la barra lateral
     const renderToolbarBtn = (id: any, Icon: any, label: string, onClick: () => void, isActive: boolean) => (
         <button
             onClick={onClick}
@@ -99,17 +95,13 @@ export const LeftToolbar: React.FC<Props> = memo(({ model }) => {
     return (
         <aside className="w-20 bg-[#001a35]/40 backdrop-blur-xl border-r border-white/5 flex flex-col items-center py-6 gap-4 z-50">
 
-            {/* Herramientas Principales */}
-            {renderToolbarBtn('multiseleccion', Layers, "Selección Múltiple", () => activarHerramienta('multiseleccion'), herramientaActiva === 'multiseleccion')}
-
+            {/* Herramienta de Selección (Principal) */}
             {renderToolbarBtn(null, MousePointer2, "Seleccionar", () => {
                 setHerramientaActiva(null);
                 setModoPuntos(false);
                 if (idCapaDibujoActual?.current !== undefined) idCapaDibujoActual.current = null;
                 cerrarMenus();
             }, herramientaActiva === null)}
-
-            {renderToolbarBtn('goma', Eraser, "Goma", () => activarHerramienta('goma'), herramientaActiva === 'goma')}
 
             {/* Menú de Figuras */}
             <div className="relative">

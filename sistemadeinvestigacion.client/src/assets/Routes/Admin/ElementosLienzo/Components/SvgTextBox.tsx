@@ -1,98 +1,67 @@
 ﻿import React, { useMemo, memo } from 'react';
+import { wrapTextToLines } from '../Utils/lienzo.text';
 
 type Props = {
     el: any;
     svgId?: string;
 };
 
-// 1. Extraemos la lógica de procesamiento de texto fuera del componente.
-// Al ser una función pura, no consume recursos del ciclo de vida de React.
-const wrapText = (text: string, maxCharsPerLine: number): string[] => {
-    if (!text) return [];
-    const words = text.split(/\s+/).filter(Boolean);
-    const lines: string[] = [];
-    let current = '';
-
-    for (const w of words) {
-        const next = current ? `${current} ${w}` : w;
-        if (next.length <= maxCharsPerLine) {
-            current = next;
-        } else {
-            if (current) lines.push(current);
-            current = w.length > maxCharsPerLine ? w.slice(0, maxCharsPerLine) : w;
-        }
-    }
-    if (current) lines.push(current);
-    return lines;
-};
-
-// 2. Usamos memo para que el texto solo se recalcule si cambia su contenido, 
-// tamaño o la caja que lo contiene.
-export const SvgTextBox: React.FC<Props> = memo(({ el, svgId = 'lienzo-svg' }) => {
-    // Valores calculados con defaults seguros
-    const w = Number(el.width ?? 200);
-    const h = Number(el.height ?? 80);
+/**
+ * Componente SvgTextBox optimizado: 
+ * Se elimina el envoltorio <g> para evitar anidaciones y duplicidad de metadatos.
+ * Ahora el contenido se renderiza directamente dentro del DraggableItem.
+ */
+export const SvgTextBox: React.FC<Props> = memo(({ el }) => {
+    // 1. Cálculos de dimensiones y tipografía
+    const w = Number(el.width ?? 250);
+    const h = Number(el.height ?? 100);
     const fontSize = Number(el.fontSize ?? 16);
-    const fontFamily = el.fontFamily ?? 'Arial';
-    const fontWeight = el.fontWeight ?? '700';
-    const fill = el.fill ?? '#000';
-
     const pad = 10;
-    const lineHeight = Math.round(fontSize * 1.25);
+    const lineHeight = Math.round(fontSize * 1.2);
 
-    // 3. Optimizamos el cálculo de caracteres máximos
-    const maxChars = useMemo(() => {
-        return Math.max(5, Math.floor((w - pad * 2) / (fontSize * 0.6)));
-    }, [w, fontSize]);
-
-    // 4. El wrapText solo se ejecuta si el texto o el ancho de la caja cambian
+    // 2. Procesamiento de líneas (Word Wrap)
+    // Se utiliza directamente el texto inyectado en el estado por el Parser
     const lines = useMemo(() => {
-        return wrapText(String(el.text ?? ''), maxChars);
-    }, [el.text, maxChars]);
-
-    // ID único persistente para el clipPath
-    const clipId = useMemo(() => `clip-txt-${svgId}-${el.id}`, [svgId, el.id]);
+        return wrapTextToLines({
+            text: el.text || '...',
+            maxWidthPx: w - (pad * 2),
+            fontSize,
+            fontFamily: el.fontFamily || 'Arial',
+            fontWeight: el.fontWeight || '400'
+        });
+    }, [el.text, w, fontSize, el.fontFamily, el.fontWeight]);
 
     return (
-        <g data-elid={el.id}>
-            {/* HITBOX: Optimizada para no tener opacidad innecesaria si es transparente */}
+        /* Se usa un Fragment para inyectar los elementos directamente al DOM del padre */
+        <>
+            {/* Área reactiva para eventos del mouse */}
             <rect
-                data-elid={el.id}
                 width={w}
                 height={h}
-                fill="none"
+                fill="transparent"
                 pointerEvents="all"
             />
 
-            <defs>
-                <clipPath id={clipId}>
-                    <rect x="0" y="-20" width={w} height={h+20} />
-                </clipPath>
-            </defs>
-
             <text
-                data-elid={el.id}
                 x={pad}
                 y={pad}
-                fill={fill}
-                fontFamily={fontFamily}
+                fill={el.fill || '#000000'}
+                fontFamily={el.fontFamily || 'Arial'}
                 fontSize={fontSize}
-                fontWeight={fontWeight}
-                dominantBaseline="hanging"
-                clipPath={`url(#${clipId})`}
-                pointerEvents="visiblePainted"
-                style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
+                fontWeight={el.fontWeight || '400'}
+                dominantBaseline="central"
+                style={{ userSelect: 'none', pointerEvents: 'none' }}
             >
                 {lines.map((line, i) => (
                     <tspan
                         key={`${el.id}-line-${i}`}
                         x={pad}
-                        dy={i === 0 ? 0 : lineHeight}
+                        dy={i === 0 ? "1.2em" : `${lineHeight}px`}
                     >
                         {line}
                     </tspan>
                 ))}
             </text>
-        </g>
+        </>
     );
 });

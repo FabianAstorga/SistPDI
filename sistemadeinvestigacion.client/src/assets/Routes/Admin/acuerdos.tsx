@@ -2,10 +2,11 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from "framer-motion";
 import { Navbar } from '../../components/Navbar';
-import { Settings2, ArrowRight, Building2, Calendar, FileText, Info } from 'lucide-react';
+import { Settings2, ArrowRight, Building2, Calendar, FileText, Info, Layout } from 'lucide-react';
 
 /** * GESTIÓN DE ACUERDOS V6.5 - PDI Intranet 2026
  * Fix: Eliminación de creación de empresas. Flujo de selección pura de entidades habilitadas.
+ * Update: Integración de selección de Templates Svg.
  */
 
 const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
@@ -21,6 +22,7 @@ const getOneYearFromNow = () => {
 export default function Acuerdos() {
     const navigate = useNavigate();
     const [empresas, setEmpresas] = useState<any[]>([]);
+    const [templates, setTemplates] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -30,49 +32,81 @@ export default function Acuerdos() {
         detallesDescripcion: '',
         fechaVencimiento: getOneYearFromNow(),
         idEmpresa: '' as string | number,
+        templateSvg: '' // Almacena el svgOriginal seleccionado
     });
 
-    // Fetch de empresas habilitadas}
-    const fetchEmpresas = useCallback(async () => {
+    // Fetch de empresas y templates
+    const fetchData = useCallback(async () => {
         if (abortControllerRef.current) abortControllerRef.current.abort();
         abortControllerRef.current = new AbortController();
 
         setLoading(true);
+        const token = localStorage.getItem('token');
+        const headers = { ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/Empresa`, {
-                headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+            // 1. Fetch Empresas
+            const resEmp = await fetch(`${import.meta.env.VITE_API_URL}/api/Empresa`, {
+                headers,
                 signal: abortControllerRef.current.signal
             });
-            const data = await res.json();
+            const dataEmp = await resEmp.json();
+            const listEmp = Array.isArray(dataEmp) ? dataEmp : (dataEmp?.$values || []);
+            setEmpresas(listEmp);
 
-            const list = Array.isArray(data) ? data : (data?.$values || []);
-            setEmpresas(list);
-
-            // Seleccionamos la primera empresa por defecto si hay disponibles
-            if (list.length > 0 && formData.idEmpresa === '') {
-                const firstId = list[0].idEmpresa ?? list[0].id;
+            if (listEmp.length > 0 && formData.idEmpresa === '') {
+                const firstId = listEmp[0].idEmpresa ?? listEmp[0].id;
                 setFormData(p => ({ ...p, idEmpresa: firstId }));
             }
+
+            // 2. Fetch Templates
+            const resTemp = await fetch(`${import.meta.env.VITE_API_URL}/api/Svg/obtenerTemplates`, {
+                headers,
+                signal: abortControllerRef.current.signal
+            });
+            const dataTemp = await resTemp.json();
+            const listTemp = Array.isArray(dataTemp) ? dataTemp : (dataTemp?.$values || []);
+            setTemplates(listTemp);
+
         } catch (e: any) {
-            if (e.name !== 'AbortError') console.error("Fetch Empresas Error:", e);
+            if (e.name !== 'AbortError') console.error("Fetch Data Error:", e);
         } finally {
             setLoading(false);
         }
     }, [formData.idEmpresa]);
 
     useEffect(() => {
-        fetchEmpresas();
+        fetchData();
         return () => abortControllerRef.current?.abort();
-    }, [fetchEmpresas]);
+    }, [fetchData]);
 
     const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         setFormData(prev => ({ ...prev, idEmpresa: e.target.value }));
     };
 
+    const handleTemplateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setFormData(prev => ({ ...prev, templateSvg: e.target.value }));
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        localStorage.setItem('temp_acuerdo', JSON.stringify({ ...formData, estado: 'ACTIVO' }));
+        const payload = {
+            titulo: formData.titulo,
+            descripcion: formData.descripcion,
+            detallesDescripcion: formData.detallesDescripcion, // Cambiado para que coincida con templateKey="detalle"
+            fechaVencimiento: formData.fechaVencimiento,
+            idEmpresa: formData.idEmpresa,
+        };
+        localStorage.setItem('temp_acuerdo', JSON.stringify(payload));
+        // Guardamos la información del acuerdo
+        
+
+        // Guardamos el template seleccionado de forma independiente
+        if (formData.templateSvg) {
+            localStorage.setItem('template_svg', formData.templateSvg);
+        } else {
+            localStorage.removeItem('template_svg');
+        }
 
         const modoLienzo = {
             tipo: 1,
@@ -148,6 +182,23 @@ export default function Acuerdos() {
                                 </div>
 
                                 <div className="space-y-1">
+                                    <label className={LABEL_STYLE}><Layout size={12} /> Plantilla Base (Opcional)</label>
+                                    <select
+                                        value={formData.templateSvg}
+                                        onChange={handleTemplateChange}
+                                        className={`${INPUT_STYLE} cursor-pointer`}
+                                        disabled={loading}
+                                    >
+                                        <option value="">Sin plantilla (Lienzo en blanco)</option>
+                                        {templates.map(t => (
+                                            <option key={`temp-${t.id}`} value={t.svgOriginal}>
+                                                Template {t.id}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="space-y-1 md:col-span-2">
                                     <label className={LABEL_STYLE}><Calendar size={12} /> Fecha de Expiración</label>
                                     <input
                                         type="datetime-local"

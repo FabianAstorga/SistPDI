@@ -15,7 +15,7 @@ import {
     List
 } from 'lucide-react';
 
-// 1. Configuración estática fuera para evitar que el Heap rastree el objeto en cada render
+// 1. Configuración estática
 const NAV_CONFIG = [
     { id: 'inicio', label: 'Inicio', path: '/panel', icon: LayoutDashboard },
     {
@@ -28,13 +28,12 @@ const NAV_CONFIG = [
     {
         id: 'empresas', label: 'Empresas', icon: Building,
         items: [
-
             { label: 'Registrar Empresa', path: '/institucion', icon: PlusCircle },
             { label: 'Listar Empresas', path: '/institucionList', icon: List },
         ]
     },
-    {id: 'funcionarios', label: 'Funcionarios', path: '/empleado', icon: Users},
-    //{ id: 'plantilla', label: 'Plantilla', path: '/lienzo', icon: Layers },
+    { id: 'funcionarios', label: 'Funcionarios', path: '/empleado', icon: Users },
+    { id: 'plantilla', label: 'Plantilla', path: '/lienzo', icon: Layers },
 ];
 
 export const Navbar = () => {
@@ -43,7 +42,6 @@ export const Navbar = () => {
     const [user, setUser] = useState<any>(null);
     const [hoveredMenu, setHoveredMenu] = useState<string | null>(null);
 
-    // Carga de usuario optimizada
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
@@ -55,6 +53,22 @@ export const Navbar = () => {
         }
     }, []);
 
+    // Función de navegación centralizada para manejar los Modos del Lienzo
+    const handleNavigation = useCallback((path: string) => {
+        if (path === '/lienzo') {
+            // Seteamos el MODO 2 (Template) para que el lienzo sepa cómo guardar
+            const modoTemplate = {
+                tipo: 2,
+                nombre: "Modo Plantilla"
+            };
+            localStorage.setItem('modo', JSON.stringify(modoTemplate));
+            // Limpiamos datos temporales de acuerdos para iniciar lienzo limpio
+            localStorage.removeItem('temp_acuerdo');
+        }
+
+        navigate(path);
+    }, [navigate]);
+
     const handleLogout = useCallback(async () => {
         try {
             await authService.logout();
@@ -64,7 +78,6 @@ export const Navbar = () => {
         }
     }, [navigate]);
 
-    // Memoizamos el ID activo para que los botones solo cambien cuando la ruta sea distinta
     const activeSectionId = useMemo(() => {
         const currentPath = location.pathname;
         return NAV_CONFIG.find(section =>
@@ -75,12 +88,11 @@ export const Navbar = () => {
 
     return (
         <nav className="fixed top-0 left-0 w-full z-[100] h-16 flex items-center px-6">
-            {/* El fondo se separa para evitar re-renderizar efectos de blur pesados */}
             <div className="absolute inset-0 bg-[#001a35]/80 backdrop-blur-md border-b border-white/5 shadow-2xl pointer-events-none" />
 
             <div className="relative w-full flex items-center justify-between h-full">
                 <div className="flex items-center gap-6 h-full">
-                    <div className="flex items-center gap-3 cursor-pointer mr-4" onClick={() => navigate('/panel')}>
+                    <div className="flex items-center gap-3 cursor-pointer mr-4" onClick={() => handleNavigation('/panel')}>
                         <img src="/LOGOPDI.png" className="h-9 w-auto brightness-200" alt="PDI" />
                     </div>
 
@@ -92,13 +104,12 @@ export const Navbar = () => {
                                 isActive={activeSectionId === section.id}
                                 isHovered={hoveredMenu === section.id}
                                 onHover={setHoveredMenu}
-                                onNavigate={navigate}
+                                onNavigate={handleNavigation} // Usamos la nueva función
                             />
                         ))}
                     </div>
                 </div>
 
-                {/* Sección Derecha */}
                 <div className="flex items-center gap-4">
                     <div className="flex flex-col items-end">
                         <span className="text-white font-black text-[11px] uppercase tracking-widest leading-none">
@@ -111,7 +122,7 @@ export const Navbar = () => {
                     <motion.button
                         whileHover={{ rotate: 90 }}
                         whileTap={{ scale: 0.9 }}
-                        onClick={() => navigate('/configuracion')}
+                        onClick={() => handleNavigation('/configuracion')}
                         className={`p-1.5 transition-colors ${location.pathname === '/configuracion' ? 'text-blue-500' : 'text-white/50 hover:text-white'}`}
                     >
                         <Settings size={22} strokeWidth={2.5} />
@@ -132,8 +143,6 @@ export const Navbar = () => {
     );
 };
 
-// 2. Subcomponente NavItem Memoizado
-// Esto evita que todos los botones de la Navbar se re-rendericen si solo haces hover en uno.
 const NavItem = memo(({ section, isActive, isHovered, onHover, onNavigate }: any) => {
     const Icon = section.icon;
 
@@ -188,7 +197,6 @@ const NavItem = memo(({ section, isActive, isHovered, onHover, onNavigate }: any
     );
 });
 
-// 3. DropdownItem Memoizado para evitar recrear funciones onClick
 const DropdownItem = memo(({ item, onNavigate, closeMenu }: any) => {
     const SubIcon = item.icon;
 
