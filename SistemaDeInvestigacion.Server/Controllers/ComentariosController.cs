@@ -15,7 +15,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
-        private readonly IHubContext<ComentariosHub> _hubContext;
 
         public ComentariosController(ApplicationDbContext context, IConfiguration configuration)
         {

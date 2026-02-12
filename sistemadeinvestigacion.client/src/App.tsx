@@ -11,8 +11,8 @@ import Institucion from './assets/Routes/Admin/institucion';
 import Empleado from './assets/Routes/Admin/Empleado';
 import ListarAcuerdos from './assets/Routes/Admin/listarAcuerdos';
 import InstitucionList from './assets/Routes/Admin/institucionList';
-import { RouteGuard } from './assets/Routes/Admin/RouteGuard'
-
+import { RouteGuard } from './assets/Routes/Admin/RouteGuard';
+import Categoria from './assets/Routes/Admin/categoria';
 import { Lienzo } from './assets/Routes/Admin/ElementosLienzo/Lienzo';
 
 function App() {
@@ -28,6 +28,7 @@ function App() {
                 <Route path="/lienzo" element={<Lienzo />} />
                 <Route path="/configuracion" element={<Configuracion />} />
                 <Route path="/acuerdos" element={<Acuerdos />} />
+                <Route path="/categorias" element={<Categoria />} />
                 <Route path="/listarAcuerdos" element={<ListarAcuerdos />} />
                 <Route path="/institucion" element={<Institucion />} />
                 <Route path="/empleado" element={<Empleado />} />

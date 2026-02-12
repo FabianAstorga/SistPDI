@@ -9,14 +9,15 @@ import {
     Settings,
     Save,
     Info,
-    FileText
+    FileText,
+    Loader2
 } from 'lucide-react';
 import { Virtuoso } from 'react-virtuoso';
 import { Navbar } from '../../components/Navbar';
 import { useSignalR } from '../../../context/SignalRContext';
 
-/** * LISTAR ACUERDOS V12.0 - PDI Intranet 2026
- * Fix: Implementación de PATCH con FormData (Multipart) + SignalR Real-time
+/** * LISTAR ACUERDOS V20.0 - PDI Intranet 2026
+ * Fix: High-Speed Performance & Spring Physics Animations.
  */
 
 const API_BASE = import.meta.env.VITE_API_URL;
@@ -24,7 +25,10 @@ const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/
 const PLACEHOLDER_IMG = "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png";
 
 const LABEL_STYLE = "text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 flex items-center gap-2";
-const INPUT_STYLE = "w-full bg-slate-100 border-b border-slate-200 text-slate-900 px-4 py-4 outline-none focus:border-[#002855] focus:bg-white transition-all duration-300 font-semibold text-sm";
+const INPUT_STYLE = "w-full bg-slate-100 border-b border-slate-200 text-slate-900 px-4 py-4 outline-none focus:border-[#002855] focus:bg-white transition-all duration-150 font-semibold text-sm";
+
+// Configuración de resortes para respuesta instantánea (Sweet spot de velocidad)
+const FAST_SPRING = { type: "spring", stiffness: 500, damping: 35 };
 
 const resolveBackendUrl = (path?: string | null) => {
     if (!path) return null;
@@ -34,29 +38,49 @@ const resolveBackendUrl = (path?: string | null) => {
 };
 
 export default function ListarAcuerdos() {
-    const [acuerdos, setAcuerdos] = useState<any[]>([]);
+    const [items, setItems] = useState<any[]>([]);
     const [empresas, setEmpresas] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
 
-    // --- INTEGRACIÓN SIGNALR ---
     const { connection } = useSignalR();
 
-    const fetchData = useCallback(async () => {
+    // Lógica de ordenamiento multinivel (Estado -> ID Desc)
+    const sortAcuerdos = (arr: any[]) => {
+        return [...arr].sort((a, b) => {
+            if (a.idEstado !== b.idEstado) return a.idEstado - b.idEstado;
+            return b.id - a.id;
+        });
+    };
+
+    const fetchAcuerdos = useCallback(async () => {
         if (abortControllerRef.current) abortControllerRef.current.abort();
         abortControllerRef.current = new AbortController();
+        setLoading(true);
+
         const token = localStorage.getItem('token');
         const headers = { ...(token ? { Authorization: `Bearer ${token}` } : {}) };
 
         try {
             const [resAcuerdos, resEmpresas] = await Promise.all([
-                fetch(`${API_BASE}/api/Acuerdos`, { headers, signal: abortControllerRef.current.signal }),
-                fetch(`${API_BASE}/api/Empresa`, { headers, signal: abortControllerRef.current.signal })
+                fetch(`${API_BASE}/api/Acuerdos/listado`, { headers, signal: abortControllerRef.current.signal }),
+                fetch(`${API_BASE}/api/Empresa/listado`, { headers, signal: abortControllerRef.current.signal })
             ]);
-            setAcuerdos(await resAcuerdos.json());
-            setEmpresas(await resEmpresas.json());
+
+            const dataA = await resAcuerdos.json();
+            const dataE = await resEmpresas.json();
+            const rawArr = Array.isArray(dataA) ? dataA : (dataA?.items || dataA?.$values || []);
+
+            const mapped = rawArr.map((a: any) => ({
+                ...a,
+                id: a.idAcuerdo,
+                habilitado: a.idEstado === 1
+            }));
+
+            setItems(sortAcuerdos(mapped));
+            setEmpresas(Array.isArray(dataE) ? dataE : (dataE?.items || dataE?.$values || []));
         } catch (e: any) {
             if (e.name !== 'AbortError') console.error("Error fetchData:", e);
         } finally {
@@ -65,71 +89,100 @@ export default function ListarAcuerdos() {
     }, []);
 
     useEffect(() => {
-        fetchData();
+        fetchAcuerdos();
         return () => abortControllerRef.current?.abort();
-    }, [fetchData]);
+    }, [fetchAcuerdos]);
 
-    // --- LISTENER DE SIGNALR ---
+    const handleToggleEstado = useCallback(async (e: React.MouseEvent, id: number) => {
+        e.stopPropagation();
+        const token = localStorage.getItem('token');
+
+        setItems(prev => prev.map(item =>
+            item.id === id
+                ? { ...item, habilitado: !item.habilitado, idEstado: item.idEstado === 1 ? 2 : 1 }
+                : item
+        ));
+
+        try {
+            await fetch(`${API_BASE}/api/Acuerdos/alternar/${id}`, {
+                method: 'PATCH',
+                headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+            });
+        } catch (err) {
+            fetchAcuerdos();
+        }
+    }, [fetchAcuerdos]);
+
     useEffect(() => {
         if (connection) {
-            const handleUpdate = () => {
-                console.log("⚡ SignalR: Recibida actualización de acuerdos. Recargando...");
-                fetchData();
-            };
-
+            const handleUpdate = () => fetchAcuerdos();
             connection.on("RecibirActualizacionAcuerdos", handleUpdate);
-
-            return () => {
-                connection.off("RecibirActualizacionAcuerdos", handleUpdate);
-            };
+            return () => { connection.off("RecibirActualizacionAcuerdos", handleUpdate); };
         }
-    }, [connection, fetchData]);
+    }, [connection, fetchAcuerdos]);
 
-    const rows = useMemo(() => {
+    const filteredItems = useMemo(() => {
         const query = search.toLowerCase();
-        const filtered = (Array.isArray(acuerdos) ? acuerdos : []).filter(a =>
+        return items.filter(a =>
             a.titulo?.toLowerCase().includes(query) ||
             a.categoria?.toLowerCase().includes(query)
         );
-        const result = [];
-        for (let i = 0; i < filtered.length; i += 2) {
-            result.push(filtered.slice(i, i + 2));
-        }
-        return result;
-    }, [search, acuerdos]);
+    }, [items, search]);
 
     return (
         <div className="h-screen w-full bg-[#002855] font-sans text-white overflow-hidden flex flex-col">
             <Navbar />
-            <div className="fixed inset-0 z-0 pointer-events-none opacity-10" style={{ backgroundImage: `url(${HERO_BG})`, backgroundSize: 'cover' }} />
+            <div className="fixed inset-0 z-0 pointer-events-none">
+                <div className="absolute inset-0 bg-cover bg-center opacity-10" style={{ backgroundImage: `url(${HERO_BG})` }} />
+            </div>
 
             <main className="relative z-10 flex-1 flex items-center justify-center p-6">
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full max-w-7xl h-[85vh] flex shadow-2xl overflow-hidden rounded-sm bg-[#002855] border border-white/10">
-                    <div className="hidden md:flex w-80 p-10 flex-col shrink-0 border-r border-white/10">
-                        <div className="w-12 h-12 bg-blue-600 flex items-center justify-center mb-8"><LayoutGrid size={24} /></div>
-                        <h2 className="text-3xl font-black uppercase tracking-tighter mb-2 text-white">Lista de <br /><span className="text-blue-400">Acuerdos</span></h2>
-                        <div className="space-y-4 mt-8">
-                            <label className={LABEL_STYLE}><Search size={12} /> Filtro</label>
-                            <input type="text" value={search} onChange={e => setSearch(e.target.value)} className="w-full bg-white/5 border-b border-white/10 p-3 outline-none focus:border-blue-400 transition-all text-sm" />
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.99 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.15 }}
+                    className="w-full max-w-7xl h-[85vh] flex shadow-[0_40px_100px_rgba(0,0,0,0.6)] overflow-hidden rounded-sm bg-[#002855]"
+                >
+                    <div className="hidden md:flex w-80 bg-[#002855] p-10 flex-col border-y border-l border-white/10 shrink-0">
+                        <div className="w-12 h-12 bg-blue-600 flex items-center justify-center mb-8 shadow-lg border border-white/10">
+                            <LayoutGrid className="text-white" size={24} />
+                        </div>
+                        <h2 className="text-3xl font-black leading-none uppercase tracking-tighter mb-2 text-white">Lista de <br /><span className="text-blue-400">Acuerdos</span></h2>
+                        <div className="space-y-6">
+                            <label className={LABEL_STYLE}><Search size={12} /> Filtro Rápido</label>
+                            <input
+                                type="text"
+                                value={search}
+                                onChange={e => setSearch(e.target.value)}
+                                placeholder="Nombre o categoría..."
+                                className="w-full bg-white/5 border-b border-white/10 text-white px-4 py-3 outline-none focus:border-blue-400 transition-colors duration-150 text-sm placeholder:text-white/20"
+                            />
                         </div>
                     </div>
 
-                    <div className="flex-1 bg-white overflow-hidden">
-                        {loading ? (
-                            <div className="h-full flex items-center justify-center text-[#002855] font-black uppercase text-xs">Cargando...</div>
-                        ) : (
-                            <Virtuoso
-                                style={{ height: '100%' }}
-                                data={rows}
-                                itemContent={(_, pair) => (
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-8">
-                                        {pair.map((a: any) => (
-                                            <AcuerdoItem key={a.idAcuerdo} acuerdo={a} onOpen={() => setSelectedId(a.idAcuerdo)} />
-                                        ))}
-                                    </div>
-                                )}
-                            />
-                        )}
+                    <div className="flex-1 bg-white flex flex-col overflow-hidden relative border-y border-r border-white/10">
+                        <div className="flex-1 bg-slate-50/50 relative">
+                            {loading && items.length === 0 ? (
+                                <div className="h-full flex items-center justify-center">
+                                    <span className="text-[#002855] font-black text-xs uppercase tracking-[0.3em] animate-pulse">Sincronizando...</span>
+                                </div>
+                            ) : (
+                                <Virtuoso
+                                    style={{ height: '100%' }}
+                                    data={filteredItems}
+                                    overscan={800}
+                                    itemContent={(_, inst) => (
+                                        <div className="p-4 px-8">
+                                            <AcuerdoItem
+                                                acuerdo={inst}
+                                                onOpen={() => setSelectedId(inst.id)}
+                                                onToggle={(e) => handleToggleEstado(e, inst.id)}
+                                            />
+                                        </div>
+                                    )}
+                                />
+                            )}
+                        </div>
                     </div>
                 </motion.div>
             </main>
@@ -140,7 +193,7 @@ export default function ListarAcuerdos() {
                         id={selectedId}
                         empresas={empresas}
                         onClose={() => setSelectedId(null)}
-                        onSuccess={() => { setSelectedId(null); fetchData(); }}
+                        onSuccess={() => { setSelectedId(null); fetchAcuerdos(); }}
                     />
                 )}
             </AnimatePresence>
@@ -148,27 +201,84 @@ export default function ListarAcuerdos() {
     );
 }
 
-const AcuerdoItem = memo(({ acuerdo, onOpen }: { acuerdo: any, onOpen: () => void }) => (
-    <div className="group bg-white border border-slate-200 p-6 flex flex-col gap-4 hover:shadow-lg transition-all relative">
-        <div className="flex justify-between items-start gap-4">
-            <div className="flex-1 min-w-0">
-                <span className="text-[9px] font-black bg-[#002855] text-white px-2 py-0.5 rounded uppercase mb-2 inline-block italic">{acuerdo.categoria || 'PDI'}</span>
-                <h3 className="text-lg font-black text-[#002855] uppercase tracking-tighter truncate leading-none mb-2">{acuerdo.titulo}</h3>
-                <p className="text-slate-600 text-[11px] line-clamp-2 italic">{acuerdo.descripcion}</p>
+const AcuerdoItem = memo(({ acuerdo, onOpen, onToggle }: {
+    acuerdo: any,
+    onOpen: () => void,
+    onToggle: (e: React.MouseEvent) => void
+}) => {
+    const isHabilitado = acuerdo.habilitado !== false;
+
+    return (
+        <motion.div
+            whileHover={{ y: -3 }}
+            whileTap={{ scale: 0.995 }}
+            transition={FAST_SPRING}
+            onClick={onOpen}
+            className={`group bg-white border p-6 flex flex-col gap-4 hover:shadow-xl transition-all duration-150 relative overflow-hidden h-64 cursor-pointer will-change-transform
+                ${!isHabilitado ? 'grayscale border-slate-200 opacity-80' : 'border-slate-200 shadow-sm'}`}
+        >
+            <div className={`absolute left-0 top-0 bottom-0 w-1 transition-transform duration-150 origin-top
+                ${isHabilitado ? 'bg-blue-600' : 'bg-slate-400'} 
+                scale-y-0 group-hover:scale-y-100`}
+            />
+
+            <div className="flex items-start justify-between gap-4 h-full">
+                <div className="flex-1 min-w-0 flex flex-col h-full">
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter 
+                            ${isHabilitado ? 'bg-blue-100 text-blue-600' : 'bg-slate-200 text-slate-500'}`}>
+                            {acuerdo.categoria || 'Convenio'}
+                        </span>
+                        <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter 
+                            ${isHabilitado ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                            {isHabilitado ? 'Activo' : 'Inactivo'}
+                        </span>
+                        <span className="text-[8px] font-bold text-slate-300 uppercase tracking-widest ml-auto">ID #{acuerdo.id}</span>
+                    </div>
+
+                    <h3 className={`text-xl font-black uppercase tracking-tighter truncate leading-tight mb-2 transition-colors duration-150
+                        ${isHabilitado ? 'text-[#002855] group-hover:text-blue-600' : 'text-slate-500'}`}>
+                        {acuerdo.titulo}
+                    </h3>
+
+                    <p className="text-slate-500 text-xs font-medium line-clamp-3 italic mb-4 leading-relaxed">
+                        {acuerdo.descripcion || 'Sin descripción disponible.'}
+                    </p>
+
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onToggle(e);
+                        }}
+                        className={`mt-auto flex items-center rounded-sm justify-center gap-2 w-fit px-6 py-2 text-[10px] font-black uppercase tracking-widest transition-all duration-150 border
+                            ${isHabilitado
+                                ? "bg-blue-600 text-white border-blue-600 hover:bg-[#001d3d]"
+                                : "bg-slate-200 text-slate-600 border-slate-300 hover:bg-slate-300"
+                            }`}
+                    >
+                        {isHabilitado ? "Desactivar" : "Activar"}
+                    </button>
+                </div>
+
+                <div className="w-24 h-24 bg-slate-50 rounded border border-slate-100 flex items-center justify-center shrink-0 overflow-hidden shadow-inner group-hover:border-blue-200 transition-colors duration-150">
+                    <img
+                        src={resolveBackendUrl(acuerdo.imagenUrl) || PLACEHOLDER_IMG}
+                        className="w-full h-full object-contain p-2"
+                        alt=""
+                    />
+                </div>
             </div>
-            <img src={resolveBackendUrl(acuerdo.imagenUrl) || PLACEHOLDER_IMG} className="w-14 h-14 object-contain opacity-80" alt="" />
-        </div>
-        <button onClick={onOpen} className="mt-auto flex items-center justify-center gap-2 bg-[#002855] text-white py-2.5 text-[10px] font-black uppercase hover:bg-blue-600 transition-all">
-            <Settings size={12} /> Gestionar
-        </button>
-    </div>
-));
+        </motion.div>
+    );
+});
 
 const ModalConfiguracion = ({ id, empresas, onClose, onSuccess }: { id: number, empresas: any[], onClose: () => void, onSuccess: () => void }) => {
-    const [data, setData] = useState<any>(null);
+    const [data, setData] = useState<any>(null); // Referencia original
+    const [formChanges, setFormChanges] = useState<any>({}); // Cambios del usuario
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
+    // Carga inicial para mostrar placeholders
     useEffect(() => {
         const fetchById = async () => {
             try {
@@ -177,54 +287,63 @@ const ModalConfiguracion = ({ id, empresas, onClose, onSuccess }: { id: number, 
                     headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
                 });
                 if (res.ok) {
-                    const json = await res.json();
-                    setData(json);
+                    const result = await res.json();
+                    setData(result);
                 }
-            } catch (e) { console.error(e); }
-            finally { setLoading(false); }
+            } finally {
+                setLoading(false);
+            }
         };
         fetchById();
     }, [id]);
 
-    const handleUpdate = async () => {
-        if (!data) return;
+    const handlePatchUpdate = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        // Si no hay cambios en el objeto formChanges, cerramos sin llamar a la API
+        if (Object.keys(formChanges).length === 0) {
+            onClose();
+            return;
+        }
+
         setSaving(true);
+        const token = localStorage.getItem('token');
+
+        // Construcción del Multipart Form Data
+        const formData = new FormData();
+
+        if (formChanges.titulo) formData.append('titulo', formChanges.titulo);
+        if (formChanges.descripcion) formData.append('descripcion', formChanges.descripcion);
+        if (formChanges.detallesDescripcion) formData.append('detallesDescripcion', formChanges.detallesDescripcion);
+        if (formChanges.idEmpresa) formData.append('idEmpresa', String(formChanges.idEmpresa));
+
+        // idCategoria se omite o se manda fijo si es necesario según tu regla
+        // formData.append('idCategoria', "1"); 
+
+        if (formChanges.fechaVencimiento) {
+            // Aseguramos formato ISO para el backend
+            const isoDate = new Date(formChanges.fechaVencimiento).toISOString();
+            formData.append('fechaVencimiento', isoDate);
+        }
 
         try {
-            const token = localStorage.getItem('token');
-            const url = `${API_BASE}/api/Acuerdos/editar/${id}`;
-            const formData = new FormData();
-
-            formData.append('titulo', data.titulo || '');
-            formData.append('descripcion', data.descripcion || '');
-            formData.append('detallesDescripcion', data.detallesDescripcion || '');
-            formData.append('idCategoria', String(data.idCategoria || 1));
-            formData.append('svg_editado', data.svg_editado || '');
-
-            if (data.fechaVencimiento) {
-                const dateObj = new Date(data.fechaVencimiento);
-                const isoDate = dateObj.toISOString();
-                formData.append('fechaVencimiento', isoDate);
-            }
-
-            const res = await fetch(url, {
+            const res = await fetch(`${API_BASE}/api/Acuerdos/editar/${id}`, {
                 method: 'PATCH',
                 headers: {
-                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                    'Accept': '*/*'
+                    ...(token ? { Authorization: `Bearer ${token}` } : {})
+                    // Nota: No se pone 'Content-Type', el navegador lo pone auto con el boundary del FormData
                 },
                 body: formData
             });
 
             if (res.ok) {
-                onSuccess();
+                onSuccess(); // Refresca la lista y cierra modal
             } else {
-                const errText = await res.text();
-                console.error("Detalle del error:", errText);
-                alert("Error al actualizar.");
+                const errData = await res.json();
+                console.error("Error en PATCH:", errData);
             }
-        } catch (e) {
-            console.error(e);
+        } catch (error) {
+            console.error("Error de red:", error);
         } finally {
             setSaving(false);
         }
@@ -232,75 +351,121 @@ const ModalConfiguracion = ({ id, empresas, onClose, onSuccess }: { id: number, 
 
     if (loading) return (
         <div className="fixed inset-0 z-[110] bg-[#001a35]/95 flex items-center justify-center">
-            <span className="text-white font-black uppercase tracking-[0.5em] text-xs animate-pulse">Abriendo Expediente...</span>
+            <span className="text-white font-black uppercase tracking-[0.5em] text-xs animate-pulse">Consultando estado actual...</span>
         </div>
     );
 
-    return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center bg-[#001a35]/95 backdrop-blur-md p-6">
-            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-white w-full max-w-5xl h-[90vh] flex rounded-sm overflow-hidden shadow-2xl">
+    const infoOriginal = data?.datosAcuerdo;
 
-                <div className="w-72 bg-[#002855] p-10 flex flex-col shrink-0 border-r border-white/10">
-                    <div className="w-12 h-12 bg-blue-600 flex items-center justify-center mb-8 shadow-lg text-white"><Settings size={24} /></div>
-                    <h2 className="text-3xl font-black uppercase tracking-tighter mb-4 text-white">Editor <br /><span className="text-blue-400">PATCH</span></h2>
-                    <div className="mt-auto">
-                        {data?.imagenUrl && <img src={resolveBackendUrl(data.imagenUrl)} className="w-full aspect-square object-contain bg-white/5 p-4 mb-4" alt="" />}
-                        <p className="text-blue-200/40 text-[9px] font-bold uppercase tracking-widest">REGISTRO #{id}</p>
+    return (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-[#002855]/95 backdrop-blur-md p-6"
+        >
+            <motion.div
+                initial={{ scale: 0.95, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.95, y: 20 }}
+                className="w-full max-w-6xl h-[85vh] flex shadow-[0_40px_100px_rgba(0,0,0,0.6)] rounded-sm overflow-hidden bg-white relative"
+            >
+                <button onClick={onClose} className="absolute top-6 right-6 z-[60] p-2 text-slate-400 hover:text-red-500 transition-colors">
+                    <X size={28} />
+                </button>
+
+                {/* Sidebar - Estética Acuerdos.tsx */}
+                <div className="hidden md:flex w-72 bg-[#002855] p-10 flex-col justify-start border-y border-l border-white/10 shrink-0 text-white">
+                    <div className="w-12 h-12 bg-blue-600 flex items-center justify-center mb-8 shadow-lg border border-white/10">
+                        <Settings size={24} />
                     </div>
+                    <h2 className="text-3xl font-black leading-none uppercase tracking-tighter mb-4">
+                        Modificar <br /> <span className="text-blue-400"> Registro</span>
+                    </h2>
+                    <div className="w-8 h-1 bg-blue-500 mb-6" />
+                    <p className="text-blue-200/40 text-[10px] font-bold uppercase tracking-widest leading-relaxed">
+                        Edición parcial activa. Solo los campos con texto serán actualizados en la base de datos de la Intranet.
+                    </p>
                 </div>
 
-                <div className="flex-1 flex flex-col bg-white overflow-hidden">
-                    <header className="px-10 py-6 border-b flex justify-between items-center">
-                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Ajuste de Parámetros Multipart</span>
-                        <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors"><X size={24} /></button>
-                    </header>
+                <form onSubmit={handlePatchUpdate} className="flex-1 flex flex-col bg-white overflow-hidden relative">
+                    <div className="flex-1 p-10 md:p-14 overflow-y-auto text-slate-900">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
 
-                    <div className="flex-1 overflow-y-auto p-14 custom-list-scroll">
-                        <div className="grid grid-cols-2 gap-8 text-slate-900">
-                            <div className="col-span-2">
-                                <label className={LABEL_STYLE}>Título del Acuerdo</label>
-                                <input type="text" value={data.titulo || ''} onChange={e => setData({ ...data, titulo: e.target.value })} className={INPUT_STYLE} />
-                            </div>
-                            <div className="space-y-1">
-                                <label className={LABEL_STYLE}><Building2 size={12} /> Empresa Asociada</label>
-                                <select value={data.idEmpresa || ''} onChange={e => setData({ ...data, idEmpresa: e.target.value })} className={INPUT_STYLE}>
-                                    {empresas.map((e: any) => <option key={e.idEmpresa} value={e.idEmpresa}>{e.nombre}</option>)}
-                                </select>
-                            </div>
-                            <div className="space-y-1">
-                                <label className={LABEL_STYLE}><Calendar size={12} /> Vencimiento</label>
+                            <div className="md:col-span-2">
+                                <label className={LABEL_STYLE}>Nuevo Título (Actual: {infoOriginal?.titulo})</label>
                                 <input
-                                    type="datetime-local"
-                                    value={data.fechaVencimiento ? data.fechaVencimiento.slice(0, 16) : ''}
-                                    onChange={e => setData({ ...data, fechaVencimiento: e.target.value })}
+                                    type="text"
+                                    placeholder={infoOriginal?.titulo}
+                                    value={formChanges.titulo || ''}
+                                    onChange={e => setFormChanges({ ...formChanges, titulo: e.target.value })}
                                     className={INPUT_STYLE}
                                 />
                             </div>
-                            <div className="col-span-2">
-                                <label className={LABEL_STYLE}><FileText size={12} /> Resumen</label>
-                                <textarea rows={3} value={data.descripcion || ''} onChange={e => setData({ ...data, descripcion: e.target.value })} className={`${INPUT_STYLE} h-24 resize-none`} />
+
+                            <div className="space-y-1">
+                                <label className={LABEL_STYLE}><Building2 size={12} /> Cambiar Empresa</label>
+                                <select
+                                    value={formChanges.idEmpresa || ''}
+                                    onChange={e => setFormChanges({ ...formChanges, idEmpresa: e.target.value })}
+                                    className={`${INPUT_STYLE} cursor-pointer`}
+                                >
+                                    <option value="">No cambiar empresa</option>
+                                    {empresas.map((e: any) => (
+                                        <option key={e.idEmpresa} value={e.idEmpresa}>
+                                            {e.nombre}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
-                            <div className="col-span-2">
-                                <label className={LABEL_STYLE}><Info size={12} /> Detalle Técnico</label>
-                                <textarea rows={4} value={data.detallesDescripcion || ''} onChange={e => setData({ ...data, detallesDescripcion: e.target.value })} className={`${INPUT_STYLE} h-32 resize-none text-xs leading-relaxed`} />
+
+                            <div className="space-y-1">
+                                <label className={LABEL_STYLE}><Calendar size={12} /> Nueva Fecha de Vencimiento</label>
+                                <input
+                                    type="datetime-local"
+                                    value={formChanges.fechaVencimiento || ''}
+                                    onChange={e => setFormChanges({ ...formChanges, fechaVencimiento: e.target.value })}
+                                    className={INPUT_STYLE}
+                                />
+                            </div>
+
+                            <div className="md:col-span-2">
+                                <label className={LABEL_STYLE}><FileText size={12} /> Nueva Descripción</label>
+                                <textarea
+                                    placeholder={infoOriginal?.descripcion}
+                                    value={formChanges.descripcion || ''}
+                                    onChange={e => setFormChanges({ ...formChanges, descripcion: e.target.value })}
+                                    className={`${INPUT_STYLE} h-24 resize-none`}
+                                />
+                            </div>
+
+                            <div className="md:col-span-2">
+                                <label className={LABEL_STYLE}><Info size={12} /> Nuevos Detalles</label>
+                                <textarea
+                                    placeholder={infoOriginal?.detallesDescripcion}
+                                    value={formChanges.detallesDescripcion || ''}
+                                    onChange={e => setFormChanges({ ...formChanges, detallesDescripcion: e.target.value })}
+                                    className={`${INPUT_STYLE} h-40 resize-none text-xs`}
+                                />
                             </div>
                         </div>
                     </div>
 
-                    <footer className="p-10 bg-slate-50/50 border-t flex justify-between items-center">
-                        <button onClick={onClose} className="text-[10px] font-black uppercase text-slate-400 hover:text-red-500 tracking-widest transition-colors">Cancelar</button>
-                        <div className="flex items-center gap-6">
-                            <span className="text-[10px] font-black text-[#002855] uppercase">{saving ? 'Enviando...' : 'Aplicar Cambios'}</span>
-                            <button
-                                onClick={handleUpdate}
-                                disabled={saving}
-                                className="h-16 w-16 rounded-full bg-[#002855] text-white flex items-center justify-center hover:bg-blue-600 hover:scale-110 shadow-2xl transition-all group disabled:bg-slate-300"
-                            >
-                                <Save size={28} className={saving ? 'animate-spin' : 'group-hover:rotate-12 transition-transform'} />
-                            </button>
-                        </div>
-                    </footer>
-                </div>
+                    {/* Botón Save Estilo Acuerdos.tsx */}
+                    <div className="absolute bottom-10 right-10">
+                        <button
+                            type="submit"
+                            disabled={saving}
+                            className="h-16 w-16 rounded-full bg-[#002855] text-white flex items-center justify-center hover:bg-green-600 hover:scale-110 shadow-2xl transition-all duration-300 group disabled:bg-slate-300"
+                        >
+                            {saving ? (
+                                <Loader2 size={28} className="animate-spin" />
+                            ) : (
+                                <Save size={28} className="group-hover:rotate-6 transition-transform" />
+                            )}
+                        </button>
+                    </div>
+                </form>
             </motion.div>
         </motion.div>
     );

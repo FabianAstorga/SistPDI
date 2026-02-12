@@ -4,11 +4,6 @@ import { motion } from "framer-motion";
 import { Navbar } from '../../components/Navbar';
 import { Settings2, ArrowRight, Building2, Calendar, FileText, Info, Layout } from 'lucide-react';
 
-/** * GESTIÓN DE ACUERDOS V6.5 - PDI Intranet 2026
- * Fix: Eliminación de creación de empresas. Flujo de selección pura de entidades habilitadas.
- * Update: Integración de selección de Templates Svg.
- */
-
 const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
 const LABEL_STYLE = "text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 flex items-center gap-2";
 const INPUT_STYLE = "w-full bg-slate-100 border-b border-slate-200 text-slate-900 px-4 py-4 outline-none focus:border-[#002855] focus:bg-white transition-all duration-300 font-semibold text-sm";
@@ -21,6 +16,7 @@ const getOneYearFromNow = () => {
 
 export default function Acuerdos() {
     const navigate = useNavigate();
+    const [categorias, setCategorias] = useState<any[]>([]);
     const [empresas, setEmpresas] = useState<any[]>([]);
     const [templates, setTemplates] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -32,10 +28,10 @@ export default function Acuerdos() {
         detallesDescripcion: '',
         fechaVencimiento: getOneYearFromNow(),
         idEmpresa: '' as string | number,
-        templateSvg: '' // Almacena el svgOriginal seleccionado
+        idCategoria: '' as string | number,
+        templateSvg: ''
     });
 
-    // Fetch de empresas y templates
     const fetchData = useCallback(async () => {
         if (abortControllerRef.current) abortControllerRef.current.abort();
         abortControllerRef.current = new AbortController();
@@ -45,7 +41,7 @@ export default function Acuerdos() {
         const headers = { ...(token ? { Authorization: `Bearer ${token}` } : {}) };
 
         try {
-            // 1. Fetch Empresas
+            // 1. Cargar Empresas
             const resEmp = await fetch(`${import.meta.env.VITE_API_URL}/api/Empresa`, {
                 headers,
                 signal: abortControllerRef.current.signal
@@ -59,7 +55,22 @@ export default function Acuerdos() {
                 setFormData(p => ({ ...p, idEmpresa: firstId }));
             }
 
-            // 2. Fetch Templates
+            // 2. Cargar Categorías con preselección automática
+            const resCat = await fetch(`${import.meta.env.VITE_API_URL}/api/Categoria/categorias`, {
+                headers,
+                signal: abortControllerRef.current.signal
+            });
+            const dataCat = await resCat.json();
+            const listCat = Array.isArray(dataCat) ? dataCat : (dataCat?.$values || []);
+            setCategorias(listCat);
+
+            // Selecciona automáticamente la primera categoría si existe
+            if (listCat.length > 0 && formData.idCategoria === '') {
+                const firstCatId = listCat[0].idCategoria ?? listCat[0].id;
+                setFormData(p => ({ ...p, idCategoria: firstCatId }));
+            }
+
+            // 3. Cargar Templates
             const resTemp = await fetch(`${import.meta.env.VITE_API_URL}/api/Svg/obtenerTemplates`, {
                 headers,
                 signal: abortControllerRef.current.signal
@@ -73,7 +84,7 @@ export default function Acuerdos() {
         } finally {
             setLoading(false);
         }
-    }, [formData.idEmpresa]);
+    }, [formData.idEmpresa, formData.idCategoria]);
 
     useEffect(() => {
         fetchData();
@@ -93,15 +104,13 @@ export default function Acuerdos() {
         const payload = {
             titulo: formData.titulo,
             descripcion: formData.descripcion,
-            detallesDescripcion: formData.detallesDescripcion, // Cambiado para que coincida con templateKey="detalle"
+            detallesDescripcion: formData.detallesDescripcion,
             fechaVencimiento: formData.fechaVencimiento,
             idEmpresa: formData.idEmpresa,
+            idCategoria: formData.idCategoria,
         };
         localStorage.setItem('temp_acuerdo', JSON.stringify(payload));
-        // Guardamos la información del acuerdo
-        
 
-        // Guardamos el template seleccionado de forma independiente
         if (formData.templateSvg) {
             localStorage.setItem('template_svg', formData.templateSvg);
         } else {
@@ -131,7 +140,6 @@ export default function Acuerdos() {
                     animate={{ opacity: 1, y: 0 }}
                     className="w-full max-w-6xl h-[85vh] flex shadow-[0_40px_100px_rgba(0,0,0,0.6)] rounded-sm overflow-hidden"
                 >
-                    {/* SIDEBAR IZQUIERDO */}
                     <div className="hidden md:flex w-72 bg-[#002855] p-10 flex-col justify-start border-y border-l border-white/10 shrink-0">
                         <div className="w-12 h-12 bg-blue-600 flex items-center justify-center mb-8 shadow-lg border border-white/10">
                             <Settings2 size={24} />
@@ -141,28 +149,27 @@ export default function Acuerdos() {
                         </h2>
                         <div className="w-8 h-1 bg-blue-500 mb-6" />
                         <p className="text-blue-200/40 text-[10px] font-bold uppercase tracking-widest leading-relaxed">
-                            Complete los datos para generar un nuevo acuerdo institucional con una entidad autorizada.
+                            Complete la informacion para generar un nuevo acuerdo en sistema. Una vez termine haga click en la flecha para pasar al editor svg
                         </p>
                     </div>
 
-                    {/* FORMULARIO */}
                     <form onSubmit={handleSubmit} className="flex-1 flex flex-col bg-white border-y border-r border-white/10 overflow-hidden relative">
                         <div className="flex-1 p-10 md:p-14 overflow-y-auto custom-list-scroll text-slate-900">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
 
                                 <div className="md:col-span-2">
-                                    <label className={LABEL_STYLE}>Título del Acuerdo</label>
+                                    <label className={LABEL_STYLE}>Título</label>
                                     <input
                                         value={formData.titulo}
                                         onChange={e => setFormData(p => ({ ...p, titulo: e.target.value }))}
                                         className={INPUT_STYLE}
-                                        placeholder="Ej: Convenio de Cooperación 2026"
+                                        placeholder="Titulo del acuerdo"
                                         required
                                     />
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className={LABEL_STYLE}><Building2 size={12} /> Entidad Colaboradora</label>
+                                    <label className={LABEL_STYLE}><Building2 size={12} /> Empresas</label>
                                     <select
                                         value={formData.idEmpresa}
                                         onChange={handleSelectChange}
@@ -171,7 +178,7 @@ export default function Acuerdos() {
                                         disabled={loading}
                                     >
                                         <option value="" disabled>
-                                            {loading ? 'Cargando entidades...' : 'Seleccione una institución'}
+                                            {loading ? 'Cargando empresas' : 'Seleccione una empresa'}
                                         </option>
                                         {empresas.map(e => (
                                             <option key={`emp-${e.idEmpresa ?? e.id}`} value={e.idEmpresa ?? e.id}>
@@ -182,14 +189,14 @@ export default function Acuerdos() {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className={LABEL_STYLE}><Layout size={12} /> Plantilla Base (Opcional)</label>
+                                    <label className={LABEL_STYLE}><Layout size={12} /> Plantilla en blanco</label>
                                     <select
                                         value={formData.templateSvg}
                                         onChange={handleTemplateChange}
                                         className={`${INPUT_STYLE} cursor-pointer`}
                                         disabled={loading}
                                     >
-                                        <option value="">Sin plantilla (Lienzo en blanco)</option>
+                                        <option value="">Lienzo en blanco</option>
                                         {templates.map(t => (
                                             <option key={`temp-${t.id}`} value={t.svgOriginal}>
                                                 Template {t.id}
@@ -198,8 +205,8 @@ export default function Acuerdos() {
                                     </select>
                                 </div>
 
-                                <div className="space-y-1 md:col-span-2">
-                                    <label className={LABEL_STYLE}><Calendar size={12} /> Fecha de Expiración</label>
+                                <div className="space-y-1">
+                                    <label className={LABEL_STYLE}><Calendar size={12} /> Fecha de vencimiento</label>
                                     <input
                                         type="datetime-local"
                                         value={formData.fechaVencimiento}
@@ -209,36 +216,55 @@ export default function Acuerdos() {
                                     />
                                 </div>
 
+                                <div className="space-y-1">
+                                    <label className={LABEL_STYLE}><Layout size={12} /> Categoría</label>
+                                    <select
+                                        value={formData.idCategoria}
+                                        onChange={e => setFormData(p => ({ ...p, idCategoria: e.target.value }))}
+                                        className={`${INPUT_STYLE} cursor-pointer`}
+                                        required
+                                    >
+                                        {categorias.length > 0 ? (
+                                            categorias.map(c => (
+                                                <option key={`cat-${c.idCategoria ?? c.id}`} value={c.idCategoria ?? c.id}>
+                                                    {c.tipoCategoria}
+                                                </option>
+                                            ))
+                                        ) : (
+                                            <option value="">Sin Categorías</option>
+                                        )}
+                                    </select>
+                                </div>
+
                                 <div className="md:col-span-2">
-                                    <label className={LABEL_STYLE}><FileText size={12} /> Resumen Ejecutivo</label>
+                                    <label className={LABEL_STYLE}><FileText size={12} /> Descripción</label>
                                     <textarea
                                         value={formData.descripcion}
                                         onChange={e => setFormData(p => ({ ...p, descripcion: e.target.value }))}
                                         className={`${INPUT_STYLE} h-24 resize-none`}
-                                        placeholder="Breve descripción del propósito del acuerdo..."
+                                        placeholder="Descripcíon breve del acuerdo"
                                         required
                                     />
                                 </div>
 
                                 <div className="md:col-span-2">
-                                    <label className={LABEL_STYLE}><Info size={12} /> Términos y Condiciones</label>
+                                    <label className={LABEL_STYLE}><Info size={12} /> Detalles</label>
                                     <textarea
                                         value={formData.detallesDescripcion}
                                         onChange={e => setFormData(p => ({ ...p, detallesDescripcion: e.target.value }))}
                                         className={`${INPUT_STYLE} h-40 resize-none text-xs`}
-                                        placeholder="Detalle aquí las cláusulas o información relevante adicional..."
+                                        placeholder="Información detallada del acuerdo"
                                         required
                                     />
                                 </div>
                             </div>
                         </div>
 
-                        {/* ACCIÓN PRINCIPAL */}
                         <div className="absolute bottom-10 right-10">
                             <button
                                 type="submit"
                                 className="h-16 w-16 rounded-full bg-[#002855] text-white flex items-center justify-center hover:bg-blue-600 hover:scale-110 shadow-2xl transition-all duration-300 group disabled:bg-slate-300 disabled:scale-100"
-                                disabled={loading || !formData.idEmpresa}
+                                disabled={loading || !formData.idEmpresa || !formData.idCategoria}
                             >
                                 <ArrowRight size={28} className="group-hover:translate-x-1 transition-transform" />
                             </button>

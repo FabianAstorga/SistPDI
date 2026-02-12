@@ -5,11 +5,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Navbar } from "../../components/Navbar";
 import { LoginDrawer } from "./LoginDrawer";
-import { X, RefreshCw, Send, MessageSquare, Trash2 } from 'lucide-react';
+import { X, RefreshCw, Send, MessageSquare, Trash2, Search } from 'lucide-react';
 import { useSignalR } from "../../../context/SignalRContext";
 
-/** * PANEL PRINCIPAL V13.0 - PDI Intranet 2026
- * Real-time ready with SignalR
+/** * PANEL PRINCIPAL V14.0 - PDI Intranet 2026
+ * Fix: Sección 3 con Grid de Cards, Snap Scrolling y Scrollbar a la Izquierda.
  */
 
 const API_BASE = import.meta.env.VITE_API_URL;
@@ -57,9 +57,7 @@ export default function Panel() {
     const [modalData, setModalData] = useState<any | null>(null);
     const [inputSearch, setInputSearch] = useState("");
 
-    // --- SIGNALR CONNECTION ---
     const { connection } = useSignalR();
-
     const currentYear = useMemo(() => new Date().getFullYear(), []);
     const handleCloseModal = useCallback(() => setModalData(null), []);
     const handleOpenModal = useCallback((item: any) => setModalData(item), []);
@@ -91,13 +89,9 @@ export default function Panel() {
         }
     }, []);
 
-    // --- SOCKET LISTENER ---
     useEffect(() => {
         if (connection) {
-            const handleRefresh = () => {
-                console.log("⚡ SignalR: Actualización de datos recibida.");
-                fetchData();
-            };
+            const handleRefresh = () => fetchData();
             connection.on("RecibirActualizacionAcuerdos", handleRefresh);
             return () => { connection.off("RecibirActualizacionAcuerdos", handleRefresh); };
         }
@@ -147,9 +141,8 @@ export default function Panel() {
         onSelect();
         setScrollSnaps(emblaApi.scrollSnapList());
         emblaApi.on("select", onSelect).on("reInit", onSelect);
-        if (mejores.length > 0) emblaApi.reInit();
         return () => { emblaApi.off("select", onSelect).off("reInit", onSelect); };
-    }, [emblaApi, mejores, onSelect]);
+    }, [emblaApi, onSelect]);
 
     const filtered = useMemo(() => {
         const q = inputSearch.toLowerCase();
@@ -165,7 +158,10 @@ export default function Panel() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
             <div className="h-full overflow-y-auto snap-y snap-mandatory scroll-smooth overflow-x-hidden custom-list-scroll">
+
+                {/* SECCIÓN 1: HERO */}
                 <section className={`snap-start w-full h-screen flex flex-col items-center justify-center px-6 relative bg-[#002855] transition-all duration-700 ${isLoggedIn ? 'pt-16' : ''}`}>
                     <div className="absolute inset-0 bg-cover bg-center opacity-40 animate-pulse-slow pointer-events-none" style={{ backgroundImage: `url(${HERO_BG})` }} />
                     <div className="max-w-5xl mx-auto text-center z-10">
@@ -190,6 +186,8 @@ export default function Panel() {
                         </div>
                     </div>
                 </section>
+
+                {/* SECCIÓN 2: CARRUSEL */}
                 <section ref={carouselRef} className="snap-start w-full h-screen flex flex-col justify-center bg-slate-200 relative overflow-hidden transition-colors duration-500">
                     <div className="max-w-7xl mx-auto w-full px-6 mb-2 text-center">
                         <h2 className="text-3xl md:text-4xl font-black text-[#002855] uppercase tracking-tighter">Ultimos Acuerdos</h2>
@@ -205,36 +203,65 @@ export default function Panel() {
                     </div>
                     <CarouselDots snaps={scrollSnaps} selectedIndex={selectedIndex} onDotClick={scrollTo} />
                 </section>
-                <section ref={listSectionRef} className="snap-start w-full h-screen bg-[#002855] text-white py-12 px-6 flex items-center overflow-hidden">
-                    <div className="max-w-6xl mx-auto w-full flex flex-col h-[80vh]">
-                        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+
+                {/* SECCIÓN 3: CATÁLOGO (Grid con Scroll a la Izquierda) */}
+                <section ref={listSectionRef} className="snap-start w-full h-screen bg-[#002855] text-white py-12 px-6 flex flex-col items-center overflow-hidden">
+                    <div className="max-w-7xl mx-auto w-full flex flex-col h-full">
+
+                        {/* Cabecera */}
+                        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 shrink-0">
                             <div>
                                 <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter leading-none">Catálogo General</h2>
-                                <p className="text-blue-300/60 font-bold mt-2 uppercase text-xs">{filtered.length} Convenios registrados</p>
+                                <p className="text-blue-300/60 font-bold mt-2 uppercase text-xs tracking-widest">{filtered.length} Convenios registrados</p>
                             </div>
-                            <input
-                                type="text" placeholder="Filtrar convenios..." value={inputSearch}
-                                onChange={(e) => setInputSearch(e.target.value)}
-                                className="bg-white/10 border border-white/10 text-white px-8 py-4 rounded-xl outline-none font-bold w-full md:w-80 focus:bg-white focus:text-[#002855] transition-all shadow-2xl"
-                            />
+                            <div className="relative group w-full md:w-96">
+                                <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-400 transition-colors" size={20} />
+                                <input
+                                    type="text" placeholder="Filtrar convenios..." value={inputSearch}
+                                    onChange={(e) => setInputSearch(e.target.value)}
+                                    className="bg-white/10 border-2 border-white/10 text-white pl-16 pr-8 py-4 rounded-2xl outline-none font-bold w-full focus:bg-white focus:text-[#002855] transition-all shadow-2xl"
+                                />
+                            </div>
                         </div>
-                        <div className="flex-1 overflow-y-auto pr-4 space-y-3 custom-list-scroll pb-10">
-                            {loading ? (
-                                <div className="text-center py-20 animate-spin text-blue-300 font-black uppercase text-xs">Cargando...</div>
-                            ) : filtered.map((a) => (
-                                <ListItem key={`list-${a.id}`} item={a} onOpen={() => handleOpenModal(a)} />
-                            ))}
+
+                        {/* Contenedor con Scroll a la Izquierda (RTL trick) */}
+                        <div className="flex-1 overflow-y-auto custom-list-scroll pr-2" style={{ direction: 'rtl' }}>
+                            {/* Revertimos la dirección para el contenido */}
+                            <div style={{ direction: 'ltr' }} className="pl-6">
+                                {loading ? (
+                                    <div className="flex flex-col items-center justify-center py-40">
+                                        <RefreshCw className="animate-spin text-blue-400 mb-4" size={48} />
+                                        <span className="font-black uppercase text-xs tracking-[0.3em]">Cargando...</span>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-10">
+                                        {filtered.map((a) => (
+                                            <CardItem key={`list-${a.id}`} item={a} onOpen={() => handleOpenModal(a)} />
+                                        ))}
+                                    </div>
+                                )}
+
+                                {!loading && filtered.length === 0 && (
+                                    <div className="text-center py-20 border-2 border-dashed border-white/10 rounded-3xl">
+                                        <p className="text-white/40 font-bold uppercase italic">Sin resultados.</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </section>
             </div>
+
+            {/* Modales */}
             <AnimatePresence>
                 {modalData && <ModalDetalle data={modalData} onClose={handleCloseModal} />}
             </AnimatePresence>
             <LoginDrawer isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} onLoginSuccess={checkSession} />
+
             <style>{`
-                .custom-list-scroll::-webkit-scrollbar { width: 5px; }
-                .custom-list-scroll::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.1); border-radius: 10px; }
+                .custom-list-scroll::-webkit-scrollbar { width: 6px; }
+                .custom-list-scroll::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
+                .custom-list-scroll::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
                 @keyframes pulse-slow { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
                 .animate-pulse-slow { animation: pulse-slow 12s ease-in-out infinite; }
             `}</style>
@@ -242,6 +269,39 @@ export default function Panel() {
     );
 }
 
+// --- ITEM DE TARJETA REDISEÑADO ---
+const CardItem = memo(({ item, onOpen }: any) => (
+    <motion.div
+        whileHover={{ y: -8 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={onOpen}
+        className="group bg-white border border-slate-200 p-6 flex flex-col gap-4 hover:shadow-2xl transition-all relative overflow-hidden cursor-pointer h-full min-h-[250px] rounded-sm"
+    >
+        <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 scale-y-0 group-hover:scale-y-100 transition-transform origin-top duration-300" />
+
+        <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+                <span className="text-[9px] font-black bg-blue-600 text-white px-2 py-0.5 rounded uppercase mb-2 inline-block italic tracking-widest">
+                    {item.categoria}
+                </span>
+                <h4 className="text-lg font-black text-[#002855] uppercase leading-tight tracking-tighter line-clamp-2 group-hover:text-blue-600 transition-colors">
+                    {item.titulo}
+                </h4>
+            </div>
+            <div className="w-16 h-16 bg-slate-50 rounded border border-slate-100 flex items-center justify-center shrink-0 overflow-hidden shadow-inner group-hover:bg-white transition-colors">
+                <img loading="lazy" src={resolveBackendUrl(item.imagenUrl) || PDI_LOGO_URL} className="w-full h-full object-contain p-2" alt="" />
+            </div>
+        </div>
+
+        <div className="mt-auto pt-4 border-t border-slate-100">
+            <p className="text-slate-500 text-[11px] font-medium italic line-clamp-3 leading-relaxed">
+                {item.descripcion}
+            </p>
+        </div>
+    </motion.div>
+));
+
+// --- RESTO DE COMPONENTES IGUALES ---
 const CarouselDots = memo(({ snaps, selectedIndex, onDotClick }: any) => (
     <div className="flex justify-center gap-3 mt-8">
         {snaps.map((_: any, i: number) => (
@@ -250,19 +310,24 @@ const CarouselDots = memo(({ snaps, selectedIndex, onDotClick }: any) => (
     </div>
 ));
 
-const ListItem = memo(({ item, onOpen }: any) => (
-    <div onClick={onOpen} className="group flex items-center gap-6 bg-white p-4 rounded-xl cursor-pointer shadow-xl text-slate-900 hover:translate-x-2 transition-transform">
-        <div className="w-20 h-20 bg-slate-100 rounded-lg overflow-hidden shrink-0 border border-slate-200">
-            <img loading="lazy" src={resolveBackendUrl(item.imagenUrl) || PDI_LOGO_URL} className="w-full h-full object-cover" alt="" />
-        </div>
-        <div className="flex-1">
-            <span className="text-[9px] font-black bg-blue-600 text-white px-2 py-0.5 rounded uppercase mb-1 inline-block">{item.categoria}</span>
-            <h4 className="text-lg md:text-xl font-black text-[#002855] uppercase leading-tight">{item.titulo}</h4>
-            <p className="text-slate-500 text-xs italic line-clamp-1">{item.descripcion}</p>
-        </div>
-        <div className="bg-[#002855] text-white p-3 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
-            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" /></svg>
-        </div>
+const CarouselItem = memo(({ item, isActive, onClick }: any) => (
+    <div className="embla__slide flex-[0_0_90%] md:flex-[0_0_42%] px-4">
+        <motion.div
+            onClick={isActive ? onClick : undefined}
+            animate={{ scale: isActive ? 0.9 : 0.9, opacity: isActive ? 1 : 0.6 }}
+            className={`relative bg-white rounded-none overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.05)] flex flex-col border-none ${isActive ? 'cursor-pointer' : 'cursor-default'}`}
+        >
+            <div className="relative w-full aspect-[4/3] bg-gray-100 overflow-hidden">
+                <img src={resolveBackendUrl(item.imagenUrl) || PDI_LOGO_URL} className="absolute inset-0 w-full h-full object-cover" alt="" />
+            </div>
+            <div className="bg-white px-8 py-5 flex items-center justify-between gap-4">
+                <h3 className="text-2xl font-black text-black uppercase leading-none truncate flex-1">{item.titulo}</h3>
+                <span className="shrink-0 text-[10px] font-black bg-blue-500 text-white px-2 py-1 uppercase tracking-tighter">{item.categoria}</span>
+            </div>
+            <div className="p-6 bg-white min-h-[100px] flex items-center">
+                <p className="text-slate-600 text-sm font-bold italic line-clamp-2 leading-tight">{item.descripcion}</p>
+            </div>
+        </motion.div>
     </div>
 ));
 
@@ -397,24 +462,3 @@ const ModalDetalle = memo(({ data, onClose }: any) => {
         </div>
     );
 });
-
-const CarouselItem = memo(({ item, isActive, onClick }: any) => (
-    <div className="embla__slide flex-[0_0_90%] md:flex-[0_0_42%] px-4">
-        <motion.div
-            onClick={isActive ? onClick : undefined}
-            animate={{ scale: isActive ? 0.9 : 0.9, opacity: isActive ? 1 : 0.6 }}
-            className={`relative bg-white rounded-none overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.05)] flex flex-col border-none ${isActive ? 'cursor-pointer' : 'cursor-default'}`}
-        >
-            <div className="relative w-full aspect-[4/3] bg-gray-100 overflow-hidden">
-                <img src={resolveBackendUrl(item.imagenUrl) || PDI_LOGO_URL} className="absolute inset-0 w-full h-full object-cover" alt="" />
-            </div>
-            <div className="bg-white px-8 py-5 flex items-center justify-between gap-4">
-                <h3 className="text-2xl font-black text-black uppercase leading-none truncate flex-1">{item.titulo}</h3>
-                <span className="shrink-0 text-[10px] font-black bg-blue-500 text-white px-2 py-1 uppercase tracking-tighter">{item.categoria}</span>
-            </div>
-            <div className="p-6 bg-white min-h-[100px] flex items-center">
-                <p className="text-slate-600 text-sm font-bold italic line-clamp-2 leading-tight">{item.descripcion}</p>
-            </div>
-        </motion.div>
-    </div>
-));

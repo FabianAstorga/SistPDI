@@ -126,7 +126,7 @@ export default function AdministracionIdentidad() {
                 <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-7xl h-full flex shadow-[0_40px_100px_rgba(0,0,0,0.6)] rounded-sm overflow-hidden bg-[#002855]">
                     <div className="hidden md:flex w-72 p-10 flex-col border-y border-l border-white/10 shrink-0 relative">
                         <div className="w-12 h-12 bg-blue-600 flex items-center justify-center mb-8 shadow-lg border border-white/10"><ShieldCheck size={24} /></div>
-                        <h2 className="text-3xl font-black uppercase tracking-tighter mb-2 leading-none text-white">Control de <br /><span className="text-blue-400">Personal</span></h2>
+                        <h2 className="text-3xl font-black uppercase tracking-tighter mb-2 leading-none text-white">Control de <br /><span className="text-blue-400">Funcionarios</span></h2>
                         <div className="w-8 h-1 bg-blue-500 mb-6" />
 
                         <div className="space-y-6 flex-1">
@@ -135,7 +135,7 @@ export default function AdministracionIdentidad() {
                                 <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} className="w-full bg-white/5 border-b border-white/10 text-white px-2 py-3 outline-none focus:border-blue-400 transition-all text-xs font-bold uppercase tracking-widest" placeholder="RUT O NOMBRE..." />
                             </div>
                             <div className="p-3 bg-blue-900/30 border border-blue-400/20 rounded-sm">
-                                <p className="text-[9px] font-black text-blue-300/40 uppercase tracking-widest">Rol Actual</p>
+                                <p className="text-[9px] font-black text-blue-300/40 uppercase tracking-widest">Rol del usuario</p>
                                 <p className="text-xs font-bold text-white uppercase mt-1">{currentUserRole === 1 ? 'Administrador' : 'Funcionario'}</p>
                             </div>
 

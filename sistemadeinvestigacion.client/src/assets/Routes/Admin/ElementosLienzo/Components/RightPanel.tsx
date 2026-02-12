@@ -163,7 +163,7 @@ export const RightPanel: React.FC<Props> = memo(({ model }) => {
                                                     className={`${INPUT_DARK_STYLE} text-blue-300 cursor-pointer`}
                                                 >
                                                     <option value="" className="bg-[#001a35] text-white/30">Sin asignar</option>
-                                                    <option value="titulo" className="bg-[#001a35] text-white">Título</option>
+                                                    <option value="titulo" className="bg-[#001a35] text-white">Título</option>cd 
                                                     <option value="descripcion" className="bg-[#001a35] text-white">Descripción</option>
                                                     <option value="detallesDescripcion" className="bg-[#001a35] text-white">Detalles </option>
                                                 </select>
@@ -243,24 +243,49 @@ export const RightPanel: React.FC<Props> = memo(({ model }) => {
                                         </div>
 
                                         {/* CONFIGURACIÓN ESPECÍFICA DE TEXTO */}
-                                        {seleccionado.type === 'texto' && (
-                                            <div className="space-y-4 pt-4 border-t border-white/5">
-                                                <label className={LABEL_STYLE}>Contenido del texto</label>
-                                                <textarea
-                                                    value={seleccionado.text || ''}
-                                                    onChange={(e) => actualizarAtributo(seleccionado.id, { text: e.target.value })}
-                                                    className={`${INPUT_DARK_STYLE} h-24 resize-none`}
-                                                    placeholder="Escribe el texto base..."
-                                                />
-                                                <select
-                                                    value={seleccionado.fontFamily || 'Arial'}
-                                                    onChange={(e) => actualizarAtributo(seleccionado.id, { fontFamily: e.target.value })}
-                                                    className={INPUT_DARK_STYLE}
-                                                >
-                                                    {fontsDisponibles.map((f: string) => <option key={f} value={f} className="bg-[#001a35]">{f}</option>)}
-                                                </select>
-                                            </div>
-                                        )}
+                                            {seleccionado.type === 'texto' && (
+                                                <div className="space-y-4 pt-4 border-t border-white/5">
+                                                    {/* Contenido del Texto */}
+                                                    <div className="space-y-1">
+                                                        <label className={LABEL_STYLE}>Contenido del texto</label>
+                                                        <textarea
+                                                            value={seleccionado.text || ''}
+                                                            onChange={(e) => actualizarAtributo(seleccionado.id, { text: e.target.value })}
+                                                            className={`${INPUT_DARK_STYLE} h-24 resize-none`}
+                                                            placeholder="Escribe el contenido del texto"
+                                                        />
+                                                    </div>
+
+                                                    {/* Tamaño de Fuente Dinámico */}
+                                                    <div className="space-y-1">
+                                                        <label className={LABEL_STYLE}>Tamaño de fuente (px)</label>
+                                                        <input
+                                                            type="number"
+                                                            min="1"
+                                                            max="500"
+                                                            value={seleccionado.fontSize || 16}
+                                                            onChange={(e) => actualizarAtributo(seleccionado.id, { fontSize: Number(e.target.value) })}
+                                                            className={INPUT_DARK_STYLE}
+                                                        />
+                                                    </div>
+
+                                                    {/* Selector de Familia de Fuente */}
+                                                    <div className="space-y-1">
+                                                        <label className={LABEL_STYLE}>Familia de fuente</label>
+                                                        <select
+                                                            value={seleccionado.fontFamily || 'Arial'}
+                                                            onChange={(e) => actualizarAtributo(seleccionado.id, { fontFamily: e.target.value })}
+                                                            className={INPUT_DARK_STYLE}
+                                                        >
+                                                            {fontsDisponibles.map((f: string) => (
+                                                                <option key={f} value={f} className="bg-[#001a35]">
+                                                                    {f}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            )}
 
                                         <button
                                             onClick={() => eliminarElemento(seleccionado.id)}

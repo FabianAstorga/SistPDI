@@ -12,7 +12,8 @@ import {
     Users,
     ChevronDown,
     PlusCircle,
-    List
+    List,
+    Tags
 } from 'lucide-react';
 
 // 1. Configuración estática
@@ -33,7 +34,9 @@ const NAV_CONFIG = [
         ]
     },
     { id: 'funcionarios', label: 'Funcionarios', path: '/empleado', icon: Users },
+    { id: 'categoria', label: 'Categoria', path: '/Categorias', icon: Tags },
     { id: 'plantilla', label: 'Plantilla', path: '/lienzo', icon: Layers },
+    
 ];
 
 export const Navbar = () => {
