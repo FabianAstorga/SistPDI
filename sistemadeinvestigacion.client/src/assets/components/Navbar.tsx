@@ -57,16 +57,23 @@ export const Navbar = () => {
     }, []);
 
     // Función de navegación centralizada para manejar los Modos del Lienzo
+    // Función de navegación centralizada
     const handleNavigation = useCallback((path: string) => {
         if (path === '/lienzo') {
-            // Seteamos el MODO 2 (Template) para que el lienzo sepa cómo guardar
+            // Configuración para entrar al modo plantilla
             const modoTemplate = {
                 tipo: 2,
                 nombre: "Modo Plantilla"
             };
             localStorage.setItem('modo', JSON.stringify(modoTemplate));
-            // Limpiamos datos temporales de acuerdos para iniciar lienzo limpio
+            // Limpiamos datos de acuerdos pero mantenemos lo necesario para el lienzo si fuera el caso
             localStorage.removeItem('temp_acuerdo');
+        } else {
+            // SI NAVEGAMOS A CUALQUIER OTRA RUTA:
+            // Eliminamos el modo y el SVG temporal
+            localStorage.removeItem('modo');
+            localStorage.removeItem('template_svg');
+            localStorage.removeItem('temp_acuerdo'); // Opcional, por seguridad
         }
 
         navigate(path);
