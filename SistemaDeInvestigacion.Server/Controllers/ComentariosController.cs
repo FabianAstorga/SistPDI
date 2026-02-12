@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
+using SistemaDeInvestigacion.Hubs;
 using SistemaDeInvestigacion.Server.Data;
 using SistemaDeInvestigacion.Server.Dtos;
 using SistemaDeInvestigacion.Server.Models;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authorization;
 
 namespace SistemaDeInvestigacion.Server.Controllers
 {
@@ -13,6 +15,8 @@ namespace SistemaDeInvestigacion.Server.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
+        private readonly IHubContext<ComentariosHub> _hubContext;
+
         public ComentariosController(ApplicationDbContext context, IConfiguration configuration)
         {
             _context = context;

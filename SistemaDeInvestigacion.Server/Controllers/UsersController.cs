@@ -49,7 +49,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
         {
             var userID = User.GetUserId();
             var userRole = User.GetUserRole();
-            //reformar esto:
+            
             if (userRole is not (1))
             {
                 return NoContent();

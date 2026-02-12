@@ -6,8 +6,6 @@ using SistemaDeInvestigacion.Server.Data;
 using SistemaDeInvestigacion.Server.Dtos;
 using SistemaDeInvestigacion.Server.Models;
 using SistemaDeInvestigacion.Server.Servicios;
-using SkiaSharp;
-using Svg.Skia;
 using System.IO;
 
 namespace SistemaDeInvestigacion.Server.Controllers

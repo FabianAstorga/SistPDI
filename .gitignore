@@ -25,3 +25,8 @@ SistemaDeInvestigacion.Server/obj/SistemaDeInvestigacion.Server.csproj.nuget.g.p
 /node_modules
 SistemaDeInvestigacion.Server/appsettings.json
 SistemaDeInvestigacion.Server/appsettings.json
+/SistemaDeInvestigacion.Server/bin/Release
+SistemaAcuerdos.zip
+/sistemadeinvestigacion.client/obj/Release
+sistemadeinvestigacion.client/.env
+sistemadeinvestigacion.client/.env

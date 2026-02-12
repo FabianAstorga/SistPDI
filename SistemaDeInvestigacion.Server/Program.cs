@@ -62,11 +62,11 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddScoped<SvgRenderService>();
+builder.Services.AddScoped<SistemaDeInvestigacion.Server.Servicios.SvgRenderService>();
 
 builder.Services.AddControllers(options =>
 {
-    
+
 })
 .AddJsonOptions(options =>
 {
@@ -111,6 +111,8 @@ builder.Services.AddCors(options =>
 builder.Services.AddScoped<AuthMailService>();
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 builder.Services.AddSignalR();
+builder.Services.AddMemoryCache();
+
 var app = builder.Build();
 
 app.UseDefaultFiles();
