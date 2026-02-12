@@ -315,17 +315,30 @@ const CarouselItem = memo(({ item, isActive, onClick }: any) => (
         <motion.div
             onClick={isActive ? onClick : undefined}
             animate={{ scale: isActive ? 0.9 : 0.9, opacity: isActive ? 1 : 0.6 }}
-            className={`relative bg-white rounded-none overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.05)] flex flex-col border-none ${isActive ? 'cursor-pointer' : 'cursor-default'}`}
+            className={`relative bg-white rounded-none overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.05)] flex flex-col border-none h-full ${isActive ? 'cursor-pointer' : 'cursor-default'}`}
         >
-            <div className="relative w-full aspect-[4/3] bg-gray-100 overflow-hidden">
-                <img src={resolveBackendUrl(item.imagenUrl) || PDI_LOGO_URL} className="absolute inset-0 w-full h-full object-cover" alt="" />
+            <div className="relative w-full aspect-[16/9] bg-slate-100 overflow-hidden flex items-center justify-center">
+                <img
+                    src={resolveBackendUrl(item.imagenUrl) || PDI_LOGO_URL}
+                    className="w-full h-full object-contain p-4"
+                    alt=""
+                />
             </div>
-            <div className="bg-white px-8 py-5 flex items-center justify-between gap-4">
-                <h3 className="text-2xl font-black text-black uppercase leading-none truncate flex-1">{item.titulo}</h3>
-                <span className="shrink-0 text-[10px] font-black bg-blue-500 text-white px-2 py-1 uppercase tracking-tighter">{item.categoria}</span>
+
+            {/* Ajuste en el contenedor del título */}
+            <div className="bg-white px-8 py-5 flex items-start justify-between gap-4 border-b border-slate-50">
+                <h3 className="text-xl md:text-2xl font-black text-black uppercase leading-tight flex-1 min-w-0 line-clamp-2">
+                    {item.titulo}
+                </h3>
+                <span className="shrink-0 text-[10px] font-black bg-blue-500 text-white px-2 py-1 uppercase tracking-tighter mt-1">
+                    {item.categoria}
+                </span>
             </div>
-            <div className="p-6 bg-white min-h-[100px] flex items-center">
-                <p className="text-slate-600 text-sm font-bold italic line-clamp-2 leading-tight">{item.descripcion}</p>
+
+            <div className="p-6 bg-white flex-1 flex items-center">
+                <p className="text-slate-600 text-sm font-bold italic line-clamp-2 leading-tight">
+                    {item.descripcion}
+                </p>
             </div>
         </motion.div>
     </div>

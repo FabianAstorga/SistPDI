@@ -1,8 +1,8 @@
-﻿import React, { useEffect, useState, useCallback, useRef, memo } from 'react';
+﻿import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Navbar } from '../../components/Navbar';
-import { Settings2, ArrowRight, Building2, Calendar, FileText, Info, Layout } from 'lucide-react';
+import { Settings2, ArrowRight, Building2, Calendar, FileText, Info, Layout, X, CheckCircle2 } from 'lucide-react';
 
 const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
 const LABEL_STYLE = "text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 flex items-center gap-2";
@@ -20,6 +20,7 @@ export default function Acuerdos() {
     const [empresas, setEmpresas] = useState<any[]>([]);
     const [templates, setTemplates] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const abortControllerRef = useRef<AbortController | null>(null);
 
     const [formData, setFormData] = useState({
@@ -41,7 +42,6 @@ export default function Acuerdos() {
         const headers = { ...(token ? { Authorization: `Bearer ${token}` } : {}) };
 
         try {
-            // 1. Cargar Empresas
             const resEmp = await fetch(`${import.meta.env.VITE_API_URL}/api/Empresa`, {
                 headers,
                 signal: abortControllerRef.current.signal
@@ -55,7 +55,6 @@ export default function Acuerdos() {
                 setFormData(p => ({ ...p, idEmpresa: firstId }));
             }
 
-            // 2. Cargar Categorías con preselección automática
             const resCat = await fetch(`${import.meta.env.VITE_API_URL}/api/Categoria/categorias`, {
                 headers,
                 signal: abortControllerRef.current.signal
@@ -64,13 +63,11 @@ export default function Acuerdos() {
             const listCat = Array.isArray(dataCat) ? dataCat : (dataCat?.$values || []);
             setCategorias(listCat);
 
-            // Selecciona automáticamente la primera categoría si existe
             if (listCat.length > 0 && formData.idCategoria === '') {
                 const firstCatId = listCat[0].idCategoria ?? listCat[0].id;
                 setFormData(p => ({ ...p, idCategoria: firstCatId }));
             }
 
-            // 3. Cargar Templates
             const resTemp = await fetch(`${import.meta.env.VITE_API_URL}/api/Svg/obtenerTemplates`, {
                 headers,
                 signal: abortControllerRef.current.signal
@@ -93,10 +90,6 @@ export default function Acuerdos() {
 
     const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         setFormData(prev => ({ ...prev, idEmpresa: e.target.value }));
-    };
-
-    const handleTemplateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        setFormData(prev => ({ ...prev, templateSvg: e.target.value }));
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -189,23 +182,6 @@ export default function Acuerdos() {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className={LABEL_STYLE}><Layout size={12} /> Plantilla en blanco</label>
-                                    <select
-                                        value={formData.templateSvg}
-                                        onChange={handleTemplateChange}
-                                        className={`${INPUT_STYLE} cursor-pointer`}
-                                        disabled={loading}
-                                    >
-                                        <option value="">Lienzo en blanco</option>
-                                        {templates.map(t => (
-                                            <option key={`temp-${t.id}`} value={t.svgOriginal}>
-                                                Template {t.id}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div className="space-y-1">
                                     <label className={LABEL_STYLE}><Calendar size={12} /> Fecha de vencimiento</label>
                                     <input
                                         type="datetime-local"
@@ -234,6 +210,29 @@ export default function Acuerdos() {
                                             <option value="">Sin Categorías</option>
                                         )}
                                     </select>
+                                </div>
+
+                                {/* ALTURA CAMBIADA AQUÍ: py-4 pasó a py-6 para ser más alto */}
+                                <div className="space-y-1">
+                                    <label className={LABEL_STYLE}><Layout size={12} /> Plantilla de Diseño</label>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsModalOpen(true)}
+                                        className="w-full flex items-center justify-between bg-slate-100 border-b border-slate-200 px-4 py-1 hover:bg-slate-200 transition-colors group"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-12 h-12 bg-white border border-slate-300 rounded overflow-hidden flex items-center justify-center">
+                                                {formData.templateSvg ? (
+                                                    <div className="w-full h-full scale-75" dangerouslySetInnerHTML={{ __html: formData.templateSvg }} />
+                                                ) : (
+                                                    <Layout size={18} className="text-slate-400" />
+                                                )}
+                                            </div>
+                                            <span className="text-sm font-semibold text-slate-700">
+                                                {formData.templateSvg ? "Plantilla Seleccionada" : "Lienzo en blanco"}
+                                            </span>
+                                        </div>
+                                    </button>
                                 </div>
 
                                 <div className="md:col-span-2">
@@ -272,6 +271,63 @@ export default function Acuerdos() {
                     </form>
                 </motion.div>
             </main>
+
+            <AnimatePresence>
+                {isModalOpen && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10">
+                        <motion.div
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            onClick={() => setIsModalOpen(false)}
+                            className="absolute inset-0 bg-[#002855]/90 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="relative w-full max-w-6xl bg-white rounded-sm shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+                        >
+                            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                                <div>
+                                    <h3 className="text-xl font-black text-[#002855] uppercase tracking-tighter">Catálogo de Plantillas</h3>
+                                </div>
+                                <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-400">
+                                    <X size={24} />
+                                </button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto p-8 custom-list-scroll">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+                                    <div
+                                        onClick={() => { setFormData(p => ({ ...p, templateSvg: '' })); setIsModalOpen(false); }}
+                                        className={`group cursor-pointer border-2 rounded-lg p-6 h-80 flex flex-col items-center justify-center transition-all ${formData.templateSvg === '' ? 'border-blue-600 bg-blue-50' : 'border-slate-100 bg-slate-50 hover:border-blue-300'}`}
+                                    >
+                                        <Layout size={64} className={formData.templateSvg === '' ? 'text-blue-600' : 'text-slate-300'} />
+                                        <span className="mt-4 text-sm font-black uppercase text-slate-600">Lienzo en Blanco</span>
+                                        {formData.templateSvg === '' && <CheckCircle2 size={24} className="text-blue-600 mt-2" />}
+                                    </div>
+
+                                    {templates.map(t => (
+                                        <div
+                                            key={`modal-temp-${t.id}`}
+                                            onClick={() => { setFormData(p => ({ ...p, templateSvg: t.svgOriginal })); setIsModalOpen(false); }}
+                                            className={`group cursor-pointer border-2 rounded-lg h-80 overflow-hidden transition-all flex flex-col bg-white ${formData.templateSvg === t.svgOriginal ? 'border-blue-600 ring-4 ring-blue-600/10' : 'border-slate-100 hover:border-blue-300 shadow-sm'}`}
+                                        >
+                                            {/* RENDERIZADO SVG MÁS GRANDE AQUÍ: h-80 de card y scale-100/90 */}
+                                            <div className="flex-1 flex items-center justify-center bg-white pointer-events-none overflow-hidden relative p-1">
+                                                <div className="w-full h-full transform scale-90 origin-center transition-transform group-hover:scale-100" dangerouslySetInnerHTML={{ __html: t.svgOriginal }} />
+                                                <div className="absolute inset-0 bg-blue-600/0 group-hover:bg-blue-600/5 transition-colors" />
+                                            </div>
+                                            <div className={`p-4 text-xs font-black text-center uppercase tracking-widest ${formData.templateSvg === t.svgOriginal ? 'bg-blue-600 text-white' : 'bg-slate-50 text-slate-500 border-t border-slate-100'}`}>
+                                                Plantilla {t.id}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
