@@ -29,7 +29,7 @@ const normalizeAcuerdo = (a: any) => ({
     descripcion: String(a?.descripcion ?? ''),
     detallesDescripcion: String(a?.detallesDescripcion ?? a?.descripcion ?? ''),
     imagenUrl: a?.imagenUrl,
-    categoria: a?.categoria || "Institucional",
+    categoria: a?.idCategoria || a?.categoria || "General",
     fechaVencimiento: a?.fechaVencimiento,
     estado: a?.estado || "Activo",
     idEmpresa: a?.idEmpresa
@@ -268,33 +268,39 @@ export default function Panel() {
         </div>
     );
 }
-
-// --- ITEM DE TARJETA REDISEÑADO ---
 const CardItem = memo(({ item, onOpen }: any) => (
     <motion.div
         whileHover={{ y: -8 }}
         whileTap={{ scale: 0.98 }}
         onClick={onOpen}
-        className="group bg-white border border-slate-200 p-6 flex flex-col gap-4 hover:shadow-2xl transition-all relative overflow-hidden cursor-pointer h-full min-h-[250px] rounded-sm"
+        className="group bg-white border border-slate-200 p-6 flex flex-col hover:shadow-2xl transition-all relative overflow-hidden cursor-pointer h-full rounded-none"
     >
+        {/* Línea decorativa lateral */}
         <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 scale-y-0 group-hover:scale-y-100 transition-transform origin-top duration-300" />
 
-        <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
-                <span className="text-[9px] font-black bg-blue-600 text-white px-2 py-0.5 rounded uppercase mb-2 inline-block italic tracking-widest">
-                    {item.categoria}
-                </span>
-                <h4 className="text-lg font-black text-[#002855] uppercase leading-tight tracking-tighter line-clamp-2 group-hover:text-blue-600 transition-colors">
-                    {item.titulo}
-                </h4>
-            </div>
-            <div className="w-16 h-16 bg-slate-50 rounded border border-slate-100 flex items-center justify-center shrink-0 overflow-hidden shadow-inner group-hover:bg-white transition-colors">
-                <img loading="lazy" src={resolveBackendUrl(item.imagenUrl) || PDI_LOGO_URL} className="w-full h-full object-contain p-2" alt="" />
-            </div>
+        {/* 1. Título con Altura Fija (h-20 garantiza 2 líneas de texto) */}
+        <div className="mb-4 h-20 overflow-hidden">
+            <span className="text-[9px] font-black bg-blue-600 text-white px-2 py-0.5 rounded-none uppercase mb-2 inline-block italic tracking-widest">
+                {item.categoria}
+            </span>
+            <h4 className="text-xl font-black text-[#002855] uppercase leading-tight tracking-tighter line-clamp-2 group-hover:text-blue-600 transition-colors">
+                {item.titulo}
+            </h4>
         </div>
 
-        <div className="mt-auto pt-4 border-t border-slate-100">
-            <p className="text-slate-500 text-[11px] font-medium italic line-clamp-3 leading-relaxed">
+        {/* 2. Imagen central con Aspect Ratio fijo para simetría total */}
+        <div className="relative aspect-video bg-slate-50 rounded-none border border-slate-100 overflow-hidden mb-4 group-hover:bg-white transition-colors shadow-inner p-4 flex items-center justify-center">
+            <img
+                loading="lazy"
+                src={resolveBackendUrl(item.imagenUrl) || PDI_LOGO_URL}
+                className="w-full h-full object-contain transform group-hover:scale-110 transition-transform duration-500"
+                alt={item.titulo}
+            />
+        </div>
+
+        {/* 3. Descripción con Altura Fija (h-16 garantiza que el borde inferior sea uniforme) */}
+        <div className="pt-4 border-t border-slate-100 h-16 overflow-hidden">
+            <p className="text-slate-500 text-[11px] font-medium italic line-clamp-2 leading-relaxed">
                 {item.descripcion}
             </p>
         </div>
@@ -314,29 +320,35 @@ const CarouselItem = memo(({ item, isActive, onClick }: any) => (
     <div className="embla__slide flex-[0_0_90%] md:flex-[0_0_42%] px-4">
         <motion.div
             onClick={isActive ? onClick : undefined}
-            animate={{ scale: isActive ? 0.9 : 0.9, opacity: isActive ? 1 : 0.6 }}
-            className={`relative bg-white rounded-none overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.05)] flex flex-col border-none h-full ${isActive ? 'cursor-pointer' : 'cursor-default'}`}
+            animate={{
+                scale: isActive ? 1 : 0.95,
+                opacity: isActive ? 1 : 0.6
+            }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className={`relative bg-white rounded-none overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.1)] flex flex-col border-none h-full ${isActive ? 'cursor-pointer' : 'cursor-default'}`}
         >
-            <div className="relative w-full aspect-[16/9] bg-slate-100 overflow-hidden flex items-center justify-center">
+            {/* 1. Imagen en 4/3 para ocupar todo el ancho (ideal para 800x600) */}
+            <div className="relative w-full aspect-[4/3] bg-slate-100 overflow-hidden flex items-center justify-center border-b border-slate-100">
                 <img
                     src={resolveBackendUrl(item.imagenUrl) || PDI_LOGO_URL}
-                    className="w-full h-full object-contain p-4"
-                    alt=""
+                    className="w-full h-full object-contain p-4" // p-4 da un aire limpio, cámbialo a p-0 si quieres que toque los bordes
+                    alt={item.titulo}
                 />
             </div>
 
-            {/* Ajuste en el contenedor del título */}
-            <div className="bg-white px-8 py-5 flex items-start justify-between gap-4 border-b border-slate-50">
-                <h3 className="text-xl md:text-2xl font-black text-black uppercase leading-tight flex-1 min-w-0 line-clamp-2">
+            {/* 2. Título con Altura Fija (h-24) */}
+            <div className="bg-white px-8 py-5 flex items-start justify-between gap-4 h-24 overflow-hidden border-b border-slate-50">
+                <h3 className="text-xl md:text-2xl font-black text-slate-900 uppercase leading-tight flex-1 min-w-0 line-clamp-2 tracking-tighter">
                     {item.titulo}
                 </h3>
-                <span className="shrink-0 text-[10px] font-black bg-blue-500 text-white px-2 py-1 uppercase tracking-tighter mt-1">
+                <span className="shrink-0 text-[10px] font-black bg-blue-600 text-white px-2 py-1 rounded-none uppercase tracking-tighter mt-1 italic">
                     {item.categoria}
                 </span>
             </div>
 
-            <div className="p-6 bg-white flex-1 flex items-center">
-                <p className="text-slate-600 text-sm font-bold italic line-clamp-2 leading-tight">
+            {/* 3. Descripción con Altura Fija (h-20) */}
+            <div className="px-8 py-6 bg-white h-20 overflow-hidden flex items-center">
+                <p className="text-slate-500 text-sm font-bold italic line-clamp-2 leading-snug">
                     {item.descripcion}
                 </p>
             </div>

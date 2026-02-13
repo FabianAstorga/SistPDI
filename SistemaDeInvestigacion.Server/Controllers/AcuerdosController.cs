@@ -141,7 +141,8 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 FechaVencimiento = acuerdos.fechaVencimiento,
                 IdEstado = 1,
                 FechaCreacion = DateTime.UtcNow,
-                IdEmpresa = acuerdos.idEmpresa
+                IdEmpresa = acuerdos.idEmpresa,
+                IdCategoria = acuerdos.idCategoria,
             };
 
             _context.Acuerdos.Add(NewAcuerdo);

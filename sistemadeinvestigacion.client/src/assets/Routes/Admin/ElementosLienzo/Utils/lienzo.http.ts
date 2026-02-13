@@ -111,6 +111,7 @@ export const guardarAcuerdoFinal = async (params: {
             })(),
             estado: String(pick(acuerdoBase, ['Estado', 'estado'], 'ACTIVO') || 'ACTIVO'),
             idEmpresa: toInt(pick(acuerdoBase, ['IdEmpresa', 'idEmpresa'], 0), 0),
+            idCategoria: toInt(pick(acuerdoBase, ['IdCategoria', 'idCategoria'], 0), 0),
             svgEditado: svgFinal,
             svgOriginal: ''
         };
@@ -119,6 +120,10 @@ export const guardarAcuerdoFinal = async (params: {
             alert('Error: El acuerdo debe tener título y empresa seleccionada.');
             return;
         }
+        console.log("[DEBUG] Datos antes de FormData:", acuerdoFinalObj);
+
+
+
 
         const fd = new FormData();
         Object.entries(acuerdoFinalObj).forEach(([k, v]) => {

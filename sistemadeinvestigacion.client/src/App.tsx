@@ -14,7 +14,7 @@ import InstitucionList from './assets/Routes/Admin/institucionList';
 import { RouteGuard } from './assets/Routes/Admin/RouteGuard';
 import Categoria from './assets/Routes/Admin/categoria';
 import { Lienzo } from './assets/Routes/Admin/ElementosLienzo/Lienzo';
-
+import Unidad from './assets/Routes/Admin/unidad';
 function App() {
     return (
         <SignalRProvider>
@@ -32,6 +32,7 @@ function App() {
                 <Route path="/listarAcuerdos" element={<ListarAcuerdos />} />
                 <Route path="/institucion" element={<Institucion />} />
                 <Route path="/empleado" element={<Empleado />} />
+                <Route path="/unidad" element={<Unidad />} />
                 <Route path="/institucionList" element={<InstitucionList/>} />
 
             </Route>
