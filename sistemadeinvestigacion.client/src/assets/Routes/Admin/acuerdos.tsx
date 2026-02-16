@@ -3,17 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from "framer-motion";
 import { Navbar } from '../../components/Navbar';
 import { Settings2, ArrowRight, Building2, Calendar, FileText, Info, Layout, X, CheckCircle2 } from 'lucide-react';
-
 const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
 const LABEL_STYLE = "text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 flex items-center gap-2";
 const INPUT_STYLE = "w-full bg-slate-100 border-b border-slate-200 text-slate-900 px-4 py-4 outline-none focus:border-[#002855] focus:bg-white transition-all duration-300 font-semibold text-sm";
-
+const FORM_DRAFT_KEY = 'acuerdos_form_draft';
 const getOneYearFromNow = () => {
     const date = new Date();
     date.setFullYear(date.getFullYear() + 1);
     return date.toISOString().slice(0, 16);
 };
-
 export default function Acuerdos() {
     const navigate = useNavigate();
     const [categorias, setCategorias] = useState<any[]>([]);
@@ -22,7 +20,6 @@ export default function Acuerdos() {
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const abortControllerRef = useRef<AbortController | null>(null);
-
     const [formData, setFormData] = useState({
         titulo: '',
         descripcion: '',
@@ -32,11 +29,24 @@ export default function Acuerdos() {
         idCategoria: '' as string | number,
         templateSvg: ''
     });
-
+    useEffect(() => {
+        const savedDraft = localStorage.getItem(FORM_DRAFT_KEY);
+        if (savedDraft) {
+            try {
+                setFormData(JSON.parse(savedDraft));
+            } catch (e) {
+                console.error("Error al restaurar borrador", e);
+            }
+        }
+    }, []);
+    useEffect(() => {
+        if (!loading) {
+            localStorage.setItem(FORM_DRAFT_KEY, JSON.stringify(formData));
+        }
+    }, [formData, loading]);
     const fetchData = useCallback(async () => {
         if (abortControllerRef.current) abortControllerRef.current.abort();
         abortControllerRef.current = new AbortController();
-
         setLoading(true);
         const token = localStorage.getItem('token');
         const headers = { ...(token ? { Authorization: `Bearer ${token}` } : {}) };
@@ -49,12 +59,10 @@ export default function Acuerdos() {
             const dataEmp = await resEmp.json();
             const listEmp = Array.isArray(dataEmp) ? dataEmp : (dataEmp?.$values || []);
             setEmpresas(listEmp);
-
             if (listEmp.length > 0 && formData.idEmpresa === '') {
                 const firstId = listEmp[0].idEmpresa ?? listEmp[0].id;
                 setFormData(p => ({ ...p, idEmpresa: firstId }));
             }
-
             const resCat = await fetch(`${import.meta.env.VITE_API_URL}/api/Categoria/categorias`, {
                 headers,
                 signal: abortControllerRef.current.signal
@@ -62,12 +70,10 @@ export default function Acuerdos() {
             const dataCat = await resCat.json();
             const listCat = Array.isArray(dataCat) ? dataCat : (dataCat?.$values || []);
             setCategorias(listCat);
-
             if (listCat.length > 0 && formData.idCategoria === '') {
                 const firstCatId = listCat[0].idCategoria ?? listCat[0].id;
                 setFormData(p => ({ ...p, idCategoria: firstCatId }));
             }
-
             const resTemp = await fetch(`${import.meta.env.VITE_API_URL}/api/Svg/obtenerTemplates`, {
                 headers,
                 signal: abortControllerRef.current.signal
@@ -82,14 +88,28 @@ export default function Acuerdos() {
             setLoading(false);
         }
     }, [formData.idEmpresa, formData.idCategoria]);
-
     useEffect(() => {
         fetchData();
         return () => abortControllerRef.current?.abort();
     }, [fetchData]);
+    const handleEmpresaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const value = e.target.value;
+        if (value === "CREATE_NEW_ENTITY") {
+            localStorage.setItem(FORM_DRAFT_KEY, JSON.stringify(formData));
+            navigate('/institucion');
+            return;
+        }
+        setFormData(prev => ({ ...prev, idEmpresa: value }));
+    };
 
-    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        setFormData(prev => ({ ...prev, idEmpresa: e.target.value }));
+    const handleCategoriaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const value = e.target.value;
+        if (value === "CREATE_NEW_ENTITY") {
+            localStorage.setItem(FORM_DRAFT_KEY, JSON.stringify(formData));
+            navigate('/Categorias');
+            return;
+        }
+        setFormData(p => ({ ...p, idCategoria: value }));
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -103,21 +123,19 @@ export default function Acuerdos() {
             idCategoria: formData.idCategoria,
         };
         localStorage.setItem('temp_acuerdo', JSON.stringify(payload));
-
         if (formData.templateSvg) {
             localStorage.setItem('template_svg', formData.templateSvg);
         } else {
             localStorage.removeItem('template_svg');
         }
-
         const modoLienzo = {
             tipo: 1,
             nombre: "Modo creacion"
         };
         localStorage.setItem('modo', JSON.stringify(modoLienzo));
+        localStorage.removeItem(FORM_DRAFT_KEY);
         navigate('/lienzo');
     };
-
     return (
         <div className="h-screen w-full bg-[#002855] font-sans text-white overflow-hidden flex flex-col">
             <Navbar />
@@ -165,7 +183,7 @@ export default function Acuerdos() {
                                     <label className={LABEL_STYLE}><Building2 size={12} /> Empresas</label>
                                     <select
                                         value={formData.idEmpresa}
-                                        onChange={handleSelectChange}
+                                        onChange={handleEmpresaChange}
                                         className={`${INPUT_STYLE} cursor-pointer`}
                                         required
                                         disabled={loading}
@@ -178,6 +196,9 @@ export default function Acuerdos() {
                                                 {e.nombre}
                                             </option>
                                         ))}
+                                        <option value="CREATE_NEW_ENTITY" className="font-bold text-blue-600 bg-blue-50">
+                                            Nueva empresa
+                                        </option>
                                     </select>
                                 </div>
 
@@ -196,7 +217,7 @@ export default function Acuerdos() {
                                     <label className={LABEL_STYLE}><Layout size={12} /> Categoría</label>
                                     <select
                                         value={formData.idCategoria}
-                                        onChange={e => setFormData(p => ({ ...p, idCategoria: e.target.value }))}
+                                        onChange={handleCategoriaChange}
                                         className={`${INPUT_STYLE} cursor-pointer`}
                                         required
                                     >
@@ -209,10 +230,12 @@ export default function Acuerdos() {
                                         ) : (
                                             <option value="">Sin Categorías</option>
                                         )}
+                                        <option value="CREATE_NEW_ENTITY" className="font-bold text-blue-600 bg-blue-50">
+                                            Nueva categoria
+                                        </option>
                                     </select>
                                 </div>
 
-                                {/* ALTURA CAMBIADA AQUÍ: py-4 pasó a py-6 para ser más alto */}
                                 <div className="space-y-1">
                                     <label className={LABEL_STYLE}><Layout size={12} /> Plantilla de Diseño</label>
                                     <button
@@ -301,9 +324,7 @@ export default function Acuerdos() {
                                         onClick={() => { setFormData(p => ({ ...p, templateSvg: '' })); setIsModalOpen(false); }}
                                         className={`group cursor-pointer border-2 rounded-lg p-6 h-80 flex flex-col items-center justify-center transition-all ${formData.templateSvg === '' ? 'border-blue-600 bg-blue-50' : 'border-slate-100 bg-slate-50 hover:border-blue-300'}`}
                                     >
-                                        <Layout size={64} className={formData.templateSvg === '' ? 'text-blue-600' : 'text-slate-300'} />
                                         <span className="mt-4 text-sm font-black uppercase text-slate-600">Lienzo en Blanco</span>
-                                        {formData.templateSvg === '' && <CheckCircle2 size={24} className="text-blue-600 mt-2" />}
                                     </div>
 
                                     {templates.map(t => (
@@ -312,7 +333,6 @@ export default function Acuerdos() {
                                             onClick={() => { setFormData(p => ({ ...p, templateSvg: t.svgOriginal })); setIsModalOpen(false); }}
                                             className={`group cursor-pointer border-2 rounded-lg h-80 overflow-hidden transition-all flex flex-col bg-white ${formData.templateSvg === t.svgOriginal ? 'border-blue-600 ring-4 ring-blue-600/10' : 'border-slate-100 hover:border-blue-300 shadow-sm'}`}
                                         >
-                                            {/* RENDERIZADO SVG MÁS GRANDE AQUÍ: h-80 de card y scale-100/90 */}
                                             <div className="flex-1 flex items-center justify-center bg-white pointer-events-none overflow-hidden relative p-1">
                                                 <div className="w-full h-full transform scale-90 origin-center transition-transform group-hover:scale-100" dangerouslySetInnerHTML={{ __html: t.svgOriginal }} />
                                                 <div className="absolute inset-0 bg-blue-600/0 group-hover:bg-blue-600/5 transition-colors" />
