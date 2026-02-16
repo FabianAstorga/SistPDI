@@ -8,23 +8,16 @@ import { LoginDrawer } from "./LoginDrawer";
 import { X, RefreshCw, Send, MessageSquare, Trash2, Search, FileText } from 'lucide-react';
 import { useSignalR } from "../../../context/SignalRContext";
 import { PDFDownloadLink } from "@react-pdf/renderer";
-import { PDFDocument } from "./PDFDocument"; // Asegúrate de que la ruta sea correcta
-
-/** * PANEL PRINCIPAL V14.0 - PDI Intranet 2026
- * Fix: Sección 3 con Grid de Cards, Snap Scrolling y Scrollbar a la Izquierda.
- */
-
+import { PDFDocument } from "./PDFDocument"; 
 const API_BASE = import.meta.env.VITE_API_URL;
 const PDI_LOGO_URL = "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png";
 const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
-
 const resolveBackendUrl = (path?: string | null) => {
     if (!path) return null;
     const s = String(path).trim();
     if (!s || /^http?:\/\//i.test(s)) return s || null;
     return `${API_BASE}${s.startsWith('/') ? s : `/${s}`}`;
 };
-
 const normalizeAcuerdo = (a: any) => ({
     id: Number(a?.idAcuerdo ?? a?.id ?? 0),
     titulo: String(a?.titulo ?? ''),
@@ -36,20 +29,17 @@ const normalizeAcuerdo = (a: any) => ({
     estado: a?.estado || "Activo",
     idEmpresa: a?.idEmpresa
 });
-
 const FADE_VARIANT = {
     initial: { opacity: 0, y: 15 },
     animate: { opacity: 1, y: 0 },
     exit: { opacity: 0, y: -15 }
 };
-
 export default function Panel() {
     const navigate = useNavigate();
     const location = useLocation();
     const carouselRef = useRef<HTMLElement | null>(null);
     const listSectionRef = useRef<HTMLElement | null>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
-
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isLoginOpen, setIsLoginOpen] = useState(false);
     const [userName, setUserName] = useState("");
@@ -58,17 +48,14 @@ export default function Panel() {
     const [loading, setLoading] = useState(true);
     const [modalData, setModalData] = useState<any | null>(null);
     const [inputSearch, setInputSearch] = useState("");
-
     const { connection } = useSignalR();
     const currentYear = useMemo(() => new Date().getFullYear(), []);
     const handleCloseModal = useCallback(() => setModalData(null), []);
     const handleOpenModal = useCallback((item: any) => setModalData(item), []);
-
     useEffect(() => {
         document.body.style.overflow = 'hidden';
         return () => { document.body.style.overflow = 'unset'; };
     }, []);
-
     const fetchData = useCallback(async () => {
         if (abortControllerRef.current) abortControllerRef.current.abort();
         abortControllerRef.current = new AbortController();
@@ -90,7 +77,6 @@ export default function Panel() {
             setLoading(false);
         }
     }, []);
-
     useEffect(() => {
         if (connection) {
             const handleRefresh = () => fetchData();
@@ -98,7 +84,6 @@ export default function Panel() {
             return () => { connection.off("RecibirActualizacionAcuerdos", handleRefresh); };
         }
     }, [connection, fetchData]);
-
     const checkSession = useCallback(() => {
         const token = localStorage.getItem('token');
         const userJson = localStorage.getItem('user');
@@ -115,29 +100,23 @@ export default function Panel() {
         }
         fetchData();
     }, [location.pathname, navigate, fetchData]);
-
     useEffect(() => {
         checkSession();
         return () => { abortControllerRef.current?.abort(); };
     }, [checkSession]);
-
     const [emblaRef, emblaApi] = useEmblaCarousel(
         { loop: true, align: "center", duration: 25 },
         [Autoplay({ delay: 5000, stopOnInteraction: false })]
     );
-
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
-
     const onSelect = useCallback(() => {
         if (!emblaApi) return;
         setSelectedIndex(emblaApi.selectedScrollSnap());
     }, [emblaApi]);
-
     const scrollTo = useCallback((index: number) => {
         if (emblaApi) emblaApi.scrollTo(index);
     }, [emblaApi]);
-
     useEffect(() => {
         if (!emblaApi) return;
         onSelect();
@@ -145,12 +124,10 @@ export default function Panel() {
         emblaApi.on("select", onSelect).on("reInit", onSelect);
         return () => { emblaApi.off("select", onSelect).off("reInit", onSelect); };
     }, [emblaApi, onSelect]);
-
     const filtered = useMemo(() => {
         const q = inputSearch.toLowerCase();
         return acuerdos.filter(a => a.titulo.toLowerCase().includes(q));
     }, [inputSearch, acuerdos]);
-
     return (
         <div className="fixed inset-0 overflow-hidden bg-white font-sans text-slate-900 selection:bg-[#002855] selection:text-white">
             <AnimatePresence>
@@ -160,10 +137,7 @@ export default function Panel() {
                     </motion.div>
                 )}
             </AnimatePresence>
-
             <div className="h-full overflow-y-auto snap-y snap-mandatory scroll-smooth overflow-x-hidden custom-list-scroll">
-
-                {/* SECCIÓN 1: HERO */}
                 <section className={`snap-start w-full h-screen flex flex-col items-center justify-center px-6 relative bg-[#002855] transition-all duration-700 ${isLoggedIn ? 'pt-16' : ''}`}>
                     <div className="absolute inset-0 bg-cover bg-center opacity-40 animate-pulse-slow pointer-events-none" style={{ backgroundImage: `url(${HERO_BG})` }} />
                     <div className="max-w-5xl mx-auto text-center z-10">
@@ -188,8 +162,6 @@ export default function Panel() {
                         </div>
                     </div>
                 </section>
-
-                {/* SECCIÓN 2: CARRUSEL */}
                 <section ref={carouselRef} className="snap-start w-full h-screen flex flex-col justify-center bg-slate-200 relative overflow-hidden transition-colors duration-500">
                     <div className="max-w-7xl mx-auto w-full px-6 mb-2 text-center">
                         <h2 className="text-3xl md:text-4xl font-black text-[#002855] uppercase tracking-tighter">Ultimos Acuerdos</h2>
@@ -205,12 +177,8 @@ export default function Panel() {
                     </div>
                     <CarouselDots snaps={scrollSnaps} selectedIndex={selectedIndex} onDotClick={scrollTo} />
                 </section>
-
-                {/* SECCIÓN 3: CATÁLOGO (Grid con Scroll a la Izquierda) */}
                 <section ref={listSectionRef} className="snap-start w-full h-screen bg-[#002855] text-white py-12 px-6 flex flex-col items-center overflow-hidden">
                     <div className="max-w-7xl mx-auto w-full flex flex-col h-full">
-
-                        {/* Cabecera */}
                         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 shrink-0">
                             <div>
                                 <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter leading-none">Catálogo General</h2>
@@ -225,10 +193,7 @@ export default function Panel() {
                                 />
                             </div>
                         </div>
-
-                        {/* Contenedor con Scroll a la Izquierda (RTL trick) */}
                         <div className="flex-1 overflow-y-auto custom-list-scroll pr-2" style={{ direction: 'rtl' }}>
-                            {/* Revertimos la dirección para el contenido */}
                             <div style={{ direction: 'ltr' }} className="pl-6">
                                 {loading ? (
                                     <div className="flex flex-col items-center justify-center py-40">
@@ -253,8 +218,6 @@ export default function Panel() {
                     </div>
                 </section>
             </div>
-
-            {/* Modales */}
             <AnimatePresence>
                 {modalData && <ModalDetalle data={modalData} onClose={handleCloseModal} />}
             </AnimatePresence>
@@ -277,10 +240,7 @@ const CardItem = memo(({ item, onOpen }: any) => (
         onClick={onOpen}
         className="group bg-white border border-slate-200 p-6 flex flex-col hover:shadow-2xl transition-all relative overflow-hidden cursor-pointer h-full rounded-none"
     >
-        {/* Línea decorativa lateral */}
         <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 scale-y-0 group-hover:scale-y-100 transition-transform origin-top duration-300" />
-
-        {/* 1. Título con Altura Fija (h-20 garantiza 2 líneas de texto) */}
         <div className="mb-4 h-20 overflow-hidden">
             <span className="text-[9px] font-black bg-blue-600 text-white px-2 py-0.5 rounded-none uppercase mb-2 inline-block italic tracking-widest">
                 {item.categoria}
@@ -289,8 +249,6 @@ const CardItem = memo(({ item, onOpen }: any) => (
                 {item.titulo}
             </h4>
         </div>
-
-        {/* 2. Imagen central con Aspect Ratio fijo para simetría total */}
         <div className="relative aspect-video bg-slate-50 rounded-none border border-slate-100 overflow-hidden mb-4 group-hover:bg-white transition-colors shadow-inner p-4 flex items-center justify-center">
             <img
                 loading="lazy"
@@ -299,8 +257,6 @@ const CardItem = memo(({ item, onOpen }: any) => (
                 alt={item.titulo}
             />
         </div>
-
-        {/* 3. Descripción con Altura Fija (h-16 garantiza que el borde inferior sea uniforme) */}
         <div className="pt-4 border-t border-slate-100 h-16 overflow-hidden">
             <p className="text-slate-500 text-[11px] font-medium italic line-clamp-2 leading-relaxed">
                 {item.descripcion}
@@ -309,7 +265,6 @@ const CardItem = memo(({ item, onOpen }: any) => (
     </motion.div>
 ));
 
-// --- RESTO DE COMPONENTES IGUALES ---
 const CarouselDots = memo(({ snaps, selectedIndex, onDotClick }: any) => (
     <div className="flex justify-center gap-3 mt-8">
         {snaps.map((_: any, i: number) => (
