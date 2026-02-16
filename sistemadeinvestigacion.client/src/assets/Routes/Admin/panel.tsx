@@ -5,8 +5,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Navbar } from "../../components/Navbar";
 import { LoginDrawer } from "./LoginDrawer";
-import { X, RefreshCw, Send, MessageSquare, Trash2, Search } from 'lucide-react';
+import { X, RefreshCw, Send, MessageSquare, Trash2, Search, FileText } from 'lucide-react';
 import { useSignalR } from "../../../context/SignalRContext";
+import { PDFDownloadLink } from "@react-pdf/renderer";
+import { PDFDocument } from "./PDFDocument"; // Asegúrate de que la ruta sea correcta
 
 /** * PANEL PRINCIPAL V14.0 - PDI Intranet 2026
  * Fix: Sección 3 con Grid de Cards, Snap Scrolling y Scrollbar a la Izquierda.
@@ -425,7 +427,21 @@ const ModalDetalle = memo(({ data, onClose }: any) => {
                     <div className="flex-1 min-w-0 pr-6">
                         <h2 className="text-2xl md:text-5xl font-black text-[#002855] uppercase leading-none truncate tracking-tighter">{data.titulo}</h2>
                     </div>
-                    <div className="flex items-center gap-8 shrink-0">
+                    <div className="flex items-center gap-4 md:gap-8 shrink-0">
+                        <PDFDownloadLink
+                            document={<PDFDocument data={data} logoUrl={resolveBackendUrl(data.imagenUrl)} />}
+                            fileName={`Acuerdo_${data.titulo.replace(/\s+/g, '_')}.pdf`}
+                        >
+                            {({ loading }) => (
+                                <button
+                                    disabled={loading}
+                                    className="flex items-center gap-2 px-4 py-2 md:px-6 md:py-3 bg-red-600 text-white font-black uppercase text-[10px] md:text-xs hover:bg-red-700 transition-all shadow-lg disabled:opacity-50"
+                                >
+                                    <FileText size={18} />
+                                    <span className="hidden md:inline">{loading ? "Generando..." : "Descargar PDF"}</span>
+                                </button>
+                            )}
+                        </PDFDownloadLink>
                         <button onClick={onClose} className="p-2 bg-slate-50 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all rounded-full"><X size={32} /></button>
                     </div>
                 </header>
