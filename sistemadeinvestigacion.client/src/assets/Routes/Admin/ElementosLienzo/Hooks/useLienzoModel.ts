@@ -1,4 +1,5 @@
-﻿/* eslint-disable @typescript-eslint/no-unused-expressions */
+﻿/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import type { LienzoModel } from '../types/lienzo.model';
 import type { DragHandle, Herramienta, Pt } from '../types/lienzo.types';
@@ -113,25 +114,33 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
         };
     }, [elementos]);
 
+
     useEffect(() => {
         const modoRaw = localStorage.getItem('modo');
         const modoParsed = modoRaw ? JSON.parse(modoRaw) : { tipo: 1 };
         setModo(modoParsed);
 
+        const templateSvg = localStorage.getItem('template_svg');
+
+        if (templateSvg) {
+            const iniciales = reconstruirEstadoDesdeGruposSVG(templateSvg);
+            setElementos(iniciales);
+        }
+
         if (modoParsed.tipo === 3) {
             const tempCambio = localStorage.getItem('temp_cambio');
             if (tempCambio) {
                 const data = JSON.parse(tempCambio);
-                setElementos(data.elementos || []);
                 setTituloAcuerdo(data.titulo || 'Editando Acuerdo');
             }
         } else {
-            const templateSvg = localStorage.getItem('template_svg');
-            if (templateSvg) {
-                const iniciales = reconstruirEstadoDesdeGruposSVG(templateSvg);
-                setElementos(iniciales);
+            const tempAcuerdo = localStorage.getItem('temp_acuerdo');
+            if (tempAcuerdo) {
+                const data = JSON.parse(tempAcuerdo);
+                setTituloAcuerdo(data.titulo || 'Nuevo Proyecto');
             }
         }
+
         setAutorNombre(readUserNameFromLocalStorage());
     }, []);
 

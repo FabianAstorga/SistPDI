@@ -4,10 +4,6 @@ export const clamp = (n: number, a: number, b: number) => Math.max(a, Math.min(b
 export const clonePts = (pts: Pt[]) => pts.map((p) => ({ x: p.x, y: p.y }));
 export const ptsToString = (pts: Pt[]) => pts.map((p) => `${p.x},${p.y}`).join(' ');
 
-/**
- * Ahora todas las figuras son tratadas como polígonos editables 
- * porque todas se basan en un array de puntos (pointsArr).
- */
 export const isEditablePolygon = (type: string) =>
     ['rectangulo', 'circulo', 'triangulo', 'estrella', 'rombo', 'hexagono', 'octagono'].includes(type);
 
@@ -15,15 +11,10 @@ export const isStrokeType = (type: string) => ['linea', 'flecha', 'curva'].inclu
 
 export const isEditableByPoints = (el: any) => Array.isArray(el?.pointsArr) && el.pointsArr.length >= 2;
 
-/**
- * Generador universal de puntos para figuras.
- * Define la "anatomía" interna del grupo semántico.
- */
 export const getBasePolygonPoints = (type: string, w: number, h: number): Pt[] => {
     const W = w || 120;
     const H = h || 120;
 
-    // El rectángulo ahora es un polígono de 4 puntos
     if (type === 'rectangulo') {
         return [
             { x: 0, y: 0 },
@@ -48,8 +39,6 @@ export const getBasePolygonPoints = (type: string, w: number, h: number): Pt[] =
             { x: 0, y: H / 2 }
         ];
 
-    // Para el círculo, generamos una aproximación de 32 puntos
-    // Esto permite deformar el "círculo" punto por punto si se desea
     if (type === 'circulo') {
         const pts: Pt[] = [];
         const res = 32;
@@ -113,10 +102,6 @@ export const svgPointFromMouse = (svgEl: SVGSVGElement, clientX: number, clientY
     return { x: p.x, y: p.y };
 };
 
-/**
- * Esta función es clave: traduce una coordenada global a la local del grupo
- * aplicando la inversa de la rotación y el flip.
- */
 export const applyInverseElTransformToPoint = (pWorld: Pt, el: any): Pt => {
     const w = el.width || 120;
     const h = el.height || 120;
@@ -141,7 +126,6 @@ export const applyInverseElTransformToPoint = (pWorld: Pt, el: any): Pt => {
     return { x: x + w / 2, y: y + h / 2 };
 };
 
-// ===== Helpers para normalización de grupos (Trazos) =====
 
 export const bboxFromPts = (pts: Pt[]) => {
     let minX = Number.POSITIVE_INFINITY;
@@ -160,9 +144,6 @@ export const bboxFromPts = (pts: Pt[]) => {
     return { minX, minY, maxX, maxY };
 };
 
-/**
- * Convierte un dibujo libre en un grupo semántico con Bounding Box.
- */
 export const normalizePtsToLocal = (ptsWorld: Pt[]) => {
     const { minX, minY, maxX, maxY } = bboxFromPts(ptsWorld);
     const w = Math.max(1, maxX - minX);
@@ -171,9 +152,6 @@ export const normalizePtsToLocal = (ptsWorld: Pt[]) => {
     return { x: minX, y: minY, w, h, ptsLocal };
 };
 
-/**
- * Traduce el array de puntos a un comando de dibujo SVG nativo.
- */
 export const buildStrokePathD = (el: any) => {
     const pts: Pt[] = Array.isArray(el?.pointsArr) ? el.pointsArr : [];
     if (el.type === 'linea' || el.type === 'flecha') {

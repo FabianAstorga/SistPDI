@@ -29,7 +29,7 @@ const sanitizeSvgString = (svgString: string): string => {
         });
         const resultadoFinal = new XMLSerializer().serializeToString(svg);
         console.log("[HTTP] ✅ SVG Sanitizado listo para enviar/descargar. Tamaño caracteres:", resultadoFinal.length);
-        return new XMLSerializer().serializeToString(svg);
+        return resultadoFinal;
     } catch {
         return svgString;
     }
@@ -54,17 +54,12 @@ export const guardarAcuerdoFinal = async (params: {
 }) => {
     const { navigate, modo } = params;
     const token = localStorage.getItem('token');
-
-    // Determinamos la fuente de datos
     const storageKey = modo.tipo === 3 ? 'temp_cambio' : 'temp_acuerdo';
     const storageRaw = localStorage.getItem(storageKey);
-
-    if (!token || (!storageRaw && modo.tipo !== 2)) {
+    if (!token || (modo.tipo === 1 && !storageRaw) || (modo.tipo === 2 && false)) {
         alert('Error: Faltan datos o la sesión expiró.');
         return;
     }
-
-    // 1. Obtención y limpieza del SVG
     const maybeFn = params.getSvgString;
     const rawSvgString =
         typeof maybeFn === 'function'
@@ -77,7 +72,6 @@ export const guardarAcuerdoFinal = async (params: {
     }
     const svgFinal = sanitizeSvgString(rawSvgString);
 
-    // 2. Configuración dinámica según Modo
     let url = `${import.meta.env.VITE_API_URL}/api/Acuerdos/crear`;
     let method = 'POST';
     let body: any = null;
@@ -86,7 +80,6 @@ export const guardarAcuerdoFinal = async (params: {
     };
 
     if (modo.tipo === 2) {
-        // --- LÓGICA MODO 2: TEMPLATE (JSON) ---
         url = `${import.meta.env.VITE_API_URL}/api/Svg/crearTemplate`;
         headers['Content-Type'] = 'application/json';
         body = JSON.stringify({
@@ -94,50 +87,51 @@ export const guardarAcuerdoFinal = async (params: {
             estado: true
         });
     } else {
-        // --- LÓGICA MODOS 1 Y 3: ACUERDOS (FormData) ---
+        const fd = new FormData();
+        const acuerdoBase = safeJson(storageRaw) || {};
+
         if (modo.tipo === 3 && modo.id) {
             url = `${import.meta.env.VITE_API_URL}/api/Acuerdos/editar/${modo.id}`;
-            method = 'PUT';
+            method = 'PATCH';
+
+            if (acuerdoBase.titulo) fd.append('titulo', acuerdoBase.titulo);
+            if (acuerdoBase.descripcion) fd.append('descripcion', acuerdoBase.descripcion);
+            if (acuerdoBase.detallesDescripcion) fd.append('detallesDescripcion', acuerdoBase.detallesDescripcion);
+            if (acuerdoBase.idEmpresa) fd.append('idEmpresa', String(acuerdoBase.idEmpresa));
+            if (acuerdoBase.idCategoria) fd.append('idCategoria', String(acuerdoBase.idCategoria));
+
+            if (acuerdoBase.fechaVencimiento) {
+                fd.append('fechaVencimiento', new Date(acuerdoBase.fechaVencimiento).toISOString());
+            }
+
+            fd.append('svg_editado', svgFinal);
+
+        } else {
+            fd.append('titulo', String(pick(acuerdoBase, ['Titulo', 'titulo'], '') || '').trim());
+            fd.append('descripcion', String(pick(acuerdoBase, ['Descripcion', 'descripcion'], '') || '').trim());
+            fd.append('detallesDescripcion', String(pick(acuerdoBase, ['DetallesDescripcion', 'detallesDescripcion'], '') || '').trim());
+
+            const fVenc = pick(acuerdoBase, ['FechaVencimiento', 'fechaVencimiento'], null);
+            fd.append('fechaVencimiento', fVenc ? new Date(fVenc).toISOString() : new Date().toISOString());
+
+            fd.append('idEmpresa', String(toInt(pick(acuerdoBase, ['IdEmpresa', 'idEmpresa'], 0), 0)));
+            fd.append('idCategoria', String(toInt(pick(acuerdoBase, ['IdCategoria', 'idCategoria'], 0), 0)));
+            fd.append('estado', 'ACTIVO');
+            fd.append('svgEditado', svgFinal);
+            fd.append('svgOriginal', localStorage.getItem('template_svg') || '');
+
+            if (!fd.get('titulo') || fd.get('idEmpresa') === '0') {
+                alert('Error: El acuerdo debe tener título y empresa seleccionada.');
+                return;
+            }
         }
 
-        const acuerdoBase = safeJson(storageRaw) || {};
-        const acuerdoFinalObj: any = {
-            titulo: String(pick(acuerdoBase, ['Titulo', 'titulo'], '') || '').trim(),
-            descripcion: String(pick(acuerdoBase, ['Descripcion', 'descripcion'], '') || '').trim(),
-            detallesDescripcion: String(pick(acuerdoBase, ['DetallesDescripcion', 'detallesDescripcion'], '') || '').trim(),
-            fechaVencimiento: (() => {
-                const raw = pick(acuerdoBase, ['FechaVencimiento', 'fechaVencimiento'], null);
-                return raw ? new Date(raw).toISOString() : new Date().toISOString();
-            })(),
-            estado: String(pick(acuerdoBase, ['Estado', 'estado'], 'ACTIVO') || 'ACTIVO'),
-            idEmpresa: toInt(pick(acuerdoBase, ['IdEmpresa', 'idEmpresa'], 0), 0),
-            idCategoria: toInt(pick(acuerdoBase, ['IdCategoria', 'idCategoria'], 0), 0),
-            svgEditado: svgFinal,
-            svgOriginal: ''
-        };
-
-        if (!acuerdoFinalObj.titulo || !acuerdoFinalObj.idEmpresa) {
-            alert('Error: El acuerdo debe tener título y empresa seleccionada.');
-            return;
-        }
-        console.log("[DEBUG] Datos antes de FormData:", acuerdoFinalObj);
-
-        const fd = new FormData();
-        Object.entries(acuerdoFinalObj).forEach(([k, v]) => {
-            if (v === undefined || v === null) return;
-            fd.append(k, String(v));
-        });
-
-        // --- CAMBIO: AGREGAR ARRAY DE UNIDADES ---
         const idsUnidades = pick(acuerdoBase, ['idsUnidades', 'IdsUnidades'], []);
         if (Array.isArray(idsUnidades)) {
-            idsUnidades.forEach((id: number) => {
-                fd.append('idsUnidades', String(id));
-            });
+            idsUnidades.forEach((id: number) => fd.append('idsUnidades', String(id)));
         }
 
         body = fd;
-        // El navegador gestiona el Content-Type para FormData automáticamente
     }
 
     console.log(`[HTTP] Enviando a ${url} con método ${method}. Modo: ${modo.tipo}`);
@@ -154,8 +148,8 @@ export const guardarAcuerdoFinal = async (params: {
         if (resAcuerdo.ok) {
             alert(modo.tipo === 2 ? 'Plantilla guardada.' : 'Acuerdo procesado exitosamente.');
 
-            // Limpieza de estados temporales
-            localStorage.removeItem(storageKey);
+            localStorage.removeItem('temp_cambio');
+            localStorage.removeItem('temp_acuerdo');
             localStorage.removeItem('modo');
             localStorage.removeItem('template_svg');
 

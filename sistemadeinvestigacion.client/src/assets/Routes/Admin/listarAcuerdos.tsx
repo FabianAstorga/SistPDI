@@ -10,12 +10,13 @@ import {
     Save,
     Info,
     FileText,
-    Loader2
+    Loader2,
+    ArrowRight
 } from 'lucide-react';
 import { Virtuoso } from 'react-virtuoso';
+import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../../components/Navbar';
 import { useSignalR } from '../../../context/SignalRContext';
-
 const API_BASE = import.meta.env.VITE_API_URL;
 const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
 const PLACEHOLDER_IMG = "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png";
@@ -268,9 +269,10 @@ const AcuerdoItem = memo(({ acuerdo, onOpen, onToggle }: {
 
 const ModalConfiguracion = ({ id, empresas, onClose, onSuccess }: { id: number, empresas: any[], onClose: () => void, onSuccess: () => void }) => {
     const [data, setData] = useState<any>(null);
-    const [formChanges, setFormChanges] = useState<any>({}); 
+    const [formChanges, setFormChanges] = useState<any>({});
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchById = async () => {
@@ -331,6 +333,39 @@ const ModalConfiguracion = ({ id, empresas, onClose, onSuccess }: { id: number, 
             }
         } catch (error) {
             console.error("Error de red:", error);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleIrAlEditor = async () => {
+        setSaving(true);
+        const token = localStorage.getItem('token');
+
+        if (Object.keys(formChanges).length > 0) {
+            localStorage.setItem('temp_cambio', JSON.stringify(formChanges));
+        } else {
+            localStorage.removeItem('temp_cambio');
+        }
+
+        try {
+            const res = await fetch(`${API_BASE}/api/Svg/svgAcuerdo/${id}`, {
+                headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+            });
+
+            if (res.ok) {
+                const svgData = await res.json();
+
+                localStorage.setItem('template_svg', svgData.svg_editado);
+
+                const modoLienzo = { tipo: 3, id: id, nombre: "Modo Edición" };
+                localStorage.setItem('modo', JSON.stringify(modoLienzo));
+                navigate('/lienzo');
+            } else {
+                console.error("Error al obtener el SVG del acuerdo");
+            }
+        } catch (error) {
+            console.error("Error de conexión:", error);
         } finally {
             setSaving(false);
         }
@@ -437,16 +472,29 @@ const ModalConfiguracion = ({ id, empresas, onClose, onSuccess }: { id: number, 
                         </div>
                     </div>
 
-                    <div className="absolute bottom-10 right-10">
+                    <div className="absolute bottom-10 left-10 right-10 flex justify-between">
                         <button
                             type="submit"
                             disabled={saving}
-                            className="h-16 w-16 rounded-full bg-[#002855] text-white flex items-center justify-center hover:bg-green-600 hover:scale-110 shadow-2xl transition-all duration-300 group disabled:bg-slate-300"
+                            className="h-16 w-16 rounded-full bg-[#002855] text-white flex items-center justify-center hover:bg-green-600 hover:scale-110 shadow-2xl transition-all duration-300 group disabled:bg-slate-300 pointer-events-auto"
                         >
                             {saving ? (
                                 <Loader2 size={28} className="animate-spin" />
                             ) : (
                                 <Save size={28} className="group-hover:rotate-6 transition-transform" />
+                            )}
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={handleIrAlEditor}
+                            disabled={saving}
+                            className="h-16 w-16 rounded-full bg-[#002855] text-white flex items-center justify-center hover:bg-blue-600 hover:scale-110 shadow-2xl transition-all duration-300 group disabled:bg-slate-300 pointer-events-auto"
+                        >
+                            {saving ? (
+                                <Loader2 size={28} className="animate-spin" />
+                            ) : (
+                                <ArrowRight size={28} className="group-hover:translate-x-1 transition-transform" />
                             )}
                         </button>
                     </div>
