@@ -15,7 +15,7 @@ const sanitizeSvgString = (svgString: string): string => {
         const doc = parser.parseFromString(svgString, 'image/svg+xml');
         console.log("[HTTP] 🧹 Iniciando sanitización del SVG...");
         const nodosEditor = doc.querySelectorAll('[data-editor="1"]');
-        console.log(`[HTTP] 🗑️ Eliminando ${nodosEditor.length} elementos de interfaz (manejadores/nodos)`);   
+        console.log(`[HTTP] 🗑️ Eliminando ${nodosEditor.length} elementos de interfaz (manejadores/nodos)`);
         const svg = doc.querySelector('svg');
         if (!svg) return svgString;
         svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
@@ -122,14 +122,20 @@ export const guardarAcuerdoFinal = async (params: {
         }
         console.log("[DEBUG] Datos antes de FormData:", acuerdoFinalObj);
 
-
-
-
         const fd = new FormData();
         Object.entries(acuerdoFinalObj).forEach(([k, v]) => {
             if (v === undefined || v === null) return;
             fd.append(k, String(v));
         });
+
+        // --- CAMBIO: AGREGAR ARRAY DE UNIDADES ---
+        const idsUnidades = pick(acuerdoBase, ['idsUnidades', 'IdsUnidades'], []);
+        if (Array.isArray(idsUnidades)) {
+            idsUnidades.forEach((id: number) => {
+                fd.append('idsUnidades', String(id));
+            });
+        }
+
         body = fd;
         // El navegador gestiona el Content-Type para FormData automáticamente
     }

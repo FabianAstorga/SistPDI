@@ -457,4 +457,4 @@ const ModalDetalle = memo(({ data, onClose }: any) => {
             </motion.div>
         </div>
     );
-});
+}); 

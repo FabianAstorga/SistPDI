@@ -19,7 +19,10 @@ import {
     EyeOff,
     AlertCircle,
     LockIcon,
-    Plus
+    Plus,
+    Boxes,
+    Building2
+    
 } from 'lucide-react';
 
 const FAST_TRANSITION = { type: "spring", stiffness: 400, damping: 30 };
@@ -34,6 +37,7 @@ export default function AdministracionIdentidad() {
     const [usuarios, setUsuarios] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
+    const [unidades, setUnidades] = useState<any[]>([]);
     const [selectedFunc, setSelectedFunc] = useState<any | null>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -64,14 +68,18 @@ export default function AdministracionIdentidad() {
         try {
             const token = localStorage.getItem('token');
             const headers = { 'Accept': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
-            const [resFunc, resUsr] = await Promise.all([
+            const [resFunc, resUsr, resUni] = await Promise.all([
                 fetch(`${API_BASE}/api/Funcionarios`, { headers, signal: abortControllerRef.current.signal }),
-                fetch(`${API_BASE}/api/Users`, { headers, signal: abortControllerRef.current.signal })
+                fetch(`${API_BASE}/api/Users`, { headers, signal: abortControllerRef.current.signal }),
+                fetch(`${API_BASE}/api/Unidad`, { headers, signal: abortControllerRef.current.signal }) // Nueva API
             ]);
             const dataFunc = await resFunc.json();
             const dataUsr = await resUsr.json();
+            const dataUni = await resUni.json();
             setFuncionarios(Array.isArray(dataFunc) ? dataFunc : []);
             setUsuarios(Array.isArray(dataUsr) ? dataUsr : []);
+            const listUni = Array.isArray(dataUni) ? dataUni : (dataUni?.$values || []);
+            setUnidades(listUni);
         } catch (e: any) { if (e.name !== 'AbortError') console.error("Sync Error:", e); }
         finally { setLoading(false); }
     }, []);
@@ -86,14 +94,31 @@ export default function AdministracionIdentidad() {
     }, [fetchData]);
 
     const unifiedData = useMemo(() => {
+        // 1. Mapa de usuarios para búsqueda rápida por RUT
         const userMap = new Map();
         usuarios.forEach(u => userMap.set(cleanRut(u.rut), u));
 
-        const base = funcionarios
-            .map(f => ({
-                funcionario: f,
+        // 2. Mapa de unidades para búsqueda rápida por ID
+        // Esto es lo que permite "cruzar" los datos localmente
+        const unidadMap = new Map();
+        unidades.forEach(uni => {
+            const id = uni.idUnidad ?? uni.id;
+            if (id) unidadMap.set(Number(id), uni);
+        });
+
+        const base = funcionarios.map(f => {
+            // Buscamos la unidad en nuestro mapa usando el idUnidad del funcionario
+            const unidadEncontrada = unidadMap.get(Number(f.idUnidad));
+
+            return {
+                funcionario: {
+                    ...f,
+                    // Si el backend no trajo 'unidad', le ponemos la que encontramos nosotros
+                    unidad: f.unidad || unidadEncontrada
+                },
                 usuario: userMap.get(cleanRut(f.rut)) || null
-            }))
+            };
+        })
             .filter(item => {
                 if (!currentUserId) return true;
                 return item.usuario?.idPersona !== currentUserId;
@@ -103,9 +128,12 @@ export default function AdministracionIdentidad() {
         const q = search.toLowerCase();
         return base.filter(item =>
             item.funcionario.rut.toLowerCase().includes(q) ||
-            item.funcionario.nombreCompleto?.toLowerCase().includes(q)
+            item.funcionario.nombreCompleto?.toLowerCase().includes(q) ||
+            // Ahora también puedes buscar por el nombre de la unidad cruzada
+            item.funcionario.unidad?.nombre?.toLowerCase().includes(q)
         );
-    }, [funcionarios, usuarios, search, currentUserId]);
+        // IMPORTANTE: Agregamos 'unidades' a las dependencias para que se refresque al cargar
+    }, [funcionarios, usuarios, unidades, search, currentUserId]);
 
     return (
         <div className="h-screen w-full bg-[#002855] font-sans text-white overflow-hidden flex flex-col relative">
@@ -150,7 +178,7 @@ export default function AdministracionIdentidad() {
             </main>
 
             <AnimatePresence>
-                {selectedFunc && <ModalGestionFuncionario item={selectedFunc} onClose={() => setSelectedFunc(null)} onRefresh={fetchData} isAdmin={currentUserRole === 1} />}
+                {selectedFunc && <ModalGestionFuncionario item={selectedFunc} unidades={unidades} onClose={() => setSelectedFunc(null)} onRefresh={fetchData} isAdmin={currentUserRole === 1} />}
             </AnimatePresence>
         </div>
     );
@@ -194,6 +222,18 @@ const IdentityRow = memo(({ data, onSelect, isRestricted }: any) => {
                         <span className={infoStyle}>
                             {data.funcionario.rut}
                         </span>
+                        {data.funcionario.unidad?.nombre && (
+                            <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 border border-emerald-100 rounded-full shadow-sm">
+                                    <Boxes size={10} className="text-emerald-600" />
+                                    <span className="text-[12px] font-black text-emerald-700 uppercase tracking-tighter whitespace-nowrap">
+                                        {data.funcionario.unidad.nombre}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+
+
                     </div>
                 </div>
                 <div className="flex items-center gap-8 shrink-0">
@@ -236,9 +276,10 @@ const IdentityRow = memo(({ data, onSelect, isRestricted }: any) => {
     );
 });
 
-const ModalGestionFuncionario = ({ item, onClose, onRefresh, isAdmin }: any) => {
+const ModalGestionFuncionario = ({ item, onClose, onRefresh, isAdmin, unidades }: any) => {
     const isNew = !item.funcionario.rut;
     const isLinked = !!item.usuario;
+
     const [saving, setSaving] = useState(false);
     const [showPass, setShowPass] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -247,10 +288,25 @@ const ModalGestionFuncionario = ({ item, onClose, onRefresh, isAdmin }: any) => 
     const [email, setEmail] = useState('');
     const [rol, setRol] = useState<number | null>(null);
     const [password, setPassword] = useState('');
+    const [idUnidad, setIdUnidad] = useState<number | string>('');
+
+    // Sincronizar estados iniciales
+    useEffect(() => {
+        if (unidades && unidades.length > 0) {
+            if (isNew) {
+                const ultima = unidades[unidades.length - 1];
+                setIdUnidad(ultima.idUnidad ?? ultima.id);
+            } else {
+                // Al editar, cargamos la unidad que ya tiene el funcionario
+                setIdUnidad(item.funcionario.idUnidad || '');
+            }
+        }
+    }, [unidades, isNew, item]);
+
     const canSubmit = useMemo(() => {
-        if (isNew) return !!(nombre.trim() && rut.trim() && email.trim() && (isAdmin ? password.trim() : true));
+        if (isNew) return !!(nombre.trim() && rut.trim() && email.trim() && idUnidad && (isAdmin ? password.trim() : true));
         return true;
-    }, [nombre, rut, email, password, isNew, isAdmin]);
+    }, [nombre, rut, email, password, idUnidad, isNew, isAdmin]);
 
     const handleSave = async () => {
         if (!canSubmit) return;
@@ -258,15 +314,26 @@ const ModalGestionFuncionario = ({ item, onClose, onRefresh, isAdmin }: any) => 
         setError(null);
         const token = localStorage.getItem('token');
         const headers = { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+
         const finalNombre = nombre.trim() || item.funcionario.nombreCompleto;
         const finalRut = rut.trim() || item.funcionario.rut;
         const finalEmail = email.trim() || item.funcionario.correoElectronico;
         const finalRol = rol !== null ? rol : (item.usuario?.rol || 2);
+
+        // CORRECCIÓN: Usamos el estado idUnidad que cambió el usuario
+        const finalUnidad = Number(idUnidad);
+
         try {
             if (isNew) {
-                const bodyCrearFunc = { rut: finalRut, correoElectronico: finalEmail, nombreCompleto: finalNombre };
+                const bodyCrearFunc = {
+                    rut: finalRut,
+                    correoElectronico: finalEmail,
+                    nombreCompleto: finalNombre,
+                    idUnidad: finalUnidad
+                };
                 const resF = await fetch(`${API_BASE}/api/Funcionarios/crear`, { method: 'POST', headers, body: JSON.stringify(bodyCrearFunc) });
                 if (!resF.ok) throw new Error(await resF.text() || "Error al registrar funcionario");
+
                 if (isAdmin && password.trim()) {
                     const fd = new FormData();
                     fd.append('Rut', finalRut);
@@ -274,30 +341,38 @@ const ModalGestionFuncionario = ({ item, onClose, onRefresh, isAdmin }: any) => 
                     fd.append('Contrasena', password);
                     await fetch(`${API_BASE}/api/Users`, { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : {}, body: fd });
                 }
-            } else if (isLinked && isAdmin) {
+            } else if (isAdmin) {
+                // Si ya existe (isLinked) o es solo alta de acceso
                 const bodyFunc = {
                     rut: item.funcionario.rut,
                     correoElectronico: finalEmail,
                     nombreCompleto: finalNombre,
-                    idUnidad: Number(item.funcionario.idUnidad) || 1
+                    idUnidad: finalUnidad // <-- Ahora enviará el cambio correctamente
                 };
-                const bodyUser = {
-                    idPersona: Number(item.usuario.idPersona),
-                    contrasena: password || "",
-                    rol: Number(finalRol),
-                    rut: item.funcionario.rut
-                };
-                await Promise.all([
-                    fetch(`${API_BASE}/api/Funcionarios/editar`, { method: 'PATCH', headers, body: JSON.stringify(bodyFunc) }),
-                    fetch(`${API_BASE}/api/Users`, { method: 'PATCH', headers, body: JSON.stringify(bodyUser) })
-                ]);
-            } else if (!isLinked && isAdmin) {
-                const fd = new FormData();
-                fd.append('Rut', item.funcionario.rut);
-                fd.append('Rol', String(finalRol));
-                fd.append('Contrasena', password);
-                const resU = await fetch(`${API_BASE}/api/Users`, { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : {}, body: fd });
-                if (!resU.ok) throw new Error("Error al asignar cuenta.");
+
+                if (isLinked) {
+                    const bodyUser = {
+                        idPersona: Number(item.usuario.idPersona),
+                        contrasena: password || "",
+                        rol: Number(finalRol),
+                        rut: item.funcionario.rut
+                    };
+                    await Promise.all([
+                        fetch(`${API_BASE}/api/Funcionarios/editar`, { method: 'PATCH', headers, body: JSON.stringify(bodyFunc) }),
+                        fetch(`${API_BASE}/api/Users`, { method: 'PATCH', headers, body: JSON.stringify(bodyUser) })
+                    ]);
+                } else {
+                    // Alta de acceso para funcionario existente
+                    const fd = new FormData();
+                    fd.append('Rut', item.funcionario.rut);
+                    fd.append('Rol', String(finalRol));
+                    fd.append('Contrasena', password);
+
+                    // Actualizamos unidad primero y luego creamos usuario
+                    await fetch(`${API_BASE}/api/Funcionarios/editar`, { method: 'PATCH', headers, body: JSON.stringify(bodyFunc) });
+                    const resU = await fetch(`${API_BASE}/api/Users`, { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : {}, body: fd });
+                    if (!resU.ok) throw new Error("Error al asignar cuenta.");
+                }
             }
             onRefresh();
             onClose();
@@ -343,17 +418,36 @@ const ModalGestionFuncionario = ({ item, onClose, onRefresh, isAdmin }: any) => 
                                     />
                                 </div>
 
-                                <div>
-                                    <label className={LABEL_STYLE}><Mail size={12} /> Correo *</label>
-                                    <input
-                                        className={INPUT_STYLE}
-                                        value={email}
-                                        placeholder={item.funcionario.correoElectronico || "correo@institucion.cl"}
-                                        onChange={e => setEmail(e.target.value)}
-                                        disabled={!isNew && !isAdmin}
-                                    />
+                                <div className="space-y-8">
+                                    <div>
+                                        <label className={LABEL_STYLE}><Mail size={12} /> Correo *</label>
+                                        <input
+                                            className={INPUT_STYLE}
+                                            value={email}
+                                            placeholder={item.funcionario.correoElectronico || "correo@institucion.cl"}
+                                            onChange={e => setEmail(e.target.value)}
+                                            disabled={!isNew && !isAdmin}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className={LABEL_STYLE}><Building2 size={12} /> Unidad Institucional *</label>
+                                        <select
+                                            className={INPUT_STYLE}
+                                            value={idUnidad}
+                                            onChange={e => setIdUnidad(e.target.value)}
+                                            disabled={!isAdmin && !isNew}
+                                        >
+                                            <option value="" disabled>Seleccione una unidad operativa</option>
+                                            {unidades.map((u: any) => (
+                                                <option key={u.idUnidad ?? u.id} value={u.idUnidad ?? u.id}>
+                                                    {u.nombre}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
+
                             <div className={`space-y-8 ${(isNew && !isAdmin) ? 'opacity-30 pointer-events-none' : ''}`}>
                                 <div className="border-b border-slate-100 pb-2"><h3 className="text-[11px] font-black text-[#002855] uppercase tracking-[0.2em]">Seguridad y Rol</h3></div>
 
@@ -387,7 +481,7 @@ const ModalGestionFuncionario = ({ item, onClose, onRefresh, isAdmin }: any) => 
                                     <div className="flex gap-3">
                                         <Info size={16} className="text-[#002855] shrink-0 mt-0.5" />
                                         <p className="text-[10px] text-slate-700 font-extrabold uppercase tracking-tight leading-relaxed">
-                                            {isNew ? "Los campos vacíos mantendrán los valores mostrados en gris." : "Solo los campos que escriba serán actualizados."}
+                                            {isNew ? "La unidad por defecto es la última creada." : "Solo los campos que escriba serán actualizados."}
                                         </p>
                                     </div>
                                 </div>

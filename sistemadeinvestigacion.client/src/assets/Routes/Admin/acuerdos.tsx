@@ -20,6 +20,8 @@ export default function Acuerdos() {
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const abortControllerRef = useRef<AbortController | null>(null);
+    const [isUnidadesModalOpen, setIsUnidadesModalOpen] = useState(false);
+    const [unidades, setUnidades] = useState<any[]>([]);
     const [formData, setFormData] = useState({
         titulo: '',
         descripcion: '',
@@ -27,13 +29,19 @@ export default function Acuerdos() {
         fechaVencimiento: getOneYearFromNow(),
         idEmpresa: '' as string | number,
         idCategoria: '' as string | number,
-        templateSvg: ''
+        templateSvg: '',
+        idsUnidades: [] as number[]
     });
     useEffect(() => {
         const savedDraft = localStorage.getItem(FORM_DRAFT_KEY);
         if (savedDraft) {
             try {
-                setFormData(JSON.parse(savedDraft));
+                const parsed = JSON.parse(savedDraft);
+                setFormData(prev => ({
+                    ...prev,
+                    ...parsed,
+                    idsUnidades: parsed.idsUnidades || []
+                }));
             } catch (e) {
                 console.error("Error al restaurar borrador", e);
             }
@@ -82,6 +90,14 @@ export default function Acuerdos() {
             const listTemp = Array.isArray(dataTemp) ? dataTemp : (dataTemp?.$values || []);
             setTemplates(listTemp);
 
+            const resUni = await fetch(`${import.meta.env.VITE_API_URL}/api/Unidad`, {
+                headers,
+                signal: abortControllerRef.current.signal
+            });
+            const dataUni = await resUni.json();
+            const listUni = Array.isArray(dataUni) ? dataUni : (dataUni?.$values || []);
+            setUnidades(listUni);
+
         } catch (e: any) {
             if (e.name !== 'AbortError') console.error("Fetch Data Error:", e);
         } finally {
@@ -114,28 +130,35 @@ export default function Acuerdos() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        setIsUnidadesModalOpen(true);
+    };
+
+    const finalSubmitToLienzo = () => {
         const payload = {
             titulo: formData.titulo,
             descripcion: formData.descripcion,
             detallesDescripcion: formData.detallesDescripcion,
             fechaVencimiento: formData.fechaVencimiento,
-            idEmpresa: formData.idEmpresa,
-            idCategoria: formData.idCategoria,
+            idEmpresa: Number(formData.idEmpresa),
+            idCategoria: Number(formData.idCategoria),
+            idsUnidades: formData.idsUnidades
         };
+
         localStorage.setItem('temp_acuerdo', JSON.stringify(payload));
+
         if (formData.templateSvg) {
             localStorage.setItem('template_svg', formData.templateSvg);
         } else {
             localStorage.removeItem('template_svg');
         }
-        const modoLienzo = {
-            tipo: 1,
-            nombre: "Modo creacion"
-        };
+
+        const modoLienzo = { tipo: 1, nombre: "Modo creacion" };
         localStorage.setItem('modo', JSON.stringify(modoLienzo));
         localStorage.removeItem(FORM_DRAFT_KEY);
+
         navigate('/lienzo');
     };
+
     return (
         <div className="h-screen w-full bg-[#002855] font-sans text-white overflow-hidden flex flex-col">
             <Navbar />
@@ -344,6 +367,102 @@ export default function Acuerdos() {
                                     ))}
                                 </div>
                             </div>
+                        </motion.div>
+                    </div>
+                )}
+
+                {isUnidadesModalOpen && (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            onClick={() => setIsUnidadesModalOpen(false)}
+                            className="absolute inset-0 bg-[#001a35]/95 backdrop-blur-md"
+                        />
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0, y: 10 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.95, opacity: 0, y: 10 }}
+                            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                            className="relative w-full max-w-4xl bg-white rounded-sm shadow-2xl overflow-hidden flex flex-col max-h-[70vh]"
+                        >
+                            {/* CABECERA CON TÍTULO EMAIL (BLANCO) DE UNIDADES (AZUL) */}
+                            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-[#002855]">
+                                <h3 className="text-xl font-black uppercase tracking-tighter">
+                                    <span className="text-white">Email</span> <span className="text-blue-400">de unidades</span>
+                                </h3>
+                                <button onClick={() => setIsUnidadesModalOpen(false)} className="text-white/50 hover:text-white transition-colors">
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="p-6 overflow-y-auto custom-list-scroll relative flex-1">
+                                <div className="grid grid-cols-2 gap-3">
+                                    {/* OPCIÓN INTEGRADA: NO AÑADIR UNIDADES */}
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData(p => ({ ...p, idsUnidades: [] }))}
+                                        className={`flex items-center justify-between p-3 border rounded-sm transition-all ${(formData.idsUnidades || []).length === 0
+                                                ? 'border-emerald-500 bg-emerald-50 shadow-inner'
+                                                : 'border-slate-100 bg-slate-50 hover:bg-slate-100'
+                                            }`}
+                                    >
+                                        <div className="flex items-center gap-3 text-slate-900 min-w-0">
+                                            <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${(formData.idsUnidades || []).length === 0 ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-400'}`}>
+                                                <Info size={14} />
+                                            </div>
+                                            <span className="text-[11px] font-black uppercase truncate">Sin destinatarios</span>
+                                        </div>
+                                        {(formData.idsUnidades || []).length === 0 && <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />}
+                                    </button>
+
+                                    {/* LISTADO DE UNIDADES API */}
+                                    {unidades.map(u => {
+                                        const id = u.idUnidad ?? u.id;
+                                        const isSelected = (formData.idsUnidades || []).includes(id);
+                                        return (
+                                            <button
+                                                key={`uni-${id}`}
+                                                type="button"
+                                                onClick={() => {
+                                                    setFormData(p => ({
+                                                        ...p,
+                                                        idsUnidades: isSelected
+                                                            ? (p.idsUnidades || []).filter(item => item !== id)
+                                                            : [...(p.idsUnidades || []), id]
+                                                    }));
+                                                }}
+                                                className={`flex items-center justify-between p-3 border rounded-sm transition-all ${isSelected ? 'border-blue-600 bg-blue-50 shadow-inner' : 'border-slate-100 bg-slate-50 hover:bg-slate-100'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center gap-3 text-slate-900 min-w-0">
+                                                    <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-400'}`}>
+                                                        <Building2 size={14} />
+                                                    </div>
+                                                    <span className="text-[11px] font-bold uppercase truncate">{u.nombre}</span>
+                                                </div>
+                                                {isSelected && <CheckCircle2 size={16} className="text-blue-600 shrink-0" />}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* BOTÓN FLOTANTE ORIGINAL (FLECHA) */}
+                            <div className="absolute bottom-6 right-6 z-50 flex flex-col items-center gap-2">
+                                <span className="text-[9px] font-black text-[#002855] uppercase tracking-widest opacity-40">Continuar</span>
+                                <button
+                                    onClick={finalSubmitToLienzo}
+                                    className="h-14 w-14 rounded-full bg-[#002855] text-white flex items-center justify-center hover:bg-blue-600 hover:scale-110 shadow-[0_10px_30px_rgba(0,40,85,0.3)] transition-all active:scale-95"
+                                >
+                                    <ArrowRight size={24} strokeWidth={3} />
+                                </button>
+                            </div>
+
+                            {/* Espaciador inferior para que el grid no quede debajo del botón flotante */}
+                            <div className="h-20 bg-transparent pointer-events-none" />
                         </motion.div>
                     </div>
                 )}

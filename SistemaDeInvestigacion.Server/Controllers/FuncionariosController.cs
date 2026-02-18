@@ -111,7 +111,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
             if (!string.IsNullOrEmpty(dto.CorreoElectronico)) funcionario.CorreoElectronico = dto.CorreoElectronico;
             if (!string.IsNullOrEmpty(dto.NombreCompleto)) funcionario.NombreCompleto = dto.NombreCompleto;
-            if (!dto.idUnidad.HasValue) funcionario.idUnidad = dto.idUnidad.Value;
+            if (dto.idUnidad.HasValue) funcionario.idUnidad = dto.idUnidad.Value;
      
             await _context.SaveChangesAsync();
      
