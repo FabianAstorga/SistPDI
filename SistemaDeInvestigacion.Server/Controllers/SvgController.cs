@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using SistemaDeInvestigacion.Server.Data;
-using SistemaDeInvestigacion.Server.Models;
-using SistemaDeInvestigacion.Server.Dtos;
-using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Primitives;
+using SistemaDeInvestigacion.Server.Data;
+using SistemaDeInvestigacion.Server.Dtos;
+using SistemaDeInvestigacion.Server.Models;
+using System.Security.Claims;
 
 namespace SistemaDeInvestigacion.Server.Controllers
 {
@@ -33,6 +35,18 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return Ok(listaSvg);
         }
 
+        [Authorize]
+        [HttpGet("svgAcuerdo/{idAcuerdo}")]
+        public async Task<ActionResult> GetSvgPorAcuerdo(int idAcuerdo)
+        {
+            var svg = await _context.Set<SvgTemplate>()
+                .Where(c => _context.Set<AcuerdosUsersTemplates>()
+                    .Any(b => b.IdAcuerdo == idAcuerdo && b.IdSvg == c.Id))
+                .Select(c => c.SvgEditado)
+                .FirstOrDefaultAsync();
+            return Ok(new { svg_editado = svg });
+        }
+
         //obtiene los borradores de CADA USUARIO
         [Authorize]
         [HttpGet("obtenerBorradores")]
@@ -49,6 +63,8 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return Ok(listaSvg);
         }
 
+
+        //devuelve SVG editado
         [HttpGet("devolverSvg")]
         [Authorize]
         public async Task<ActionResult<IEnumerable<SvgTemplate>>> devolverSvg(int idSvg)
@@ -56,6 +72,20 @@ namespace SistemaDeInvestigacion.Server.Controllers
             var listaSvg = await _context.SvgTemplates.FirstOrDefaultAsync(s => s.Id == idSvg);
 
             return Ok(listaSvg.SvgEditado);
+        }
+
+        //devuelve SVG original
+        [HttpGet("darTemplate/{idSvg}")]
+        [Authorize]
+        public async Task<ActionResult<IEnumerable<SvgTemplate>>> darTemplate(int idSvg)
+        {
+            var listaSvg = await _context.SvgTemplates.FirstOrDefaultAsync(s => s.Id == idSvg);
+            if (listaSvg.IdEstado != 3)
+            {
+                return BadRequest("Svg seleccionado no es un template");
+            }
+
+            return Ok(listaSvg.SvgOriginal);
         }
 
         //crea un template

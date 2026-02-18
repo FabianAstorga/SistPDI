@@ -10,6 +10,7 @@ using SistemaDeInvestigacion.Server.Servicios;
 using System.Drawing.Imaging;
 using Svg;
 using System.IO;
+using System.Drawing;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Primitives;
 
@@ -148,7 +149,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             _context.Acuerdos.Add(NewAcuerdo);
             await _context.SaveChangesAsync();
 
-            string fileName = $"acuerdo_{Guid.NewGuid().ToString().Substring(0, 8)}.png";
+            string fileName = $"acuerdo_{Guid.NewGuid().ToString().Substring(0, 8)}.jpg";
             string rutaCarpetaFisica = Path.Combine(_env.ContentRootPath, "media", "acuerdosmedia", NewAcuerdo.IdAcuerdo.ToString());
 
             if (!Directory.Exists(rutaCarpetaFisica))
@@ -158,7 +159,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
             try
             {
-                byte[] imageData = _svgService.RenderToPng(acuerdos.svgEditado);
+                byte[] imageData = _svgService.RenderToJpg(acuerdos.svgEditado);
                 await System.IO.File.WriteAllBytesAsync(rutaArchivoFisica, imageData);
             }
             catch (Exception ex)
@@ -286,7 +287,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
                 try
                 {
-                    byte[] imageData = _svgService.RenderToPng(editAcuerdoDto.svg_editado);
+                    byte[] imageData = _svgService.RenderToJpg(editAcuerdoDto.svg_editado);
                     await System.IO.File.WriteAllBytesAsync(rutaArchivoFisica, imageData);
                 }
                 catch (Exception ex)

@@ -22,4 +22,19 @@
         public string? svg_editado { get; set; }
         public DateTime? fechaVencimiento { get; set; }
     }
+
+    public class getAcuerdoDto
+    {
+        public int IdAcuerdo { get; set; }
+        public string Titulo { get; set; }
+        public string Descripcion { get; set; }
+        public string DetallesDescripcion { get; set; }
+        public DateTime? FechaVencimiento { get; set; }
+        public int IdEstado { get; set; }
+        public string ImagenUrl { get; set; }
+        public DateTime? FechaCreacion { get; set; }
+        public DateTime? FechaActualizacion { get; set; }
+        public int? IdEmpresa { get; set; }
+        public string NombreCategoria { get; set; }
+    }
 }
