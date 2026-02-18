@@ -99,7 +99,7 @@ interface PDFProps {
         titulo: string;
         descripcion: string;
         detallesDescripcion?: string;
-        categoria: string;
+        nombreCategoria: string;
         estado?: string;
         fechaVencimiento?: string;
     };
@@ -118,7 +118,7 @@ export const PDFDocument: React.FC<PDFProps> = ({ data, logoUrl }) => {
         <Document title={`Acuerdo - ${data.titulo}`}>
             <Page size="A4" style={styles.page}>
                 <View style={styles.header}>
-                    <Text style={styles.categoryBadge}>{data.categoria}</Text>
+                    <Text style={styles.categoryBadge}>{data.nombreCategoria}</Text>
                     <Text style={styles.title}>{data.titulo}</Text>
                 </View>
                 <View style={styles.imageContainer}>
