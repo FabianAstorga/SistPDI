@@ -24,7 +24,7 @@ const normalizeAcuerdo = (a: any) => ({
     descripcion: String(a?.descripcion ?? ''),
     detallesDescripcion: String(a?.detallesDescripcion ?? a?.descripcion ?? ''),
     imagenUrl: a?.imagenUrl,
-    categoria: a?.idCategoria || a?.categoria || "General",
+    nombreCategoria: a?.nombreCategoria || a?.nombreCategoria || "General",
     fechaVencimiento: a?.fechaVencimiento,
     estado: a?.estado || "Activo",
     idEmpresa: a?.idEmpresa
@@ -243,7 +243,7 @@ const CardItem = memo(({ item, onOpen }: any) => (
         <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 scale-y-0 group-hover:scale-y-100 transition-transform origin-top duration-300" />
         <div className="mb-4 h-20 overflow-hidden">
             <span className="text-[9px] font-black bg-blue-600 text-white px-2 py-0.5 rounded-none uppercase mb-2 inline-block italic tracking-widest">
-                {item.categoria}
+                {item.nombreCategoria}
             </span>
             <h4 className="text-xl font-black text-[#002855] uppercase leading-tight tracking-tighter line-clamp-2 group-hover:text-blue-600 transition-colors">
                 {item.titulo}
@@ -297,7 +297,7 @@ const CarouselItem = memo(({ item, isActive, onClick }: any) => (
                     {item.titulo}
                 </h3>
                 <span className="shrink-0 text-[10px] font-black bg-blue-600 text-white px-2 py-1 rounded-none uppercase tracking-tighter mt-1 italic">
-                    {item.categoria}
+                    {item.nombreCategoria}
                 </span>
             </div>
 
