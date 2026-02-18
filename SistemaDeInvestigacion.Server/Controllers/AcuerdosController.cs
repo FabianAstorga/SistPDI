@@ -67,56 +67,109 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
         //lista ultimos 10 acuerdos
         [HttpGet("mejores")]
-        public async Task<ActionResult<IEnumerable<Acuerdo>>> GetMejores()
+        public async Task<ActionResult<IEnumerable<getAcuerdoDto>>> GetMejores()
         {
-            if (!_cache.TryGetValue(AcuerdosRecientes, out List<Acuerdo> acuerdos))
+            // Cambiamos el tipo de la lista en la caché a getAcuerdoDto
+            if (!_cache.TryGetValue(AcuerdosRecientes, out List<getAcuerdoDto> acuerdos))
             {
                 acuerdos = await _context.Acuerdos
-                    .Where(acuerdos => acuerdos.IdEstado == 1)
+                    .Where(a => a.IdEstado == 1)
                     .OrderByDescending(x => x.FechaCreacion)
                     .Take(10)
+                    .Select(a => new getAcuerdoDto
+                    {
+                        IdAcuerdo = a.IdAcuerdo,
+                        Titulo = a.Titulo,
+                        Descripcion = a.Descripcion,
+                        DetallesDescripcion = a.DetallesDescripcion,
+                        FechaVencimiento = a.FechaVencimiento,
+                        IdEstado = a.IdEstado,
+                        ImagenUrl = a.ImagenUrl,
+                        FechaCreacion = a.FechaCreacion,
+                        FechaActualizacion = a.FechaActualizacion,
+                        IdEmpresa = a.IdEmpresa,
+                        NombreCategoria = a.Categoria.TipoCategoria
+                    })
                     .ToListAsync();
+
                 var cacheOption = new MemoryCacheEntryOptions()
                     .AddExpirationToken(new CancellationChangeToken(_resetCacheToken.Token))
                     .SetSlidingExpiration(TimeSpan.FromMinutes(60));
+
                 _cache.Set(AcuerdosRecientes, acuerdos, cacheOption);
             }
+
             return Ok(acuerdos);
         }
 
         //lista los acuerdos habilitados
         [HttpGet()]
-        public async Task<ActionResult<IEnumerable<Acuerdo>>> GetAcuerdos()
+        public async Task<ActionResult<IEnumerable<getAcuerdoDto>>> GetAcuerdos()
         {
-            if (!_cache.TryGetValue(AcuerdosHabilitados, out List<Acuerdo> acuerdoslista))
-            { 
+            if (!_cache.TryGetValue(AcuerdosHabilitados, out List<getAcuerdoDto> acuerdoslista))
+            {
                 acuerdoslista = await _context.Acuerdos
-                    .Where(acuerdos => acuerdos.IdEstado == 1)
+                    .Where(a => a.IdEstado == 1)
+                    .Select(a => new getAcuerdoDto
+                    {
+                        IdAcuerdo = a.IdAcuerdo,
+                        Titulo = a.Titulo,
+                        Descripcion = a.Descripcion,
+                        DetallesDescripcion = a.DetallesDescripcion,
+                        FechaVencimiento = a.FechaVencimiento,
+                        IdEstado = a.IdEstado,
+                        ImagenUrl = a.ImagenUrl,
+                        FechaCreacion = a.FechaCreacion,
+                        FechaActualizacion = a.FechaActualizacion,
+                        IdEmpresa = a.IdEmpresa,
+                        NombreCategoria = a.Categoria.TipoCategoria
+                    })
                     .ToListAsync();
+
                 var cacheOption = new MemoryCacheEntryOptions()
                     .AddExpirationToken(new CancellationChangeToken(_resetCacheToken.Token))
                     .SetSlidingExpiration(TimeSpan.FromMinutes(60));
-                _cache.Set(AcuerdosHabilitados, acuerdoslista, cacheOption);
 
+                _cache.Set(AcuerdosHabilitados, acuerdoslista, cacheOption);
             }
+
             return Ok(acuerdoslista);
         }
 
         //lista TODOS los acuerdos (Habilitados y no habilitados)
         [Authorize]
         [HttpGet("listado")]
-        public async Task<ActionResult<IEnumerable<Acuerdo>>> GetListado()
+        public async Task<ActionResult<IEnumerable<getAcuerdoDto>>> GetListado()
         {
             var UserRole = User.GetUserRole();
 
-            if (!_cache.TryGetValue(AcuerdosListados, out List<Acuerdo> acuerdoslista))
+            if (!_cache.TryGetValue(AcuerdosListados, out List<getAcuerdoDto> acuerdoslista))
             {
-                acuerdoslista = await _context.Acuerdos.ToListAsync();
+                acuerdoslista = await _context.Acuerdos
+                    .Select(a => new getAcuerdoDto
+                    {
+                        IdAcuerdo = a.IdAcuerdo,
+                        Titulo = a.Titulo,
+                        Descripcion = a.Descripcion,
+                        DetallesDescripcion = a.DetallesDescripcion,
+                        FechaVencimiento = a.FechaVencimiento,
+                        IdEstado = a.IdEstado,
+                        ImagenUrl = a.ImagenUrl,
+                        FechaCreacion = a.FechaCreacion,
+                        FechaActualizacion = a.FechaActualizacion,
+                        IdEmpresa = a.IdEmpresa,
+                        // Mapeo del nombre de la categoría
+                        NombreCategoria = a.Categoria.TipoCategoria
+                    })
+                    .ToListAsync();
+
                 var cacheOption = new MemoryCacheEntryOptions()
                     .AddExpirationToken(new CancellationChangeToken(_resetCacheToken.Token))
-                    .SetSlidingExpiration (TimeSpan.FromMinutes(60));
+                    .SetSlidingExpiration(TimeSpan.FromMinutes(60));
+
                 _cache.Set(AcuerdosListados, acuerdoslista, cacheOption);
             }
+
             return Ok(acuerdoslista);
         }
 
@@ -319,7 +372,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
             _resetCacheToken.Dispose();
             _resetCacheToken = new CancellationTokenSource();
             await _hubContext.Clients.All.SendAsync("RecibirActualizacionAcuerdos");
-
             return NoContent();
         }
 

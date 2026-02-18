@@ -9,4 +9,13 @@ namespace SistemaDeInvestigacion.Server.Dtos
         [Required]
         public bool estado { get; set; }
     }
+
+    public class EditSvgDto
+    {
+        [Required]
+        public required int idSvg { get; set; }
+
+        [Required]
+        public required string svgOriginal { get; set; }
+    }
 }

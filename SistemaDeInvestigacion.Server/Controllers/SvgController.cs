@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Primitives;
+using Microsoft.Extensions.Validation;
 using SistemaDeInvestigacion.Server.Data;
 using SistemaDeInvestigacion.Server.Dtos;
 using SistemaDeInvestigacion.Server.Models;
@@ -55,9 +57,9 @@ namespace SistemaDeInvestigacion.Server.Controllers
             var userId = User.GetUserId();
 
             var listaSvg = await _context.AcuerdosUserTemplates
-                .Where(relacion => relacion.IdUsuario == userId) 
-                .Select(relacion => relacion.SvgTemplate)        
-                .Where(svg => svg.IdEstado == 2)                
+                .Where(relacion => relacion.IdUsuario == userId)
+                .Select(relacion => relacion.SvgTemplate)
+                .Where(svg => svg.IdEstado == 2)
                 .ToListAsync();
 
             return Ok(listaSvg);
@@ -103,14 +105,10 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 FechaActualizacion = null
             };
 
-
-
             _context.SvgTemplates.Add(svgNuevo);
             await _context.SaveChangesAsync();
 
             var idsvg = svgNuevo.Id;
-            Console.WriteLine($"___________________ este es el id :{svgNuevo.Id}");
-
 
             var borradorNuevo = new AcuerdosUsersTemplates
             {
@@ -119,13 +117,32 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 IdAcuerdo = null
             };
 
-
             _context.AcuerdosUserTemplates.Add(borradorNuevo);
             await _context.SaveChangesAsync();
             return Ok(new { id = svgNuevo.Id });
 
         }
 
-    }
+        [Authorize]
+        [HttpPatch("editar")]
+        public async Task<ActionResult> editarSvg(EditSvgDto editSvgDto)
+        {
+            var userRol = User.GetUserRole();
+            if (userRol != 1)
+            {
+                return BadRequest("Usuario no es Administrador");
+            } 
+            var svg = await _context.SvgTemplates.FindAsync(editSvgDto.idSvg);
+            if (svg.IdEstado != 3)
+            {
+                return BadRequest("Svg no es plantilla");
+            }
+            svg.SvgOriginal = editSvgDto.svgOriginal;
 
+            await _context.SaveChangesAsync();
+            return NoContent();
+
+        }
+
+    }
 }

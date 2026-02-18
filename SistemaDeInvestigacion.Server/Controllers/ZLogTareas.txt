@@ -11,6 +11,12 @@ Base de datos:
 // Agregar una tabla COMENTARIOS para acuerdos
 // agregar tabla de olvidar contraseña
 
+//editar svg
+//devolver id como parte del acuerdo
+//cambiar peticion para poder crear
+//crear patch de svg
+
+
 Crear una base de datos para las claves de cifrado
 
 Back-end
