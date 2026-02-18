@@ -14,10 +14,10 @@ import {
     PlusCircle,
     List,
     Tags,
-    Boxes
+    Boxes,
+    Database
 } from 'lucide-react';
 
-// 1. Configuración estática
 const NAV_CONFIG = [
     { id: 'inicio', label: 'Inicio', path: '/panel', icon: LayoutDashboard },
     {
@@ -35,8 +35,13 @@ const NAV_CONFIG = [
         ]
     },
     { id: 'funcionarios', label: 'Funcionarios', path: '/empleado', icon: Users },
-    { id: 'categoria', label: 'Categoria', path: '/Categorias', icon: Tags },
-    { id: 'unidad', label: 'Unidad', path: '/unidad', icon: Boxes },
+    {
+        id: 'datos', label: 'Datos', icon: Database, 
+        items: [
+            { label: 'Categoría', path: '/Categorias', icon: Tags },
+            { label: 'Unidad', path: '/unidad', icon: Boxes },
+        ]
+    },
     { id: 'plantilla', label: 'Plantilla', path: '/lienzo', icon: Layers },
     
 ];
@@ -57,25 +62,18 @@ export const Navbar = () => {
             }
         }
     }, []);
-
-    // Función de navegación centralizada para manejar los Modos del Lienzo
-    // Función de navegación centralizada
     const handleNavigation = useCallback((path: string) => {
         if (path === '/lienzo') {
-            // Configuración para entrar al modo plantilla
             const modoTemplate = {
                 tipo: 2,
                 nombre: "Modo Plantilla"
             };
             localStorage.setItem('modo', JSON.stringify(modoTemplate));
-            // Limpiamos datos de acuerdos pero mantenemos lo necesario para el lienzo si fuera el caso
             localStorage.removeItem('temp_acuerdo');
         } else {
-            // SI NAVEGAMOS A CUALQUIER OTRA RUTA:
-            // Eliminamos el modo y el SVG temporal
             localStorage.removeItem('modo');
             localStorage.removeItem('template_svg');
-            localStorage.removeItem('temp_acuerdo'); // Opcional, por seguridad
+            localStorage.removeItem('temp_acuerdo');
         }
 
         navigate(path);
@@ -116,7 +114,7 @@ export const Navbar = () => {
                                 isActive={activeSectionId === section.id}
                                 isHovered={hoveredMenu === section.id}
                                 onHover={setHoveredMenu}
-                                onNavigate={handleNavigation} // Usamos la nueva función
+                                onNavigate={handleNavigation} 
                             />
                         ))}
                     </div>
@@ -125,7 +123,11 @@ export const Navbar = () => {
                 <div className="flex items-center gap-4">
                     <div className="flex flex-col items-end">
                         <span className="text-white font-black text-[11px] uppercase tracking-widest leading-none">
-                            {user?.nombre || 'Funcionario'}
+                            <span className="text-blue-400">
+                                {user?.rol === 1 ? 'Admin' : 'Funcionario'}
+                            </span>
+                            <span className="mx-2 text-white/30">|</span>
+                            {user?.nombre || 'Usuario'}
                         </span>
                     </div>
 

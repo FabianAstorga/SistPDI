@@ -140,7 +140,12 @@ if (!Directory.Exists(externalMediaPath))
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(externalMediaPath),
-    RequestPath = "/media"
+    RequestPath = "/media",
+    OnPrepareResponse = ctx =>
+    {
+        ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+        ctx.Context.Response.Headers.Append("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    }
 });
 
 var logosPath = Path.Combine(builder.Environment.ContentRootPath, "LogosMedia");
@@ -160,13 +165,23 @@ if (!Directory.Exists(acuerdosPath))
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(logosPath),
-    RequestPath = "/imagenes"
+    RequestPath = "/imagenes",
+    OnPrepareResponse = ctx =>
+    {
+        ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+        ctx.Context.Response.Headers.Append("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    }
 });
 
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(acuerdosPath),
-    RequestPath = "/media"
+    RequestPath = "/media",
+    OnPrepareResponse = ctx =>
+    {
+        ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+        ctx.Context.Response.Headers.Append("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    }
 });
 
 app.UseAuthentication();
