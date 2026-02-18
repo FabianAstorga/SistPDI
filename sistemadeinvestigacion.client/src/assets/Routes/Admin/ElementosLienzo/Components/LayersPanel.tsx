@@ -13,7 +13,6 @@ type Props = {
 
 const getElColor = (el: any) => el?.stroke || el?.fill || '#3b82f6';
 
-// Componente de fila individual memoizado
 const LayerRow = memo(({
     el, isSelected, isTop, isBottom, onSelect, onMove, onMoveExtreme, onDelete
 }: any) => {
@@ -26,16 +25,13 @@ const LayerRow = memo(({
                 }`}
         >
             <div className="flex items-center space-x-2 truncate flex-1">
-                {/* Indicador de Color/Tipo */}
                 <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: getElColor(el) }} />
 
                 <div className="flex flex-col truncate">
-                    {/* NOMBRE SEMÁNTICO (La Verdad del Grupo) */}
                     <span className={`text-[10px] font-bold uppercase truncate ${isSelected ? 'text-blue-700' : 'text-gray-600'}`}>
                         {el.name || el.type || 'Elemento'}
                     </span>
 
-                    {/* INDICADOR DE TEMPLATE (Si existe templateKey) */}
                     {el.templateKey && (
                         <div className="flex items-center text-[8px] text-blue-500 mt-0.5">
                             <Database size={8} className="mr-1" />
@@ -45,7 +41,6 @@ const LayerRow = memo(({
                 </div>
             </div>
 
-            {/* Acciones (Solo visibles al hacer hover) */}
             <div className="flex items-center space-x-1 ml-2 shrink-0">
                 <button
                     onClick={(e) => { e.stopPropagation(); onMoveExtreme(id, 'top'); }}

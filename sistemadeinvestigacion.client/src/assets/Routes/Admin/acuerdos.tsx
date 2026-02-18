@@ -388,7 +388,6 @@ export default function Acuerdos() {
                             transition={{ type: "spring", stiffness: 400, damping: 30 }}
                             className="relative w-full max-w-4xl bg-white rounded-sm shadow-2xl overflow-hidden flex flex-col max-h-[70vh]"
                         >
-                            {/* CABECERA CON TÍTULO EMAIL (BLANCO) DE UNIDADES (AZUL) */}
                             <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-[#002855]">
                                 <h3 className="text-xl font-black uppercase tracking-tighter">
                                     <span className="text-white">Email</span> <span className="text-blue-400">de unidades</span>
@@ -400,7 +399,6 @@ export default function Acuerdos() {
 
                             <div className="p-6 overflow-y-auto custom-list-scroll relative flex-1">
                                 <div className="grid grid-cols-2 gap-3">
-                                    {/* OPCIÓN INTEGRADA: NO AÑADIR UNIDADES */}
                                     <button
                                         type="button"
                                         onClick={() => setFormData(p => ({ ...p, idsUnidades: [] }))}
@@ -418,7 +416,6 @@ export default function Acuerdos() {
                                         {(formData.idsUnidades || []).length === 0 && <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />}
                                     </button>
 
-                                    {/* LISTADO DE UNIDADES API */}
                                     {unidades.map(u => {
                                         const id = u.idUnidad ?? u.id;
                                         const isSelected = (formData.idsUnidades || []).includes(id);
@@ -450,7 +447,6 @@ export default function Acuerdos() {
                                 </div>
                             </div>
 
-                            {/* BOTÓN FLOTANTE ORIGINAL (FLECHA) */}
                             <div className="absolute bottom-6 right-6 z-50 flex flex-col items-center gap-2">
                                 <span className="text-[9px] font-black text-[#002855] uppercase tracking-widest opacity-40">Continuar</span>
                                 <button
@@ -461,7 +457,6 @@ export default function Acuerdos() {
                                 </button>
                             </div>
 
-                            {/* Espaciador inferior para que el grid no quede debajo del botón flotante */}
                             <div className="h-20 bg-transparent pointer-events-none" />
                         </motion.div>
                     </div>

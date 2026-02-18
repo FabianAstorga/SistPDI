@@ -14,7 +14,6 @@ type Props = {
     model: any;
 };
 
-// 1. Iconos de Figuras estilizados para modo oscuro
 const FiguraMiniIcon = memo(({ id }: { id: string }) => {
     const common = { width: 20, height: 20, viewBox: '0 0 100 100', className: 'block transition-transform group-hover:scale-110' };
     const shapes: Record<string, React.ReactNode> = {
@@ -95,7 +94,6 @@ export const LeftToolbar: React.FC<Props> = memo(({ model }) => {
     return (
         <aside className="w-20 bg-[#001a35]/40 backdrop-blur-xl border-r border-white/5 flex flex-col items-center py-6 gap-4 z-50">
 
-            {/* Herramienta de Selección (Principal) */}
             {renderToolbarBtn(null, MousePointer2, "Seleccionar", () => {
                 setHerramientaActiva(null);
                 setModoPuntos(false);
@@ -103,7 +101,6 @@ export const LeftToolbar: React.FC<Props> = memo(({ model }) => {
                 cerrarMenus();
             }, herramientaActiva === null)}
 
-            {/* Menú de Figuras */}
             <div className="relative">
                 {renderToolbarBtn('figuras', Shapes, "Figuras", () => {
                     setMenuFigurasOpen(!menuFigurasOpen);
@@ -135,7 +132,6 @@ export const LeftToolbar: React.FC<Props> = memo(({ model }) => {
                 </AnimatePresence>
             </div>
 
-            {/* Menú de Trazos */}
             <div className="relative">
                 {renderToolbarBtn('trazos', Pencil, "Trazos", () => {
                     setMenuTrazosOpen(!menuTrazosOpen);
@@ -176,7 +172,6 @@ export const LeftToolbar: React.FC<Props> = memo(({ model }) => {
 
             <div className="flex-1" />
 
-            {/* Acciones de Archivo */}
             <div className="flex flex-col gap-2 pb-2">
                 <motion.button
                     whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}

@@ -100,7 +100,6 @@ export const DraggableItem: React.FC<Props> = memo(({
             className="draggable-group"
             onMouseDown={onMouseDownDrag}
             style={{ cursor: puedeInteractuar ? 'move' : 'default' }}
-            // --- NIVEL ÚNICO DE METADATOS ---
             data-elid={el.id}
             data-type={el.type}
             data-name={el.name || `${el.type}_${el.id}`}
@@ -112,13 +111,10 @@ export const DraggableItem: React.FC<Props> = memo(({
             data-rotation={el.rotation || 0}
             data-flipx={el.flipX ? 'true' : 'false'}
             data-points={el.pointsArr ? JSON.stringify(el.pointsArr) : undefined}
-            // Transformación combinada para evitar anidación
             transform={`translate(${el.x || 0}, ${el.y || 0}) rotate(${el.rotation || 0}, ${w / 2}, ${h / 2}) scale(${el.flipX ? -1 : 1}, 1) translate(${el.flipX ? -w : 0}, 0)`}
         >
-            {/* Contenido Visual Directo */}
             {children}
 
-            {/* Guías de Edición */}
             {estaSeleccionado && puedeInteractuar && (
                 <g data-editor="1">
                     <rect

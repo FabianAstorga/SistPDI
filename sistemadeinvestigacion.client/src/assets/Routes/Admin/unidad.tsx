@@ -85,12 +85,10 @@ export default function UnidadList() {
             });
 
             if (!res.ok) {
-                // Manejo de error de integridad referencial (500)
                 alert("No se puede borrar, la unidad pertenece a un funcionario");
                 throw new Error("Error de integridad");
             }
         } catch (err) {
-            // Revertimos la UI si falla
             setItems(backupItems);
             fetchUnidades();
         }

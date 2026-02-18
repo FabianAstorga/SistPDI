@@ -284,16 +284,14 @@ const CarouselItem = memo(({ item, isActive, onClick }: any) => (
             transition={{ duration: 0.4, ease: "easeOut" }}
             className={`relative bg-white rounded-none overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.1)] flex flex-col border-none h-full ${isActive ? 'cursor-pointer' : 'cursor-default'}`}
         >
-            {/* 1. Imagen en 4/3 para ocupar todo el ancho (ideal para 800x600) */}
             <div className="relative w-full aspect-[4/3] bg-slate-100 overflow-hidden flex items-center justify-center border-b border-slate-100">
                 <img
                     src={resolveBackendUrl(item.imagenUrl) || PDI_LOGO_URL}
-                    className="w-full h-full object-contain p-4" // p-4 da un aire limpio, cámbialo a p-0 si quieres que toque los bordes
+                    className="w-full h-full object-contain p-4" 
                     alt={item.titulo}
                 />
             </div>
 
-            {/* 2. Título con Altura Fija (h-24) */}
             <div className="bg-white px-8 py-5 flex items-start justify-between gap-4 h-24 overflow-hidden border-b border-slate-50">
                 <h3 className="text-xl md:text-2xl font-black text-slate-900 uppercase leading-tight flex-1 min-w-0 line-clamp-2 tracking-tighter">
                     {item.titulo}
@@ -303,7 +301,6 @@ const CarouselItem = memo(({ item, isActive, onClick }: any) => (
                 </span>
             </div>
 
-            {/* 3. Descripción con Altura Fija (h-20) */}
             <div className="px-8 py-6 bg-white h-20 overflow-hidden flex items-center">
                 <p className="text-slate-500 text-sm font-bold italic line-clamp-2 leading-snug">
                     {item.descripcion}

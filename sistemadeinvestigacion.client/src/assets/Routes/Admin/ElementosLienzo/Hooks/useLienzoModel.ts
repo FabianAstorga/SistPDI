@@ -18,12 +18,6 @@ import {
 } from '../Utils/lienzo.storage';
 import { guardarAcuerdoFinal } from '../Utils/lienzo.http';
 
-/**
- * PARSER REFACTORIZADO V3:
- * - Lee metadatos de los grupos <g>.
- * - Cruza la templateKey con el localStorage usando getValueFromTempAcuerdo.
- * - Reemplaza el texto original de la plantilla por el del acuerdo.
- */
 const reconstruirEstadoDesdeGruposSVG = (svgString: string): any[] => {
     try {
         const parser = new DOMParser();
@@ -58,11 +52,8 @@ const reconstruirEstadoDesdeGruposSVG = (svgString: string): any[] => {
             };
 
             if (el.type === 'texto') {
-                // INYECCIÓN: Si templateKey es 'titulo', busca 'titulo' en temp_acuerdo
-                // Usamos tu función getValueFromTempAcuerdo que ya usa pick() internamente
                 const datoInyectado = templateKey ? getValueFromTempAcuerdo(templateKey) : null;
 
-                // Reemplazamos el texto de la plantilla por el del acuerdo (o el original si no hay match)
                 el.text = datoInyectado || textNode?.textContent || '';
 
                 el.fontSize = Number(textNode?.getAttribute('font-size')) || 16;
@@ -128,7 +119,6 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
         setModo(modoParsed);
 
         if (modoParsed.tipo === 3) {
-            // MODO EDICIÓN: Cargar elementos guardados previamente
             const tempCambio = localStorage.getItem('temp_cambio');
             if (tempCambio) {
                 const data = JSON.parse(tempCambio);
@@ -136,10 +126,8 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
                 setTituloAcuerdo(data.titulo || 'Editando Acuerdo');
             }
         } else {
-            // MODO PLANTILLA: Solo cargamos lo que viene del SVG
             const templateSvg = localStorage.getItem('template_svg');
             if (templateSvg) {
-                // El parser ya inyecta los valores de temp_acuerdo en los campos con templateKey
                 const iniciales = reconstruirEstadoDesdeGruposSVG(templateSvg);
                 setElementos(iniciales);
             }

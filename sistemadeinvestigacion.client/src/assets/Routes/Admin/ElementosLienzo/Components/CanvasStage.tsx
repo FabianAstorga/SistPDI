@@ -138,7 +138,6 @@ export const CanvasStage: React.FC<Props> = memo(({ model, svgId = 'lienzo-svg' 
                                     alRedimensionar={(id, w, h) => redimensionarElemento(id, w, h)}
                                     puedeInteractuar={modoSeleccionActivo}
                                 >
-                                    {/* CONTENIDO VISUAL PLANO */}
                                     {isEditablePolygon(el.type) && el.pointsArr && (
                                         <>
                                             <polygon

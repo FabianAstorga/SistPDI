@@ -94,12 +94,8 @@ export default function AdministracionIdentidad() {
     }, [fetchData]);
 
     const unifiedData = useMemo(() => {
-        // 1. Mapa de usuarios para búsqueda rápida por RUT
         const userMap = new Map();
         usuarios.forEach(u => userMap.set(cleanRut(u.rut), u));
-
-        // 2. Mapa de unidades para búsqueda rápida por ID
-        // Esto es lo que permite "cruzar" los datos localmente
         const unidadMap = new Map();
         unidades.forEach(uni => {
             const id = uni.idUnidad ?? uni.id;
@@ -107,13 +103,11 @@ export default function AdministracionIdentidad() {
         });
 
         const base = funcionarios.map(f => {
-            // Buscamos la unidad en nuestro mapa usando el idUnidad del funcionario
             const unidadEncontrada = unidadMap.get(Number(f.idUnidad));
 
             return {
                 funcionario: {
                     ...f,
-                    // Si el backend no trajo 'unidad', le ponemos la que encontramos nosotros
                     unidad: f.unidad || unidadEncontrada
                 },
                 usuario: userMap.get(cleanRut(f.rut)) || null
@@ -129,10 +123,8 @@ export default function AdministracionIdentidad() {
         return base.filter(item =>
             item.funcionario.rut.toLowerCase().includes(q) ||
             item.funcionario.nombreCompleto?.toLowerCase().includes(q) ||
-            // Ahora también puedes buscar por el nombre de la unidad cruzada
             item.funcionario.unidad?.nombre?.toLowerCase().includes(q)
         );
-        // IMPORTANTE: Agregamos 'unidades' a las dependencias para que se refresque al cargar
     }, [funcionarios, usuarios, unidades, search, currentUserId]);
 
     return (
@@ -290,14 +282,12 @@ const ModalGestionFuncionario = ({ item, onClose, onRefresh, isAdmin, unidades }
     const [password, setPassword] = useState('');
     const [idUnidad, setIdUnidad] = useState<number | string>('');
 
-    // Sincronizar estados iniciales
     useEffect(() => {
         if (unidades && unidades.length > 0) {
             if (isNew) {
                 const ultima = unidades[unidades.length - 1];
                 setIdUnidad(ultima.idUnidad ?? ultima.id);
             } else {
-                // Al editar, cargamos la unidad que ya tiene el funcionario
                 setIdUnidad(item.funcionario.idUnidad || '');
             }
         }
@@ -320,7 +310,6 @@ const ModalGestionFuncionario = ({ item, onClose, onRefresh, isAdmin, unidades }
         const finalEmail = email.trim() || item.funcionario.correoElectronico;
         const finalRol = rol !== null ? rol : (item.usuario?.rol || 2);
 
-        // CORRECCIÓN: Usamos el estado idUnidad que cambió el usuario
         const finalUnidad = Number(idUnidad);
 
         try {
@@ -342,12 +331,11 @@ const ModalGestionFuncionario = ({ item, onClose, onRefresh, isAdmin, unidades }
                     await fetch(`${API_BASE}/api/Users`, { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : {}, body: fd });
                 }
             } else if (isAdmin) {
-                // Si ya existe (isLinked) o es solo alta de acceso
                 const bodyFunc = {
                     rut: item.funcionario.rut,
                     correoElectronico: finalEmail,
                     nombreCompleto: finalNombre,
-                    idUnidad: finalUnidad // <-- Ahora enviará el cambio correctamente
+                    idUnidad: finalUnidad 
                 };
 
                 if (isLinked) {
@@ -362,13 +350,11 @@ const ModalGestionFuncionario = ({ item, onClose, onRefresh, isAdmin, unidades }
                         fetch(`${API_BASE}/api/Users`, { method: 'PATCH', headers, body: JSON.stringify(bodyUser) })
                     ]);
                 } else {
-                    // Alta de acceso para funcionario existente
                     const fd = new FormData();
                     fd.append('Rut', item.funcionario.rut);
                     fd.append('Rol', String(finalRol));
                     fd.append('Contrasena', password);
 
-                    // Actualizamos unidad primero y luego creamos usuario
                     await fetch(`${API_BASE}/api/Funcionarios/editar`, { method: 'PATCH', headers, body: JSON.stringify(bodyFunc) });
                     const resU = await fetch(`${API_BASE}/api/Users`, { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : {}, body: fd });
                     if (!resU.ok) throw new Error("Error al asignar cuenta.");

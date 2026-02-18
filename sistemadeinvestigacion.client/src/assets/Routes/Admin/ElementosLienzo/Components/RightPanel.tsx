@@ -52,7 +52,6 @@ export const RightPanel: React.FC<Props> = memo(({ model }) => {
 
     const [activeTab, setActiveTab] = useState<'opciones' | 'capas'>('opciones');
 
-    // Obtención de datos de contexto del LocalStorage
     const contextData = useMemo(() => {
         const acuerdoRaw = localStorage.getItem('temp_acuerdo');
         const modoRaw = localStorage.getItem('modo');
@@ -78,7 +77,6 @@ export const RightPanel: React.FC<Props> = memo(({ model }) => {
     return (
         <aside className="w-80 bg-[#001a35]/40 backdrop-blur-xl border-l border-white/5 flex flex-col shadow-2xl h-full overflow-hidden text-white">
 
-            {/* CABECERA DE CONTEXTO */}
             <div className="p-6 pb-2 border-b border-white/5">
                 <h2 className="text-lg font-black tracking-tighter truncate uppercase text-blue-400">
                     {contextData.titulo}
@@ -90,7 +88,6 @@ export const RightPanel: React.FC<Props> = memo(({ model }) => {
                     </span>
                 </div>
 
-                {/* TABS DE NAVEGACIÓN */}
                 <div className="flex gap-1 mt-6 bg-white/5 p-1 rounded-xl border border-white/5">
                     <button
                         onClick={() => setActiveTab('opciones')}
@@ -133,14 +130,12 @@ export const RightPanel: React.FC<Props> = memo(({ model }) => {
                             initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}
                             className="p-6"
                         >
-                            {/* PROPIEDADES DEL ELEMENTO (SIN GRUPOS SEPARADOS, UNO DEBAJO DE OTRO) */}
                             <AnimatePresence mode="wait">
                                 {seleccionado ? (
                                     <motion.section
                                         key="config-active" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
                                         className="space-y-8"
                                     >
-                                        {/* NOMBRE DE CAPA */}
                                         <div className="space-y-1">
                                             <label className={LABEL_STYLE}>Nombre capa</label>
                                             <input
@@ -152,7 +147,6 @@ export const RightPanel: React.FC<Props> = memo(({ model }) => {
                                             />
                                         </div>
 
-                                        {/* LLAVE DE PLANTILLA */}
                                             <div className="space-y-1">
                                                 <label className={LABEL_STYLE}>
                                                     <Database size={12} /> Llave de Plantilla
@@ -172,7 +166,6 @@ export const RightPanel: React.FC<Props> = memo(({ model }) => {
                                                 </p>
                                             </div>
 
-                                        {/* COLOR Y SATURACIÓN */}
                                         <div className="space-y-4">
                                             <label className={LABEL_STYLE}>Color</label>
                                             <div className="flex gap-3 items-center">
@@ -207,7 +200,6 @@ export const RightPanel: React.FC<Props> = memo(({ model }) => {
                                             )}
                                         </div>
 
-                                        {/* ACCIONES DE EDICIÓN Y ROTACIÓN */}
                                         <div className="space-y-4">
                                             <label className={LABEL_STYLE}>Transformaciones</label>
                                             <button
@@ -242,10 +234,8 @@ export const RightPanel: React.FC<Props> = memo(({ model }) => {
                                             </button>
                                         </div>
 
-                                        {/* CONFIGURACIÓN ESPECÍFICA DE TEXTO */}
                                             {seleccionado.type === 'texto' && (
                                                 <div className="space-y-4 pt-4 border-t border-white/5">
-                                                    {/* Contenido del Texto */}
                                                     <div className="space-y-1">
                                                         <label className={LABEL_STYLE}>Contenido del texto</label>
                                                         <textarea
@@ -256,7 +246,6 @@ export const RightPanel: React.FC<Props> = memo(({ model }) => {
                                                         />
                                                     </div>
 
-                                                    {/* Tamaño de Fuente Dinámico */}
                                                     <div className="space-y-1">
                                                         <label className={LABEL_STYLE}>Tamaño de fuente (px)</label>
                                                         <input
@@ -269,7 +258,6 @@ export const RightPanel: React.FC<Props> = memo(({ model }) => {
                                                         />
                                                     </div>
 
-                                                    {/* Selector de Familia de Fuente */}
                                                     <div className="space-y-1">
                                                         <label className={LABEL_STYLE}>Familia de fuente</label>
                                                         <select

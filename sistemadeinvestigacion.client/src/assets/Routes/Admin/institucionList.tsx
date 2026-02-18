@@ -16,17 +16,12 @@ import {
 import { Virtuoso } from 'react-virtuoso';
 import { Navbar } from '../../components/Navbar';
 
-/** * LISTADO INSTITUCIONES V13.0 - PDI Intranet 2026
- * Fix: High-Performance Turbo, Optimización de Memoria y Animaciones Ultra-Rápidas.
- */
-
 const API_BASE = import.meta.env.VITE_API_URL;
 const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
 
 const LABEL_STYLE = "text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 flex items-center gap-2";
 const INPUT_STYLE = "w-full bg-slate-100 border-b border-slate-200 text-slate-900 px-4 py-3 outline-none focus:border-[#002855] focus:bg-white transition-all duration-150 font-semibold text-sm placeholder:text-slate-400/60 placeholder:italic placeholder:font-normal";
 
-// Configuración de resortes para respuesta inmediata
 const FAST_TRANSITION = { type: "spring", stiffness: 400, damping: 30 };
 
 const mapInstitucionFromApi = (x: any) => ({
@@ -62,7 +57,6 @@ export default function InstitucionList() {
         };
     }, []);
 
-    // --- FETCH CON CANCELACIÓN DE MEMORIA ---
     const fetchInstituciones = useCallback(async () => {
         if (abortControllerRef.current) abortControllerRef.current.abort();
         abortControllerRef.current = new AbortController();
@@ -83,10 +77,8 @@ export default function InstitucionList() {
         }
     }, []);
 
-    // --- TOGGLE OPTIMISTA ---
     const handleToggleEstado = useCallback(async (e: React.MouseEvent, idEmpresa: number | string) => {
         e.stopPropagation();
-        // Actualización optimista
         setItems(prev => prev.map(item =>
             item.id === idEmpresa ? { ...item, habilitado: !item.habilitado, idEstado: item.idEstado === 1 ? 2 : 1 } : item
         ));
@@ -99,7 +91,7 @@ export default function InstitucionList() {
             });
             if (!res.ok) throw new Error();
         } catch (err) {
-            fetchInstituciones(); // Revertir si falla
+            fetchInstituciones(); 
         }
     }, [fetchInstituciones]);
 
@@ -145,7 +137,6 @@ export default function InstitucionList() {
                     transition={{ duration: 0.2 }}
                     className="w-full max-w-7xl h-[85vh] flex shadow-[0_40px_100px_rgba(0,0,0,0.6)] overflow-hidden rounded-sm bg-[#002855]"
                 >
-                    {/* Sidebar */}
                     <div className="hidden md:flex w-80 bg-[#002855] p-10 flex-col border-y border-l border-white/10 shrink-0">
                         <div className="w-12 h-12 bg-blue-600 flex items-center justify-center mb-8 shadow-lg border border-white/10">
                             <Building className="text-white" size={24} />
@@ -164,7 +155,6 @@ export default function InstitucionList() {
                         </div>
                     </div>
 
-                    {/* Lista Principal */}
                     <div className="flex-1 bg-white flex flex-col overflow-hidden relative border-y border-r border-white/10">
                         {fetchingDetail && (
                             <div className="absolute inset-0 z-50 bg-white/60 backdrop-blur-[2px] flex items-center justify-center">
@@ -180,7 +170,7 @@ export default function InstitucionList() {
                                 <Virtuoso
                                     style={{ height: '100%' }}
                                     data={filteredItems}
-                                    overscan={800} // Turbo: precarga masiva
+                                    overscan={800} 
                                     increaseViewportBy={400}
                                     itemContent={(_, inst) => (
                                         <div className="p-4 px-8">
@@ -317,10 +307,8 @@ const EditInstitucionModal = ({ inst, onClose, onUpdate }: { inst: any, onClose:
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.97, opacity: 0 }}
                 transition={FAST_TRANSITION}
-                // bg-[#002855] aquí asegura que si hay un micro-espacio, se vea azul y no blanco
                 className="bg-[#002855] w-full max-w-5xl h-auto max-h-[90vh] rounded-sm shadow-2xl overflow-hidden flex flex-col md:flex-row relative border border-white/5"
             >
-                {/* Botón Cerrar */}
                 <button
                     onClick={onClose}
                     className="absolute top-6 right-6 z-[60] p-2 text-slate-400 hover:text-[#002855] hover:bg-slate-100 rounded-full transition-colors duration-150"
@@ -328,7 +316,6 @@ const EditInstitucionModal = ({ inst, onClose, onUpdate }: { inst: any, onClose:
                     <X size={24} />
                 </button>
 
-                {/* Columna Izquierda (Sidebar Azul) */}
                 <div className="w-full md:w-72 bg-[#002855] p-10 text-white flex flex-col shrink-0 relative z-10">
                     <div className="w-12 h-12 bg-blue-600 flex items-center justify-center mb-6 shadow-lg border border-white/10 rounded-sm">
                         <Building size={24} />
@@ -341,10 +328,8 @@ const EditInstitucionModal = ({ inst, onClose, onUpdate }: { inst: any, onClose:
                     <p className="text-[10px] text-blue-200/50 uppercase font-black tracking-[0.2em]">ID: {inst.id}</p>
                 </div>
 
-                {/* Columna Derecha (Formulario Blanco) */}
                 <div className="flex-1 overflow-y-auto p-10 bg-white relative z-20 rounded-r-sm">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                        {/* Datos Maestros */}
                         <div className="space-y-6">
                             <h3 className="text-[11px] font-black text-[#002855] uppercase tracking-[0.2em] border-b border-slate-100 pb-2 flex items-center gap-2">
                                 <span className="w-1.5 h-1.5 bg-blue-600 rounded-full" /> Datos Maestros
@@ -373,7 +358,6 @@ const EditInstitucionModal = ({ inst, onClose, onUpdate }: { inst: any, onClose:
                             </div>
                         </div>
 
-                        {/* Archivo Corporativo */}
                         <div className="space-y-6">
                             <h3 className="text-[11px] font-black text-[#002855] uppercase tracking-[0.2em] border-b border-slate-100 pb-2 flex items-center gap-2">
                                 <span className="w-1.5 h-1.5 bg-blue-600 rounded-full" /> Archivo Corporativo
@@ -407,7 +391,6 @@ const EditInstitucionModal = ({ inst, onClose, onUpdate }: { inst: any, onClose:
                         </div>
                     </div>
 
-                    {/* Botón Flotante de Guardado */}
                     <div className="sticky bottom-0 right-0 flex justify-end mt-10 pointer-events-none pb-2">
                         <button
                             onClick={handleSave}

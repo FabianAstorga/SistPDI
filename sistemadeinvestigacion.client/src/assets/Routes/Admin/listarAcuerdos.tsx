@@ -16,10 +16,6 @@ import { Virtuoso } from 'react-virtuoso';
 import { Navbar } from '../../components/Navbar';
 import { useSignalR } from '../../../context/SignalRContext';
 
-/** * LISTAR ACUERDOS V20.0 - PDI Intranet 2026
- * Fix: High-Speed Performance & Spring Physics Animations.
- */
-
 const API_BASE = import.meta.env.VITE_API_URL;
 const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
 const PLACEHOLDER_IMG = "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png";
@@ -27,7 +23,6 @@ const PLACEHOLDER_IMG = "https://developers.elementor.com/docs/assets/img/elemen
 const LABEL_STYLE = "text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 flex items-center gap-2";
 const INPUT_STYLE = "w-full bg-slate-100 border-b border-slate-200 text-slate-900 px-4 py-4 outline-none focus:border-[#002855] focus:bg-white transition-all duration-150 font-semibold text-sm";
 
-// Configuración de resortes para respuesta instantánea (Sweet spot de velocidad)
 const FAST_SPRING = { type: "spring", stiffness: 500, damping: 35 };
 
 const resolveBackendUrl = (path?: string | null) => {
@@ -47,7 +42,6 @@ export default function ListarAcuerdos() {
 
     const { connection } = useSignalR();
 
-    // Lógica de ordenamiento multinivel (Estado -> ID Desc)
     const sortAcuerdos = (arr: any[]) => {
         return [...arr].sort((a, b) => {
             if (a.idEstado !== b.idEstado) return a.idEstado - b.idEstado;
@@ -273,12 +267,11 @@ const AcuerdoItem = memo(({ acuerdo, onOpen, onToggle }: {
 });
 
 const ModalConfiguracion = ({ id, empresas, onClose, onSuccess }: { id: number, empresas: any[], onClose: () => void, onSuccess: () => void }) => {
-    const [data, setData] = useState<any>(null); // Referencia original
-    const [formChanges, setFormChanges] = useState<any>({}); // Cambios del usuario
+    const [data, setData] = useState<any>(null);
+    const [formChanges, setFormChanges] = useState<any>({}); 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
-    // Carga inicial para mostrar placeholders
     useEffect(() => {
         const fetchById = async () => {
             try {
@@ -300,7 +293,6 @@ const ModalConfiguracion = ({ id, empresas, onClose, onSuccess }: { id: number, 
     const handlePatchUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Si no hay cambios en el objeto formChanges, cerramos sin llamar a la API
         if (Object.keys(formChanges).length === 0) {
             onClose();
             return;
@@ -309,7 +301,6 @@ const ModalConfiguracion = ({ id, empresas, onClose, onSuccess }: { id: number, 
         setSaving(true);
         const token = localStorage.getItem('token');
 
-        // Construcción del Multipart Form Data
         const formData = new FormData();
 
         if (formChanges.titulo) formData.append('titulo', formChanges.titulo);
@@ -317,11 +308,8 @@ const ModalConfiguracion = ({ id, empresas, onClose, onSuccess }: { id: number, 
         if (formChanges.detallesDescripcion) formData.append('detallesDescripcion', formChanges.detallesDescripcion);
         if (formChanges.idEmpresa) formData.append('idEmpresa', String(formChanges.idEmpresa));
 
-        // idCategoria se omite o se manda fijo si es necesario según tu regla
-        // formData.append('idCategoria', "1"); 
 
         if (formChanges.fechaVencimiento) {
-            // Aseguramos formato ISO para el backend
             const isoDate = new Date(formChanges.fechaVencimiento).toISOString();
             formData.append('fechaVencimiento', isoDate);
         }
@@ -331,13 +319,12 @@ const ModalConfiguracion = ({ id, empresas, onClose, onSuccess }: { id: number, 
                 method: 'PATCH',
                 headers: {
                     ...(token ? { Authorization: `Bearer ${token}` } : {})
-                    // Nota: No se pone 'Content-Type', el navegador lo pone auto con el boundary del FormData
                 },
                 body: formData
             });
 
             if (res.ok) {
-                onSuccess(); // Refresca la lista y cierra modal
+                onSuccess();
             } else {
                 const errData = await res.json();
                 console.error("Error en PATCH:", errData);
@@ -374,7 +361,6 @@ const ModalConfiguracion = ({ id, empresas, onClose, onSuccess }: { id: number, 
                     <X size={28} />
                 </button>
 
-                {/* Sidebar - Estética Acuerdos.tsx */}
                 <div className="hidden md:flex w-72 bg-[#002855] p-10 flex-col justify-start border-y border-l border-white/10 shrink-0 text-white">
                     <div className="w-12 h-12 bg-blue-600 flex items-center justify-center mb-8 shadow-lg border border-white/10">
                         <Settings size={24} />
@@ -451,7 +437,6 @@ const ModalConfiguracion = ({ id, empresas, onClose, onSuccess }: { id: number, 
                         </div>
                     </div>
 
-                    {/* Botón Save Estilo Acuerdos.tsx */}
                     <div className="absolute bottom-10 right-10">
                         <button
                             type="submit"
