@@ -10,8 +10,8 @@ import { useSignalR } from "../../../context/SignalRContext";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import { PDFDocument } from "./PDFDocument"; 
 const API_BASE = import.meta.env.VITE_API_URL;
-const PDI_LOGO_URL = "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png";
-const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
+const PDI_LOGO_URL = "/elementor-placeholder-image.png";
+const HERO_BG = "/i_region_cuartel_investigaciones_arica.png";
 const resolveBackendUrl = (path?: string | null) => {
     if (!path) return null;
     const s = String(path).trim();

@@ -9,7 +9,7 @@ import {
 import { Virtuoso } from 'react-virtuoso';
 import { Navbar } from '../../components/Navbar';
 const API_BASE = import.meta.env.VITE_API_URL;
-const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
+const HERO_BG = "/i_region_cuartel_investigaciones_arica.png";
 const LABEL_STYLE = "text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 flex items-center gap-2";
 const INPUT_STYLE = "w-full bg-slate-100 border-b border-slate-200 text-slate-900 px-4 py-3 outline-none focus:border-[#002855] focus:bg-white transition-all duration-150 font-semibold text-sm placeholder:text-slate-400/60 placeholder:italic placeholder:font-normal";
 const mapUnidadFromApi = (x: any) => ({

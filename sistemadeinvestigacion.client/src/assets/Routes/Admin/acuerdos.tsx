@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from "framer-motion";
 import { Navbar } from '../../components/Navbar';
 import { Settings2, ArrowRight, Building2, Calendar, FileText, Info, Layout, X, CheckCircle2 } from 'lucide-react';
-const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
+const HERO_BG = "/i_region_cuartel_investigaciones_arica.png";
 const LABEL_STYLE = "text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 flex items-center gap-2";
 const INPUT_STYLE = "w-full bg-slate-100 border-b border-slate-200 text-slate-900 px-4 py-4 outline-none focus:border-[#002855] focus:bg-white transition-all duration-300 font-semibold text-sm";
 const FORM_DRAFT_KEY = 'acuerdos_form_draft';

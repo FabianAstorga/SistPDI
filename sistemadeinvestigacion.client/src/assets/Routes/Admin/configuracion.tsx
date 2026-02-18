@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { Navbar } from '../../components/Navbar';
 const API_BASE = import.meta.env.VITE_API_URL;
-const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
+const HERO_BG = "/i_region_cuartel_investigaciones_arica.png";
 const LABEL_STYLE = "text-[9px] font-black uppercase tracking-[0.2em] mb-2 flex items-center gap-2";
 const INPUT_STYLE_LIGHT = "w-full bg-slate-50 border-b border-slate-200 text-slate-900 px-4 py-3 outline-none focus:border-[#002855] focus:bg-white transition-all duration-300 font-bold text-sm placeholder:text-slate-300";
 const transitionConfig = { type: "spring", stiffness: 300, damping: 30 };

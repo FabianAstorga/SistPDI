@@ -11,7 +11,7 @@ const MemoizedLeftToolbar = memo(LeftToolbar);
 const MemoizedCanvasStage = memo(CanvasStage);
 const MemoizedRightPanel = memo(RightPanel);
 
-const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
+const HERO_BG = "/i_region_cuartel_investigaciones_arica.png";
 
 export const Lienzo = () => {
     const navigate = useNavigate();

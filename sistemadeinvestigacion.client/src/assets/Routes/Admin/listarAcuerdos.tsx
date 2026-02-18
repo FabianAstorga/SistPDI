@@ -18,8 +18,9 @@ import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../../components/Navbar';
 import { useSignalR } from '../../../context/SignalRContext';
 const API_BASE = import.meta.env.VITE_API_URL;
-const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
-const PLACEHOLDER_IMG = "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png";
+const HERO_BG = "/i_region_cuartel_investigaciones_arica.png";
+const PLACEHOLDER_IMG = "/elementor-placeholder-image.png";
+
 
 const LABEL_STYLE = "text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 flex items-center gap-2";
 const INPUT_STYLE = "w-full bg-slate-100 border-b border-slate-200 text-slate-900 px-4 py-4 outline-none focus:border-[#002855] focus:bg-white transition-all duration-150 font-semibold text-sm";
