@@ -37,6 +37,7 @@ const reconstruirEstadoDesdeGruposSVG = (svgString: string): any[] => {
                 type,
                 name: g.getAttribute('data-name') || '',
                 templateKey,
+                isLocked: g.getAttribute('data-locked') === 'true',
                 x: Number(g.getAttribute('data-x')) || 0,
                 y: Number(g.getAttribute('data-y')) || 0,
                 width: Number(g.getAttribute('data-width')) || 100,
@@ -54,9 +55,7 @@ const reconstruirEstadoDesdeGruposSVG = (svgString: string): any[] => {
 
             if (el.type === 'texto') {
                 const datoInyectado = templateKey ? getValueFromTempAcuerdo(templateKey) : null;
-
                 el.text = datoInyectado || textNode?.textContent || '';
-
                 el.fontSize = Number(textNode?.getAttribute('font-size')) || 16;
                 el.fontFamily = textNode?.getAttribute('font-family') || 'Arial';
                 el.fontWeight = textNode?.getAttribute('font-weight') || '700';
@@ -148,10 +147,11 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
         setElementos((prev) => prev.map((el) => (el.id === id ? { ...el, ...cambios } : el)));
     }, []);
 
+    // MODIFICADO: Ignora elementos bloqueados
     const transformarGrupoPosicion = useCallback((id: number, dx: number, dy: number) => {
         if (modoPuntos) return;
         setElementos((prev) => prev.map((el) => {
-            if (id === el.id || seleccionadosIds.includes(el.id)) {
+            if ((id === el.id || seleccionadosIds.includes(el.id)) && !el.isLocked) {
                 return { ...el, x: (el.x || 0) + dx, y: (el.y || 0) + dy };
             }
             return el;
@@ -279,6 +279,17 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
         }
     }, [dibujando, dibujar, modoPuntos, dragHandle, elementos]);
 
+    // NUEVA FUNCIÓN: Implementación del bloqueo
+    const bloquearElemento = useCallback((id: number, lock: boolean) => {
+        setElementos(prev => prev.map(el =>
+            el.id === id ? { ...el, isLocked: lock } : el
+        ));
+        if (lock) {
+            setSeleccionadosIds(prev => prev.filter(sid => sid !== id));
+            if (seleccionadoId === id) setSeleccionadoId(null);
+        }
+    }, [seleccionadoId]);
+
     return {
         elementos, seleccionadoId, seleccionadosIds, seleccionado, herramientaActiva,
         menuFigurasOpen, canvasSize, colorGlobal, grosorLapiz, dibujando,
@@ -313,8 +324,17 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
             if (seleccionadoId === id) setSeleccionadoId(null);
         },
         limpiarSeleccion: () => { setSeleccionadoId(null); setSeleccionadosIds([]); },
-        seleccionarElementoCanvas: (id: number) => { setSeleccionadoId(id); setSeleccionadosIds([id]); },
+
+        // MODIFICADO: No permite seleccionar si está bloqueado
+        seleccionarElementoCanvas: (id: number) => {
+            const el = elementos.find(x => x.id === id);
+            if (el?.isLocked) return;
+            setSeleccionadoId(id);
+            setSeleccionadosIds([id]);
+        },
+
         seleccionarElementoDesdeCapas: (id: number) => setSeleccionadosIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]),
+        bloquearElemento, // EXPORTADO
 
         subirImagen: (e: any) => {
             const file = e.target.files?.[0];

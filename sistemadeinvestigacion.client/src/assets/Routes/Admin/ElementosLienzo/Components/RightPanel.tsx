@@ -41,6 +41,7 @@ export const RightPanel: React.FC<Props> = memo(({ model }) => {
         actualizarAtributo,
         clonarElemento,
         eliminarElemento,
+        bloquearElemento, // <--- Agregado aquí
         seleccionarElementoDesdeCapas,
         moverCapa,
         moverCapaExtremo,
@@ -135,6 +136,7 @@ export const RightPanel: React.FC<Props> = memo(({ model }) => {
                                 moverCapa={moverCapa}
                                 moverCapaExtremo={moverCapaExtremo}
                                 eliminarElemento={eliminarElemento}
+                                bloquearElemento={bloquearElemento} // <--- Agregado aquí
                                 controlLabel={LABEL_STYLE}
                             />
                         </motion.div>

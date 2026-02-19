@@ -40,6 +40,8 @@ export type ElementoBase = {
     saturation: number;     
 
     pointsArr?: Pt[];       
+
+    isLocked?: boolean;
 };
 
 export type ElementoTexto = ElementoBase & {

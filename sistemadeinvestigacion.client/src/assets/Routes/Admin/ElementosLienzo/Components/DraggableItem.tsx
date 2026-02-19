@@ -62,7 +62,8 @@ export const DraggableItem: React.FC<Props> = memo(({
     }, [el.id, el.width, el.height, el.x, el.y, alRedimensionar]);
 
     const onMouseDownDrag = (e: React.MouseEvent<SVGGElement>) => {
-        if (!puedeInteractuar) return;
+        // Si el elemento está bloqueado o no podemos interactuar, no hacemos nada
+        if (!puedeInteractuar || el.isLocked) return;
         e.stopPropagation();
         alSeleccionarCanvas(el.id);
         draggingRef.current = true;
@@ -99,11 +100,16 @@ export const DraggableItem: React.FC<Props> = memo(({
         <g
             className="draggable-group"
             onMouseDown={onMouseDownDrag}
-            style={{ cursor: puedeInteractuar ? 'move' : 'default' }}
+            style={{
+                cursor: (puedeInteractuar && !el.isLocked) ? 'move' : 'default',
+                // CAMBIO: Si está bloqueado, desactivamos los eventos de ratón
+                pointerEvents: el.isLocked ? 'none' : 'auto'
+            }}
             data-elid={el.id}
             data-type={el.type}
             data-name={el.name || `${el.type}_${el.id}`}
             data-template-key={el.templateKey || ''}
+            data-locked={el.isLocked ? 'true' : 'false'}
             data-x={el.x || 0}
             data-y={el.y || 0}
             data-width={w}
@@ -115,7 +121,8 @@ export const DraggableItem: React.FC<Props> = memo(({
         >
             {children}
 
-            {estaSeleccionado && puedeInteractuar && (
+            {/* CAMBIO: Solo mostrar controles si NO está bloqueado */}
+            {estaSeleccionado && puedeInteractuar && !el.isLocked && (
                 <g data-editor="1">
                     <rect
                         x={-4} y={-4}
