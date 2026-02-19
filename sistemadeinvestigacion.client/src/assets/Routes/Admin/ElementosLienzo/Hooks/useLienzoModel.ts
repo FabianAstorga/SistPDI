@@ -147,7 +147,6 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
         setElementos((prev) => prev.map((el) => (el.id === id ? { ...el, ...cambios } : el)));
     }, []);
 
-    // MODIFICADO: Ignora elementos bloqueados
     const transformarGrupoPosicion = useCallback((id: number, dx: number, dy: number) => {
         if (modoPuntos) return;
         setElementos((prev) => prev.map((el) => {
@@ -279,7 +278,6 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
         }
     }, [dibujando, dibujar, modoPuntos, dragHandle, elementos]);
 
-    // NUEVA FUNCIÓN: Implementación del bloqueo
     const bloquearElemento = useCallback((id: number, lock: boolean) => {
         setElementos(prev => prev.map(el =>
             el.id === id ? { ...el, isLocked: lock } : el
@@ -325,7 +323,6 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
         },
         limpiarSeleccion: () => { setSeleccionadoId(null); setSeleccionadosIds([]); },
 
-        // MODIFICADO: No permite seleccionar si está bloqueado
         seleccionarElementoCanvas: (id: number) => {
             const el = elementos.find(x => x.id === id);
             if (el?.isLocked) return;
@@ -334,7 +331,7 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
         },
 
         seleccionarElementoDesdeCapas: (id: number) => setSeleccionadosIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]),
-        bloquearElemento, // EXPORTADO
+        bloquearElemento, 
 
         subirImagen: (e: any) => {
             const file = e.target.files?.[0];

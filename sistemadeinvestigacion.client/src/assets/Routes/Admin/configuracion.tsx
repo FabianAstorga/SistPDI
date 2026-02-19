@@ -145,7 +145,6 @@ export default function ConfiguracionPersonal() {
                 </motion.div>
 
                 <div className="grid grid-cols-12 gap-8 pb-20">
-                    {/* Perfil Info Card */}
                     <motion.div initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} transition={transitionConfig} className="col-span-12 lg:col-span-4 bg-[#001a35]/40 backdrop-blur-xl border border-white/10 rounded-sm shadow-2xl overflow-hidden h-fit">
                         <div className="h-1 bg-blue-500 w-full" />
                         <div className="p-10 flex flex-col items-center border-b border-white/5">
@@ -166,7 +165,6 @@ export default function ConfiguracionPersonal() {
                         </div>
                     </motion.div>
 
-                    {/* Formulario Principal */}
                     <div className="col-span-12 lg:col-span-8 space-y-6">
                         <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} className="bg-white/95 backdrop-blur-md p-10 rounded-sm shadow-2xl text-slate-900">
                             <AnimatePresence mode="wait">

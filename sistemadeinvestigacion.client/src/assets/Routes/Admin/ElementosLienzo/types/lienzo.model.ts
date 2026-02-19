@@ -50,7 +50,6 @@ export type LienzoModel = {
     manejarCambioColor: (nuevoColor: string) => void;
     eliminarElemento: (id: number) => void;
 
-    // --- FUNCIÓN FALTANTE ---
     bloquearElemento: (id: number, lock: boolean) => void;
 
     clonarElemento: () => void;

@@ -318,7 +318,6 @@ const ModalDetalle = memo(({ data, onClose }: any) => {
     const [nombreInput, setNombreInput] = useState("");
     const [isSending, setIsSending] = useState(false);
 
-    // Referencia para la conexión específica de comentarios
     const comentariosConnRef = useRef<HubConnection | null>(null);
 
     const userObj = JSON.parse(localStorage.getItem('user') || '{}');
@@ -339,11 +338,9 @@ const ModalDetalle = memo(({ data, onClose }: any) => {
         }
     }, [data.id]);
 
-    // --- LÓGICA DE SOCKETS PARA COMENTARIOS ---
     useEffect(() => {
-        // 1. Crear la conexión al Hub de Comentarios
         const conn = new HubConnectionBuilder()
-            .withUrl(`${API_BASE}/comentariosHub`) // ASEGÚRATE que esta URL sea la misma que en Program.cs
+            .withUrl(`${API_BASE}/comentariosHub`) 
             .withAutomaticReconnect()
             .configureLogging(LogLevel.Information)
             .build();
@@ -353,10 +350,8 @@ const ModalDetalle = memo(({ data, onClose }: any) => {
                 await conn.start();
                 console.log("Conectado al Hub de Comentarios");
 
-                // 2. Unirse al grupo una vez conectado
                 await conn.invoke("UnirseAGrupoAcuerdo", Number(data.id));
 
-                // 3. Escuchar actualizaciones
                 conn.on("RecibirActualizacionComentarios", () => {
                     fetchComentarios();
                 });
@@ -369,7 +364,6 @@ const ModalDetalle = memo(({ data, onClose }: any) => {
 
         startConnection();
 
-        // Limpieza al cerrar el modal
         return () => {
             if (comentariosConnRef.current) {
                 comentariosConnRef.current.invoke("SalirDeGrupoAcuerdo", Number(data.id))

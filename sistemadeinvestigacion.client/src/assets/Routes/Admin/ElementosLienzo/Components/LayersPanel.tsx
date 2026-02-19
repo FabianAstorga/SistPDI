@@ -17,7 +17,6 @@ type Props = {
     moverCapa: (id: number, direction: 'up' | 'down') => void;
     moverCapaExtremo: (id: number, direction: 'top' | 'bottom') => void;
     eliminarElemento: (id: number) => void;
-    // Nueva prop para manejar el bloqueo
     bloquearElemento: (id: number, lock: boolean) => void;
     controlLabel: string;
 };
@@ -54,7 +53,6 @@ const LayerRow = memo(({
             </div>
 
             <div className="flex items-center space-x-1 ml-2 shrink-0">
-                {/* Botón de Candado */}
                 <button
                     onClick={(e) => { e.stopPropagation(); onLock(id, !isLocked); }}
                     className={`p-1 rounded-md transition-all ${isLocked

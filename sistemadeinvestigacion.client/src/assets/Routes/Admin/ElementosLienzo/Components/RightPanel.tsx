@@ -83,7 +83,6 @@ export const RightPanel: React.FC<Props> = memo(({ model }) => {
     return (
         <aside className="w-80 bg-[#001a35]/40 backdrop-blur-xl border-l border-white/5 flex flex-col shadow-2xl h-full overflow-hidden text-white">
 
-            {/* PESTAÑAS MOVIDAS ARRIBA */}
             <div className="pb-1 border-b border-white/5">
                 <div className="flex w-full gap-1 mt-2 bg-white/5 p-1.5 rounded-xl border border-white/5">
                     <button
@@ -98,7 +97,7 @@ export const RightPanel: React.FC<Props> = memo(({ model }) => {
                                 : 'text-white/30 hover:text-white hover:bg-white/5'}
             `}
                     >
-                        <Settings size={16} /> {/* Icono aumentado */}
+                        <Settings size={16} /> 
                         OPCIONES
                     </button>
 
@@ -114,13 +113,12 @@ export const RightPanel: React.FC<Props> = memo(({ model }) => {
                                 : 'text-white/30 hover:text-white hover:bg-white/5'}
             `}
                     >
-                        <Layers size={16} /> {/* Icono aumentado */}
+                        <Layers size={16} /> 
                         CAPAS
                     </button>
                 </div>
             </div>
 
-            {/* CONTENEDOR PRINCIPAL MODIFICADO PARA NO TENER SCROLL EXTERNO */}
             <div className="flex-1 relative overflow-hidden">
                 <AnimatePresence mode="wait">
                     {activeTab === 'capas' ? (
@@ -136,7 +134,7 @@ export const RightPanel: React.FC<Props> = memo(({ model }) => {
                                 moverCapa={moverCapa}
                                 moverCapaExtremo={moverCapaExtremo}
                                 eliminarElemento={eliminarElemento}
-                                bloquearElemento={bloquearElemento} // <--- Agregado aquí
+                                bloquearElemento={bloquearElemento} 
                                 controlLabel={LABEL_STYLE}
                             />
                         </motion.div>
@@ -144,7 +142,7 @@ export const RightPanel: React.FC<Props> = memo(({ model }) => {
                         <motion.div
                             key="opciones-panel"
                             initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}
-                            className="absolute inset-0 p-1  custom-list-scroll" // Se añadió absolute inset-0 y overflow
+                            className="absolute inset-0 p-1  custom-list-scroll" 
                         >
                             <AnimatePresence mode="wait">
                                 <motion.section
