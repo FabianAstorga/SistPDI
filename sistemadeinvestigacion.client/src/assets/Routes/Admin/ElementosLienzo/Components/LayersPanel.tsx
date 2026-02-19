@@ -46,8 +46,8 @@ const LayerRow = memo(({
                     onClick={(e) => { e.stopPropagation(); onMoveExtreme(id, 'top'); }}
                     disabled={isTop}
                     className={`p-1 rounded-md transition-all ${isTop
-                            ? 'text-gray-200'
-                            : 'text-black hover:bg-black/10 hover:scale-110'
+                        ? 'text-gray-200'
+                        : 'text-black hover:bg-black/10 hover:scale-110'
                         }`}
                     title="Llevar al Tope"
                 >
@@ -58,8 +58,8 @@ const LayerRow = memo(({
                     onClick={(e) => { e.stopPropagation(); onMove(id, 'up'); }}
                     disabled={isTop}
                     className={`p-1 rounded-md transition-all ${isTop
-                            ? 'text-gray-200'
-                            : 'text-black hover:bg-black/10 hover:scale-110'
+                        ? 'text-gray-200'
+                        : 'text-black hover:bg-black/10 hover:scale-110'
                         }`}
                     title="Subir"
                 >
@@ -70,8 +70,8 @@ const LayerRow = memo(({
                     onClick={(e) => { e.stopPropagation(); onMove(id, 'down'); }}
                     disabled={isBottom}
                     className={`p-1 rounded-md transition-all ${isBottom
-                            ? 'text-gray-200'
-                            : 'text-black hover:bg-black/10 hover:scale-110'
+                        ? 'text-gray-200'
+                        : 'text-black hover:bg-black/10 hover:scale-110'
                         }`}
                     title="Bajar"
                 >
@@ -82,8 +82,8 @@ const LayerRow = memo(({
                     onClick={(e) => { e.stopPropagation(); onMoveExtreme(id, 'bottom'); }}
                     disabled={isBottom}
                     className={`p-1 rounded-md transition-all ${isBottom
-                            ? 'text-gray-200'
-                            : 'text-black hover:bg-black/10 hover:scale-110'
+                        ? 'text-gray-200'
+                        : 'text-black hover:bg-black/10 hover:scale-110'
                         }`}
                     title="Al Fondo"
                 >
@@ -114,8 +114,9 @@ export const LayersPanel: React.FC<Props> = memo(({
     const selectedSet = useMemo(() => new Set(seleccionadosIds), [seleccionadosIds]);
 
     return (
-        <div>
-            <div className="max-h-60 overflow-y-auto pr-1 flex flex-col-reverse space-y-1 space-y-reverse custom-scrollbar">
+        <div className="w-full">
+            {/* Clases limitantes removidas: la lista ahora crecerá natural */}
+            <div className="flex flex-col-reverse space-y-1 space-y-reverse w-full pb-4">
                 {elementos.map((el, idx) => {
                     const id = Number(el.id);
                     return (

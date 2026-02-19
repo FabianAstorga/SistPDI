@@ -27,7 +27,7 @@ import {
 
 const FAST_TRANSITION = { type: "spring", stiffness: 400, damping: 30 };
 const API_BASE = import.meta.env.VITE_API_URL;
-const HERO_BG = "https://mvstoragev.blob.core.windows.net/memoriaviva/web/files/33220/i_region_cuartel_investigaciones_arica.webp";
+const HERO_BG = "/i_region_cuartel_investigaciones_arica.png";
 const cleanRut = (r: string) => String(r || "").replace(/[^0-9kK]/g, '').toLowerCase();
 const LABEL_STYLE = "text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 flex items-center gap-2";
 const INPUT_STYLE = "w-full bg-slate-100 border-b border-slate-200 text-slate-900 px-4 py-3 outline-none focus:border-[#002855] focus:bg-white transition-all duration-300 font-bold text-sm disabled:opacity-60 disabled:cursor-not-allowed";
