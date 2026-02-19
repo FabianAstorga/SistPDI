@@ -9,6 +9,7 @@ import { X, RefreshCw, Send, MessageSquare, Trash2, Search, FileText } from 'luc
 import { useSignalR } from "../../../context/SignalRContext";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import { PDFDocument } from "./PDFDocument"; 
+import { HubConnectionBuilder, LogLevel, HubConnection } from "@microsoft/signalr";
 const API_BASE = import.meta.env.VITE_API_URL;
 const PDI_LOGO_URL = "/elementor-placeholder-image.png";
 const HERO_BG = "/i_region_cuartel_investigaciones_arica.png";
@@ -316,19 +317,12 @@ const ModalDetalle = memo(({ data, onClose }: any) => {
     const [nuevoComentario, setNuevoComentario] = useState("");
     const [nombreInput, setNombreInput] = useState("");
     const [isSending, setIsSending] = useState(false);
+
+    // Referencia para la conexión específica de comentarios
+    const comentariosConnRef = useRef<HubConnection | null>(null);
+
     const userObj = JSON.parse(localStorage.getItem('user') || '{}');
     const isAdmin = Number(userObj.rol) === 1;
-
-    const handleDelete = async (idComentario: number) => {
-        if (!window.confirm("¿Estás seguro de que deseas eliminar este comentario?")) return;
-        try {
-            const res = await fetch(`${API_BASE}/api/Comentarios/eliminar/${idComentario}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-            });
-            if (res.ok) setComentarios(prev => prev.filter(c => (c.idComentario ?? c.id) !== idComentario));
-        } catch (e) { console.error("Error deleting comment:", e); }
-    };
 
     const fetchComentarios = useCallback(async () => {
         try {
@@ -338,9 +332,52 @@ const ModalDetalle = memo(({ data, onClose }: any) => {
                 const json = await res.json();
                 setComentarios(Array.isArray(json) ? [...json].reverse() : []);
             }
-        } catch (e) { console.error("Error al cargar comentarios", e); }
-        finally { setLoadingComentarios(false); }
+        } catch (e) {
+            console.error("Error al cargar comentarios", e);
+        } finally {
+            setLoadingComentarios(false);
+        }
     }, [data.id]);
+
+    // --- LÓGICA DE SOCKETS PARA COMENTARIOS ---
+    useEffect(() => {
+        // 1. Crear la conexión al Hub de Comentarios
+        const conn = new HubConnectionBuilder()
+            .withUrl(`${API_BASE}/comentariosHub`) // ASEGÚRATE que esta URL sea la misma que en Program.cs
+            .withAutomaticReconnect()
+            .configureLogging(LogLevel.Information)
+            .build();
+
+        const startConnection = async () => {
+            try {
+                await conn.start();
+                console.log("Conectado al Hub de Comentarios");
+
+                // 2. Unirse al grupo una vez conectado
+                await conn.invoke("UnirseAGrupoAcuerdo", Number(data.id));
+
+                // 3. Escuchar actualizaciones
+                conn.on("RecibirActualizacionComentarios", () => {
+                    fetchComentarios();
+                });
+
+                comentariosConnRef.current = conn;
+            } catch (err) {
+                console.error("Error al conectar al Hub de Comentarios:", err);
+            }
+        };
+
+        startConnection();
+
+        // Limpieza al cerrar el modal
+        return () => {
+            if (comentariosConnRef.current) {
+                comentariosConnRef.current.invoke("SalirDeGrupoAcuerdo", Number(data.id))
+                    .then(() => comentariosConnRef.current?.stop())
+                    .catch(e => console.error("Error al cerrar socket comentarios:", e));
+            }
+        };
+    }, [data.id, fetchComentarios]);
 
     useEffect(() => {
         const userJson = localStorage.getItem('user');
@@ -353,6 +390,16 @@ const ModalDetalle = memo(({ data, onClose }: any) => {
         fetchComentarios();
     }, [fetchComentarios]);
 
+    const handleDelete = async (idComentario: number) => {
+        if (!window.confirm("¿Estás seguro de que deseas eliminar este comentario?")) return;
+        try {
+            await fetch(`${API_BASE}/api/Comentarios/eliminar/${idComentario}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+        } catch (e) { console.error("Error deleting comment:", e); }
+    };
+
     const handleSendComentario = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!nuevoComentario.trim() || isSending) return;
@@ -363,10 +410,7 @@ const ModalDetalle = memo(({ data, onClose }: any) => {
         formData.append('NombreUsuario', nombreInput.trim() || "Anónimo");
         try {
             const res = await fetch(`${API_BASE}/api/Comentarios/crear`, { method: 'POST', body: formData });
-            if (res.ok) {
-                setNuevoComentario("");
-                await fetchComentarios();
-            }
+            if (res.ok) setNuevoComentario("");
         } catch (e) { console.error("Error al enviar", e); }
         finally { setIsSending(false); }
     };
@@ -454,4 +498,4 @@ const ModalDetalle = memo(({ data, onClose }: any) => {
             </motion.div>
         </div>
     );
-}); 
+});

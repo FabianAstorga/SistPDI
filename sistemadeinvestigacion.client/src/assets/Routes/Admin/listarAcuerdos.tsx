@@ -17,10 +17,10 @@ import { Virtuoso } from 'react-virtuoso';
 import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../../components/Navbar';
 import { useSignalR } from '../../../context/SignalRContext';
+
 const API_BASE = import.meta.env.VITE_API_URL;
 const HERO_BG = "/i_region_cuartel_investigaciones_arica.png";
 const PLACEHOLDER_IMG = "/elementor-placeholder-image.png";
-
 
 const LABEL_STYLE = "text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 flex items-center gap-2";
 const INPUT_STYLE = "w-full bg-slate-100 border-b border-slate-200 text-slate-900 px-4 py-4 outline-none focus:border-[#002855] focus:bg-white transition-all duration-150 font-semibold text-sm";
@@ -303,14 +303,12 @@ const ModalConfiguracion = ({ id, empresas, onClose, onSuccess }: { id: number, 
 
         setSaving(true);
         const token = localStorage.getItem('token');
-
         const formData = new FormData();
 
         if (formChanges.titulo) formData.append('titulo', formChanges.titulo);
         if (formChanges.descripcion) formData.append('descripcion', formChanges.descripcion);
         if (formChanges.detallesDescripcion) formData.append('detallesDescripcion', formChanges.detallesDescripcion);
         if (formChanges.idEmpresa) formData.append('idEmpresa', String(formChanges.idEmpresa));
-
 
         if (formChanges.fechaVencimiento) {
             const isoDate = new Date(formChanges.fechaVencimiento).toISOString();
@@ -356,9 +354,7 @@ const ModalConfiguracion = ({ id, empresas, onClose, onSuccess }: { id: number, 
 
             if (res.ok) {
                 const svgData = await res.json();
-
                 localStorage.setItem('template_svg', svgData.svg_editado);
-
                 const modoLienzo = { tipo: 3, id: id, nombre: "Modo Edición" };
                 localStorage.setItem('modo', JSON.stringify(modoLienzo));
                 navigate('/lienzo');
