@@ -15,11 +15,12 @@ namespace SistemaDeInvestigacion.Server.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
-
-        public ComentariosController(ApplicationDbContext context, IConfiguration configuration)
+        private readonly IHubContext<ComentariosHub> _hubContext;
+        public ComentariosController(ApplicationDbContext context, IConfiguration configuration, IHubContext<ComentariosHub> hubContext)
         {
             _context = context;
             _configuration = configuration;
+            _hubContext = hubContext;
         }
 
         //obtiene comentarios
@@ -50,6 +51,8 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
             _context.Comentarios.Add(nuevoComentario);
             await _context.SaveChangesAsync();
+            string grupoId = $"Acuerdo_{nuevoComentario.IdAcuerdo}";
+            await _hubContext.Clients.Group(grupoId).SendAsync("RecibirActualizacionComentarios");
             return Ok("Comentario creado Correctamente");
         }
 
@@ -58,8 +61,11 @@ namespace SistemaDeInvestigacion.Server.Controllers
         [HttpDelete("eliminar/{idComentario}")]
         public async Task<ActionResult<Comentarios>> deleteComentario(int idComentario){
             var comentariosData = await _context.Comentarios.FindAsync(idComentario);
+            int idAcuerdo = comentariosData.IdAcuerdo;
             _context.Comentarios.Remove(comentariosData);
             await _context.SaveChangesAsync();
+            string grupoId = $"Acuerdo_{idAcuerdo}";
+            await _hubContext.Clients.Group(grupoId).SendAsync("RecibirActualizacionComentarios");
             return NoContent();
         }
     }

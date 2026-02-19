@@ -191,5 +191,5 @@ app.MapControllers();
 app.MapFallbackToFile("/index.html");
 
 app.MapHub<AcuerdosHub>("/acuerdosHub");
-
+app.MapHub<ComentariosHub>("/comentariosHub");
 app.Run();

@@ -52,7 +52,6 @@ namespace SistemaDeInvestigacion.Server.Servicios
             if (plaintext.Length == 0) return plaintext;
             if (IsEncrypted(plaintext)) return plaintext;
 
-            // nonce determinístico = HMAC(nonceKey, plaintext) truncado a 12 bytes
             byte[] pt = Encoding.UTF8.GetBytes(plaintext);
             byte[] full = HMACSHA256.HashData(_nonceKey, pt);
             byte[] nonce = full[..NonceSize];
