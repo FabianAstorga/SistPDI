@@ -116,23 +116,36 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
 
     useEffect(() => {
         const modoRaw = localStorage.getItem('modo');
-        const modoParsed = modoRaw ? JSON.parse(modoRaw) : { tipo: 1 };
+        // Si no hay modo, evitamos que rompa
+        if (!modoRaw) return;
+
+        const modoParsed = JSON.parse(modoRaw);
         setModo(modoParsed);
 
-        const templateSvg = localStorage.getItem('template_svg');
-
-        if (templateSvg) {
-            const iniciales = reconstruirEstadoDesdeGruposSVG(templateSvg);
-            setElementos(iniciales);
+        // Lógica de recuperación de elementos
+        if (modoParsed.tipo === 4) {
+            // Modo Edición de Plantilla Base
+            const svgEdit = localStorage.getItem('template_svg_edit');
+            if (svgEdit) {
+                console.log("[Lienzo] 🔄 Reconstruyendo plantilla para edición (Modo 4)");
+                setElementos(reconstruirEstadoDesdeGruposSVG(svgEdit));
+            }
+        } else {
+            // Modos 1, 2, 3 (usan la plantilla normal o empiezan vacíos)
+            const templateSvg = localStorage.getItem('template_svg');
+            if (templateSvg) {
+                setElementos(reconstruirEstadoDesdeGruposSVG(templateSvg));
+            }
         }
 
+        // Lógica de Títulos según el modo
         if (modoParsed.tipo === 3) {
             const tempCambio = localStorage.getItem('temp_cambio');
             if (tempCambio) {
                 const data = JSON.parse(tempCambio);
                 setTituloAcuerdo(data.titulo || 'Editando Acuerdo');
             }
-        } else {
+        } else if (modoParsed.tipo === 1 || modoParsed.tipo === 2) {
             const tempAcuerdo = localStorage.getItem('temp_acuerdo');
             if (tempAcuerdo) {
                 const data = JSON.parse(tempAcuerdo);
@@ -258,8 +271,8 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
 
     const manejarGuardadoFinal = useCallback(async () => {
         if (!modo) return;
-        await guardarAcuerdoFinal({ elementos, canvasSize, navigate, modo });
-    }, [elementos, canvasSize, navigate, modo]);
+        await guardarAcuerdoFinal({ navigate, modo });
+    }, [navigate, modo]);
 
     const onSvgMouseMove = useCallback((e: any) => {
         if (dibujando) {
@@ -331,7 +344,7 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
         },
 
         seleccionarElementoDesdeCapas: (id: number) => setSeleccionadosIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]),
-        bloquearElemento, 
+        bloquearElemento,
 
         subirImagen: (e: any) => {
             const file = e.target.files?.[0];

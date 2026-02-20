@@ -54,12 +54,15 @@ export const guardarAcuerdoFinal = async (params: {
 }) => {
     const { navigate, modo } = params;
     const token = localStorage.getItem('token');
+
     const storageKey = modo.tipo === 3 ? 'temp_cambio' : 'temp_acuerdo';
     const storageRaw = localStorage.getItem(storageKey);
-    if (!token || (modo.tipo === 1 && !storageRaw) || (modo.tipo === 2 && false)) {
-        alert('Error: Faltan datos o la sesión expiró.');
+
+    if (!token) {
+        alert('Error: La sesión expiró.');
         return;
     }
+
     const maybeFn = params.getSvgString;
     const rawSvgString =
         typeof maybeFn === 'function'
@@ -79,14 +82,29 @@ export const guardarAcuerdoFinal = async (params: {
         Authorization: `Bearer ${token}`
     };
 
-    if (modo.tipo === 2) {
+    // --- LÓGICA MODO 4: EDICIÓN DE PLANTILLA (PATCH) ---
+    if (modo.tipo === 4) {
+        if (!modo.id) {
+            alert("Error: ID de plantilla no encontrado.");
+            return;
+        }
+        // AJUSTE: Se usa 'idSvg' y 'svgOriginal' como pide tu API
+        url = `${import.meta.env.VITE_API_URL}/api/Svg/editar?idSvg=${modo.id}&svgOriginal=${encodeURIComponent(svgFinal)}`;
+        method = 'PATCH';
+        headers['Content-Type'] = 'application/json';
+        body = null;
+    }
+    // --- LÓGICA MODO 2: CREAR TEMPLATE ---
+    else if (modo.tipo === 2) {
         url = `${import.meta.env.VITE_API_URL}/api/Svg/crearTemplate`;
         headers['Content-Type'] = 'application/json';
         body = JSON.stringify({
             svg_original: svgFinal,
             estado: true
         });
-    } else {
+    }
+    // --- LÓGICA MODOS 1 Y 3: ACUERDOS ---
+    else {
         const fd = new FormData();
         const acuerdoBase = safeJson(storageRaw) || {};
 
@@ -146,14 +164,17 @@ export const guardarAcuerdoFinal = async (params: {
         const acuerdoBody = await readResponseBody(resAcuerdo);
 
         if (resAcuerdo.ok) {
-            alert(modo.tipo === 2 ? 'Plantilla guardada.' : 'Acuerdo procesado exitosamente.');
+            if (modo.tipo === 4) alert('Plantilla base editada con éxito.');
+            else if (modo.tipo === 2) alert('Plantilla guardada.');
+            else alert('Acuerdo procesado exitosamente.');
 
             localStorage.removeItem('temp_cambio');
             localStorage.removeItem('temp_acuerdo');
             localStorage.removeItem('modo');
             localStorage.removeItem('template_svg');
+            localStorage.removeItem('template_svg_edit');
 
-            navigate('/panel');
+            navigate(modo.tipo === 4 ? '/EditarSvg' : '/panel');
             return;
         }
 

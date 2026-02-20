@@ -43,6 +43,7 @@ const NAV_CONFIG = [
         ]
     },
     { id: 'plantilla', label: 'Plantilla', path: '/lienzo', icon: Layers },
+    { id: 'EditarSvg', label: 'EditarSvg', path: '/EditarSvg', icon: Layers }
     
 ];
 
