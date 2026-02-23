@@ -63,10 +63,11 @@ namespace SistemaDeInvestigacion.Server.Controllers
         [HttpPost("crear")]
         public async Task<ActionResult<Acuerdo>> PublicarInstitucion([FromForm] CreateEmpresaDto createEmpresaDto)
         {
+            var userId = User.GetUserId();
+
             string dbroute = null;
             if (createEmpresaDto.logo != null && createEmpresaDto.logo.Length > 0)
             {
-
                 string carpetaImagenes = Path.Combine(_env.ContentRootPath, "LogosMedia");
                 if (!Directory.Exists(carpetaImagenes))
                 {
@@ -78,19 +79,16 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 string filename = $"logo-{name}{extension}";
                 string routecomplete = Path.Combine(carpetaImagenes, filename);
 
-
                 using (var stream = new FileStream(routecomplete, FileMode.Create))
                 {
                     await createEmpresaDto.logo.CopyToAsync(stream);
                 }
 
                 dbroute = $"/imagenes/{filename}";
-
             }
 
             var newEmpresa = new Empresas
             {
-
                 Nombre = createEmpresaDto.nombre,
                 Descripcion = createEmpresaDto.descripcion,
                 Logo = dbroute,
@@ -104,12 +102,22 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
             _context.Empresas.Add(newEmpresa);
             await _context.SaveChangesAsync();
+
+            var auditoria = new empresasAuditoria
+            {
+                idpersona = userId,
+                accion = $"INSERT | Se creó la empresa: {newEmpresa.Nombre}",
+                fechacambio = DateTime.UtcNow,
+                idempresa = newEmpresa.IdEmpresa
+            };
+
+            _context.EmpresaAuditoria.Add(auditoria);
+            await _context.SaveChangesAsync();
+
             return Ok(new
             {
                 message = "Empresa creada correctamente"
             });
-
-
         }
 
         //alterna una empresa (de habilitado a deshabilitado y viceversa)
@@ -117,22 +125,39 @@ namespace SistemaDeInvestigacion.Server.Controllers
         [HttpPatch("alternar/{idEmpresa}")]
         public async Task<ActionResult> deshabilitarEmpresa(int idEmpresa)
         {
+            // Obtenemos el ID del usuario que realiza la acción
+            var userId = User.GetUserId();
             var empresa = await _context.Empresas.FindAsync(idEmpresa);
+
+            if (empresa == null) return NotFound("Empresa no encontrada");
+
+            int estadoAnterior = empresa.IdEstado;
+
             if (empresa.IdEstado == 1)
             {
                 empresa.IdEstado = 2;
-                await _context.SaveChangesAsync();
-                return NoContent();
             }
-
-            if (empresa.IdEstado == 2)
+            else if (empresa.IdEstado == 2)
             {
                 empresa.IdEstado = 1;
-                await _context.SaveChangesAsync();
-                return NoContent();
             }
+            else
+            {
+                return BadRequest("Error en el alternado de la empresa");
+            }
+            await _context.SaveChangesAsync();
 
-            return BadRequest("Error en el alternado de la empresa");
+            var auditoria = new empresasAuditoria
+            {
+                idpersona = userId,
+                accion = $"PATCH | Cambio de {estadoAnterior} a {empresa.IdEstado}",
+                fechacambio = DateTime.UtcNow,
+                idempresa = idEmpresa
+            };
+
+            _context.EmpresaAuditoria.Add(auditoria);
+            await _context.SaveChangesAsync();
+            return NoContent();
         }
 
         //permite editar una empresa
@@ -140,26 +165,49 @@ namespace SistemaDeInvestigacion.Server.Controllers
         [HttpPatch("editar/{idEmpresa}")]
         public async Task<ActionResult> EditEmpresa(int idEmpresa, EditEmpresaDto editEmpresaDto)
         {
+            var userId = User.GetUserId();
             var newData = editEmpresaDto;
             var dataBDEmpresa = await _context.Empresas.FindAsync(idEmpresa);
 
-            if (newData.nombre != null) {dataBDEmpresa.Nombre = newData.nombre;}
+            if (dataBDEmpresa == null) return NotFound("Empresa no encontrada");
 
-            if (newData.email != null) {dataBDEmpresa.Email = newData.email;}
+            string nombreAnterior = dataBDEmpresa.Nombre;
+            List<string> cambios = new List<string>();
 
-            if (newData.direccion != null) {dataBDEmpresa.Direccion = newData.direccion;}
-
-            if (newData.sitioWeb != null) {dataBDEmpresa.SitioWeb = newData.sitioWeb;}
-
-            if (newData.descripcion != null) {dataBDEmpresa.Descripcion = newData.descripcion;}
-
-            if (newData.telefono.HasValue) { dataBDEmpresa.Telefono = newData.telefono;}
+            if (newData.nombre != null)
+            {
+                cambios.Add($"Nombre: {nombreAnterior} -> {newData.nombre}");
+                dataBDEmpresa.Nombre = newData.nombre;
+            }
+            if (newData.email != null)
+            {
+                cambios.Add("Email actualizado");
+                dataBDEmpresa.Email = newData.email;
+            }
+            if (newData.direccion != null)
+            {
+                cambios.Add("Dirección actualizada");
+                dataBDEmpresa.Direccion = newData.direccion;
+            }
+            if (newData.sitioWeb != null)
+            {
+                cambios.Add("Sitio Web actualizado");
+                dataBDEmpresa.SitioWeb = newData.sitioWeb;
+            }
+            if (newData.descripcion != null)
+            {
+                cambios.Add("Descripción actualizada");
+                dataBDEmpresa.Descripcion = newData.descripcion;
+            }
+            if (newData.telefono.HasValue)
+            {
+                cambios.Add("Teléfono actualizado");
+                dataBDEmpresa.Telefono = newData.telefono;
+            }
 
             string dbroute = null;
-
             if (newData.logo != null && newData.logo.Length > 0)
             {
-
                 string carpetaImagenes = Path.Combine(_env.ContentRootPath, "LogosMedia");
                 if (!Directory.Exists(carpetaImagenes))
                 {
@@ -170,18 +218,33 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 string name = dataBDEmpresa.Nombre.Replace(" ", "_").ToLower();
                 string filename = $"logo-{name}{extension}";
                 string routecomplete = Path.Combine(carpetaImagenes, filename);
+
                 using (var stream = new FileStream(routecomplete, FileMode.Create))
                 {
                     await newData.logo.CopyToAsync(stream);
                 }
 
                 dbroute = $"/imagenes/{filename}";
-
                 dataBDEmpresa.Logo = dbroute;
+                cambios.Add("Logo actualizado");
             }
 
             _context.Empresas.Update(dataBDEmpresa);
             await _context.SaveChangesAsync();
+            if (cambios.Count > 0)
+            {
+                var auditoria = new empresasAuditoria
+                {
+                    idpersona = userId,
+                    accion = $"UPDATE | Cambios en {nombreAnterior}: " + string.Join(", ", cambios),
+                    fechacambio = DateTime.UtcNow,
+                    idempresa = idEmpresa
+                };
+
+                _context.EmpresaAuditoria.Add(auditoria);
+                await _context.SaveChangesAsync();
+            }
+
             return Ok();
         }
 

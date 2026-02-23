@@ -16,6 +16,13 @@ Base de datos:
 //cambiar peticion para poder crear
 //crear patch de svg
 
+// tabla de auditoria de acuerdos
+// tabla de auditoria empresas
+// tabla de auditoria estados
+// tabla de auditoria usuarios
+// tabla de auditoria categoria
+tabla de auditoria contactos
+tabla de auditoria svg_templates
 
 Crear una base de datos para las claves de cifrado
 

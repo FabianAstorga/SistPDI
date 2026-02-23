@@ -29,6 +29,11 @@ namespace SistemaDeInvestigacion.Server.Data
         public DbSet<Unidad> Unidades { get; set; } = null!;
         public DbSet<Comentarios> Comentarios { get; set; } = null!;
         public DbSet<ReinicioContrasena> ReinicioContrasena { get; set; } = null!;
+        public DbSet<acuerdosAuditoria> AcuerdosAuditoria { get; set; } = null!;
+        public DbSet<categoriaAuditoria> CategoriaAuditoria { get; set; } = null!;
+        public DbSet<empresasAuditoria> EmpresaAuditoria { get; set; } = null!;
+        public DbSet<svgAuditoria> SvgAuditoria { get; set; } = null!;
+        public DbSet<usersAuditoria> UsersAuditoria { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -362,6 +367,38 @@ namespace SistemaDeInvestigacion.Server.Data
                       .HasForeignKey(d => d.IdPersona)
                       .OnDelete(DeleteBehavior.Cascade)
                       .HasConstraintName("fk_reinicio_usuario");
+            });
+
+//auditoria
+
+            modelBuilder.Entity<acuerdosAuditoria>(entity => {
+                entity.ToTable("acuerdosauditoria");
+                entity.HasKey(e => e.idaccion);
+                entity.Property(e => e.idaccion).UseIdentityColumn();
+            });
+
+            modelBuilder.Entity<categoriaAuditoria>(entity => {
+                entity.ToTable("categoriaauditoria");
+                entity.HasKey(e => e.idaccion);
+                entity.Property(e => e.idaccion).UseIdentityColumn();
+            });
+
+            modelBuilder.Entity<empresasAuditoria>(entity => {
+                entity.ToTable("empresasauditoria");
+                entity.HasKey(e => e.idaccion);
+                entity.Property(e => e.idaccion).UseIdentityColumn();
+            });
+
+            modelBuilder.Entity<svgAuditoria>(entity => {
+                entity.ToTable("svgauditoria");
+                entity.HasKey(e => e.idaccion);
+                entity.Property(e => e.idaccion).UseIdentityColumn();
+            });
+
+            modelBuilder.Entity<usersAuditoria>(entity => {
+                entity.ToTable("usersauditoria");
+                entity.HasKey(e => e.idaccion);
+                entity.Property(e => e.idaccion).UseIdentityColumn();
             });
         }
 

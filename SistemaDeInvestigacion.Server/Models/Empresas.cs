@@ -33,7 +33,7 @@ namespace SistemaDeInvestigacion.Server.Models
         public string? Direccion { get; set; }
 
         [Column("IdEstado")]
-        public int? IdEstado { get; set; }
+        public required int IdEstado { get; set; }
 
         [Column("FechaCreacion")]
         public DateTime? FechaCreacion { get; set; }

@@ -13,6 +13,7 @@ using System.IO;
 using System.Drawing;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Primitives;
+using System.Text.Json;
 
 namespace SistemaDeInvestigacion.Server.Controllers
 {
@@ -42,9 +43,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             _svgService = svgService;
             _hubContext = hubContext;
             _cache = cache;
-
         }
-
 
         //Muestra el detalle de un acuerdo
         [HttpGet("{id}")]
@@ -63,7 +62,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
             if (acuerdos == null) return StatusCode(404, "No hay ningún Acuerdo");
             return Ok(acuerdos);
         }
-
 
         //lista ultimos 10 acuerdos
         [HttpGet("mejores")]
@@ -158,7 +156,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
                         FechaCreacion = a.FechaCreacion,
                         FechaActualizacion = a.FechaActualizacion,
                         IdEmpresa = a.IdEmpresa,
-                        // Mapeo del nombre de la categoría
                         NombreCategoria = a.Categoria.TipoCategoria
                     })
                     .ToListAsync();
@@ -202,6 +199,18 @@ namespace SistemaDeInvestigacion.Server.Controllers
             _context.Acuerdos.Add(NewAcuerdo);
             await _context.SaveChangesAsync();
 
+            var auditAcuerdo = new acuerdosAuditoria{
+                idpersona = userId,
+                accion = "INSERT | Se creó un acuerdo",
+                fechacambio = DateTime.UtcNow,
+                idacuerdo = NewAcuerdo.IdAcuerdo,
+                valorantiguo = null,
+                valornuevo = JsonSerializer.Serialize(new { NewAcuerdo.Titulo, NewAcuerdo.IdEmpresa, NewAcuerdo.IdCategoria })
+
+            };
+
+            _context.AcuerdosAuditoria.Add(auditAcuerdo);
+
             string fileName = $"acuerdo_{Guid.NewGuid().ToString().Substring(0, 8)}.jpg";
             string rutaCarpetaFisica = Path.Combine(_env.ContentRootPath, "media", "acuerdosmedia", NewAcuerdo.IdAcuerdo.ToString());
 
@@ -233,6 +242,17 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
             _context.SvgTemplates.Add(NewSvg);
             await _context.SaveChangesAsync();
+
+            var auditSvg = new svgAuditoria
+            {
+                idpersona = userId,
+                accion = $"INSERT | Registro de SVG creado para el acuerdo con id: {NewAcuerdo.IdAcuerdo}",
+                fechacambio = DateTime.UtcNow,
+                idsvg = NewSvg.Id,
+                valorantiguo = null,
+                valornuevo = JsonSerializer.Serialize(new { NewSvg.SvgEditado })
+            };
+            _context.SvgAuditoria.Add(auditSvg);
 
             var NewDatos = new AcuerdosUsersTemplates
             {
@@ -309,6 +329,16 @@ namespace SistemaDeInvestigacion.Server.Controllers
             var acuerdo = await _context.Acuerdos.FindAsync(idAcuerdo);
             if (acuerdo == null) return NotFound("Acuerdo no encontrado");
 
+            var estadoAnteriorAcuerdo = JsonSerializer.Serialize(new
+            {
+                acuerdo.Titulo,
+                acuerdo.Descripcion,
+                acuerdo.DetallesDescripcion,
+                acuerdo.IdCategoria,
+                acuerdo.IdEstado,
+                acuerdo.FechaVencimiento
+            });
+
             if (!string.IsNullOrEmpty(editAcuerdoDto.titulo))
                 acuerdo.Titulo = editAcuerdoDto.titulo;
 
@@ -326,9 +356,31 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
             acuerdo.FechaActualizacion = DateTime.UtcNow;
 
+            var auditAcuerdo = new acuerdosAuditoria
+            {
+                idpersona = userId,
+                accion = "UPDATE | Modificación de acuerdo",
+                fechacambio = DateTime.UtcNow,
+                idacuerdo = acuerdo.IdAcuerdo,
+                valorantiguo = estadoAnteriorAcuerdo,
+                valornuevo = JsonSerializer.Serialize(new
+                {
+                    acuerdo.Titulo,
+                    acuerdo.Descripcion,
+                    acuerdo.DetallesDescripcion,
+                    acuerdo.IdCategoria,
+                    acuerdo.IdEstado,
+                    acuerdo.FechaVencimiento
+                })
+            };
+            _context.AcuerdosAuditoria.Add(auditAcuerdo);
+
             if (!string.IsNullOrEmpty(editAcuerdoDto.svg_editado))
             {
                 var svgFuente = await _context.SvgTemplates.FindAsync(template.IdSvg);
+                if (svgFuente == null) return BadRequest("No se encontró el SVG original para editar.");
+
+                var valorAntiguoSvg = svgFuente.SvgEditado;
 
                 string fileName = $"acuerdo_{Guid.NewGuid().ToString().Substring(0, 8)}.png";
                 string rutaCarpetaFisica = Path.Combine(_env.ContentRootPath, "media", "acuerdosmedia", acuerdo.IdAcuerdo.ToString());
@@ -361,6 +413,17 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 _context.SvgTemplates.Add(NewSvg);
                 await _context.SaveChangesAsync();
 
+                var auditSvg = new svgAuditoria
+                {
+                    idpersona = userId,
+                    accion = $"UPDATE | Nueva versión de SVG para acuerdo {acuerdo.IdAcuerdo}",
+                    fechacambio = DateTime.UtcNow,
+                    idsvg = NewSvg.Id,
+                    valorantiguo = valorAntiguoSvg,
+                    valornuevo = NewSvg.SvgEditado
+                };
+                _context.SvgAuditoria.Add(auditSvg);
+
                 template.IdSvg = NewSvg.Id;
                 _context.AcuerdosUserTemplates.Update(template);
             }
@@ -371,7 +434,9 @@ namespace SistemaDeInvestigacion.Server.Controllers
             _resetCacheToken.Cancel();
             _resetCacheToken.Dispose();
             _resetCacheToken = new CancellationTokenSource();
+
             await _hubContext.Clients.All.SendAsync("RecibirActualizacionAcuerdos");
+
             return NoContent();
         }
 
@@ -379,29 +444,44 @@ namespace SistemaDeInvestigacion.Server.Controllers
         [HttpPatch("alternar/{idAcuerdo}")]
         public async Task<ActionResult<Acuerdo>> alternarAcuerdo(int idAcuerdo)
         {
+            var userId = User.GetUserId();
             var acuerdoData = await _context.Acuerdos.FindAsync(idAcuerdo);
+
+            if (acuerdoData == null) return NotFound("Acuerdo no encontrado");
+            int estadoAnterior = acuerdoData.IdEstado;
+
             if (acuerdoData.IdEstado == 1)
             {
                 acuerdoData.IdEstado = 2;
-                await _context.SaveChangesAsync();
-                _resetCacheToken.Cancel();
-                _resetCacheToken.Dispose();
-                _resetCacheToken = new CancellationTokenSource();
-                await _hubContext.Clients.All.SendAsync("RecibirActualizacionAcuerdos");
-                return NoContent();
             }
-
-            if (acuerdoData.IdEstado == 2)
+            else if (acuerdoData.IdEstado == 2)
             {
                 acuerdoData.IdEstado = 1;
-                await _context.SaveChangesAsync();
-                _resetCacheToken.Cancel();
-                _resetCacheToken.Dispose();
-                _resetCacheToken = new CancellationTokenSource();
-                await _hubContext.Clients.All.SendAsync("RecibirActualizacionAcuerdos");
-                return NoContent();
             }
-            return BadRequest("Error en el alternado de la empresa");
+            else
+            {
+                return BadRequest("Error en el alternado del acuerdo");
+            }
+
+            var auditoria = new acuerdosAuditoria
+            {
+                idpersona = userId,
+                accion = $"PATCH | Estado de {estadoAnterior} => {acuerdoData.IdEstado}",
+                fechacambio = DateTime.UtcNow,
+                idacuerdo = idAcuerdo,
+                valorantiguo = JsonSerializer.Serialize(new { IdEstado = estadoAnterior }),
+                valornuevo = JsonSerializer.Serialize(new { IdEstado = acuerdoData.IdEstado })
+            };
+
+            _context.AcuerdosAuditoria.Add(auditoria);
+
+            await _context.SaveChangesAsync();
+            _resetCacheToken.Cancel();
+            _resetCacheToken.Dispose();
+            _resetCacheToken = new CancellationTokenSource();
+            await _hubContext.Clients.All.SendAsync("RecibirActualizacionAcuerdos");
+
+            return NoContent();
         }
     }
 }
