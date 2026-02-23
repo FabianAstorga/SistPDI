@@ -30,7 +30,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             var userID = User.GetUserId();
             var userRole = User.GetUserRole();
 
-            if (userRole is not (1 or 2))
+            if (userRole is not (1))
             {
                 return NoContent();
             }
@@ -75,7 +75,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
             if (!rutExiste)
             {
-                BadRequest("Rut no existente");
+                return BadRequest("Rut no existente");
             }
 
             var newUser = new User
@@ -86,8 +86,19 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 idEstado = 1,
                 Contrasena = BCrypt.Net.BCrypt.HashPassword(user.Contrasena),
             };
-            Console.WriteLine("OLA LLEGUE ACA");
+
             _context.Users.Add(newUser);
+            await _context.SaveChangesAsync();
+
+            var auditoria = new usersAuditoria
+            {
+                idpersona = userId,
+                idafectado = newUser.IdPersona!.Value,
+                accion = $"INSERT | Se creó un nuevo usuario con RUT: {newUser.Rut} y Rol: {newUser.Rol}",
+                fechacambio = DateTime.UtcNow
+            };
+
+            _context.UsersAuditoria.Add(auditoria);
             await _context.SaveChangesAsync();
             return Ok(new { Message = "Usuario Nuevo Creado" });
         }
@@ -99,33 +110,57 @@ namespace SistemaDeInvestigacion.Server.Controllers
             var userID = User.GetUserId();
             var userRole = User.GetUserRole();
 
-            if (userRole is not (1 or 2))
+            if (userRole is not (1))
             {
                 return BadRequest("Usuario no permitido para editar credenciales");
             }
+
             var usuarioExistente = await _context.Users.FindAsync(updateUserDto.IdPersona);
-
             if (usuarioExistente == null) return NotFound("Usuario no encontrado");
+            var rolAnterior = usuarioExistente.Rol;
+            var rutAnterior = usuarioExistente.Rut;
+            List<string> cambiosRealizados = new List<string>();
 
-            if (!string.IsNullOrEmpty(updateUserDto.Rut))
+            if (!string.IsNullOrEmpty(updateUserDto.Rut) && updateUserDto.Rut != usuarioExistente.Rut)
+            {
+                cambiosRealizados.Add($"RUT: {usuarioExistente.Rut} -> {updateUserDto.Rut}");
                 usuarioExistente.Rut = updateUserDto.Rut;
+            }
 
-            if (updateUserDto.Rol.HasValue && updateUserDto.Rol > 0)
+            if (updateUserDto.Rol.HasValue && updateUserDto.Rol > 0 && updateUserDto.Rol != usuarioExistente.Rol)
+            {
+                cambiosRealizados.Add($"ROL: {usuarioExistente.Rol} -> {updateUserDto.Rol}");
                 usuarioExistente.Rol = updateUserDto.Rol.Value;
+            }
 
             if (!string.IsNullOrEmpty(updateUserDto.Contrasena))
             {
-
                 bool esMismaPassword = BCrypt.Net.BCrypt.Verify(updateUserDto.Contrasena, usuarioExistente.Contrasena);
                 if (!esMismaPassword)
                 {
                     usuarioExistente.Contrasena = BCrypt.Net.BCrypt.HashPassword(updateUserDto.Contrasena);
+                    cambiosRealizados.Add("Contraseña actualizada");
                 }
             }
 
             try
             {
                 await _context.SaveChangesAsync();
+
+                if (cambiosRealizados.Count > 0)
+                {
+                    var auditoria = new usersAuditoria
+                    {
+                        idpersona = userID,
+                        idafectado = usuarioExistente.IdPersona!.Value,
+                        fechacambio = DateTime.UtcNow,
+                        accion = $"UPDATE | Cambios realizados: {string.Join(", ", cambiosRealizados)}"
+                    };
+
+                    _context.UsersAuditoria.Add(auditoria);
+                    await _context.SaveChangesAsync();
+                }
+
                 return Ok(new { message = "Usuario actualizado correctamente" });
             }
             catch (Exception ex)
