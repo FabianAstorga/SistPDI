@@ -1,116 +1,86 @@
-﻿using System.Security.Cryptography;
+﻿using Microsoft.AspNetCore.DataProtection;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace SistemaDeInvestigacion.Server.Servicios
 {
     public interface IPayloadEncryptedService
     {
-        string? Encrypt(string? plaintext);                 // nonce random
-        string? EncryptDeterministic(string? plaintext);    // nonce determinístico (para PK/FK)
+        string? Encrypt(string? plaintext);
+        string? EncryptDeterministic(string? plaintext);
         string? Decrypt(string? storedValue);
         bool IsEncrypted(string? value);
     }
 
     public sealed class PayloadCryptoService : IPayloadEncryptedService
     {
-        private const string PrefixRnd = "CIPOL:PES:V1:R:";
-        private const string PrefixDet = "CIPOL:PES:V1:D:";
+        private readonly IDataProtector _protector;
+        private readonly byte[] _deterministicKey;
+        private const string Purpose = "Investigacion.PDI.V1";
 
-        private const int NonceSize = 12;
-        private const int TagSize = 16;
-
-        private readonly byte[] _aesKey;
-        private readonly byte[] _nonceKey;
-
-        public PayloadCryptoService(string keyString)
+        public PayloadCryptoService(IDataProtectionProvider provider, IConfiguration config)
         {
-            // Clave AES (32 bytes)
-            _aesKey = SHA256.HashData(Encoding.UTF8.GetBytes(keyString));
+            // Protector rotativo (para Nombres, Correos, etc.)
+            _protector = provider.CreateProtector(Purpose);
 
-            // Clave separada para derivar nonces determinísticos (evita reusar la AES key)
-            _nonceKey = SHA256.HashData(Encoding.UTF8.GetBytes(keyString + "|nonce"));
+            // Llave fija derivada de appsettings para el RUT (Determinístico)
+            var masterKey = config["Crypto:MasterKey"] ?? "Clave-Temporal-Seguridad-2026";
+            _deterministicKey = SHA256.HashData(Encoding.UTF8.GetBytes(masterKey));
         }
-
-        public bool IsEncrypted(string? value)
-            => !string.IsNullOrEmpty(value) &&
-               (value.StartsWith(PrefixRnd, StringComparison.Ordinal) ||
-                value.StartsWith(PrefixDet, StringComparison.Ordinal));
 
         public string? Encrypt(string? plaintext)
         {
-            if (plaintext is null) return null;
-            if (plaintext.Length == 0) return plaintext;
-            if (IsEncrypted(plaintext)) return plaintext;
-
-            byte[] nonce = RandomNumberGenerator.GetBytes(NonceSize);
-            return EncryptCore(PrefixRnd, nonce, plaintext);
+            if (string.IsNullOrWhiteSpace(plaintext)) return plaintext;
+            return _protector.Protect(plaintext);
         }
 
         public string? EncryptDeterministic(string? plaintext)
         {
-            if (plaintext is null) return null;
-            if (plaintext.Length == 0) return plaintext;
-            if (IsEncrypted(plaintext)) return plaintext;
+            if (string.IsNullOrWhiteSpace(plaintext)) return plaintext;
 
-            byte[] pt = Encoding.UTF8.GetBytes(plaintext);
-            byte[] full = HMACSHA256.HashData(_nonceKey, pt);
-            byte[] nonce = full[..NonceSize];
+            using var aes = Aes.Create();
+            aes.Key = _deterministicKey;
+            // IV fijo basado en la llave para que el mismo texto siempre de el mismo cifrado
+            aes.IV = SHA256.HashData(_deterministicKey).Take(16).ToArray();
 
-            return EncryptCore(PrefixDet, nonce, plaintext);
-        }
+            using var encryptor = aes.CreateEncryptor();
+            byte[] inputBytes = Encoding.UTF8.GetBytes(plaintext);
+            byte[] cipherBytes = encryptor.TransformFinalBlock(inputBytes, 0, inputBytes.Length);
 
-        private string EncryptCore(string prefix, byte[] nonce, string plaintext)
-        {
-            byte[] plainBytes = Encoding.UTF8.GetBytes(plaintext);
-            byte[] cipherBytes = new byte[plainBytes.Length];
-            byte[] tag = new byte[TagSize];
-
-            using (var aes = new AesGcm(_aesKey, TagSize))
-            {
-                aes.Encrypt(nonce, plainBytes, cipherBytes, tag, associatedData: null);
-            }
-
-            byte[] cipherWithTag = new byte[cipherBytes.Length + tag.Length];
-            Buffer.BlockCopy(cipherBytes, 0, cipherWithTag, 0, cipherBytes.Length);
-            Buffer.BlockCopy(tag, 0, cipherWithTag, cipherBytes.Length, tag.Length);
-
-            byte[] payload = new byte[nonce.Length + cipherWithTag.Length];
-            Buffer.BlockCopy(nonce, 0, payload, 0, nonce.Length);
-            Buffer.BlockCopy(cipherWithTag, 0, payload, nonce.Length, cipherWithTag.Length);
-
-            return prefix + Convert.ToBase64String(payload);
+            return "DET:" + Convert.ToBase64String(cipherBytes);
         }
 
         public string? Decrypt(string? storedValue)
         {
-            if (storedValue is null) return null;
-            if (storedValue.Length == 0) return storedValue;
+            if (string.IsNullOrWhiteSpace(storedValue)) return storedValue;
 
-            if (!IsEncrypted(storedValue)) return storedValue;
-
-            string prefix = storedValue.StartsWith(PrefixRnd, StringComparison.Ordinal) ? PrefixRnd : PrefixDet;
-
-            byte[] payload = Convert.FromBase64String(storedValue.Substring(prefix.Length));
-            if (payload.Length < NonceSize + TagSize)
-                throw new CryptographicException("Payload encriptado inválido.");
-
-            byte[] nonce = payload[..NonceSize];
-            byte[] cipherWithTag = payload[NonceSize..];
-
-            int cipherLen = cipherWithTag.Length - TagSize;
-            if (cipherLen < 0) throw new CryptographicException("Payload encriptado inválido.");
-
-            byte[] cipherBytes = cipherWithTag[..cipherLen];
-            byte[] tag = cipherWithTag[cipherLen..];
-
-            byte[] plainBytes = new byte[cipherLen];
-
-            using (var aes = new AesGcm(_aesKey, TagSize))
+            try
             {
-                aes.Decrypt(nonce, cipherBytes, tag, plainBytes, associatedData: null);
-            }
+                // Intenta descifrar formato determinístico
+                if (storedValue.StartsWith("DET:"))
+                {
+                    var cipherText = storedValue.Replace("DET:", "");
+                    using var aes = Aes.Create();
+                    aes.Key = _deterministicKey;
+                    aes.IV = SHA256.HashData(_deterministicKey).Take(16).ToArray();
 
-            return Encoding.UTF8.GetString(plainBytes);
+                    using var decryptor = aes.CreateDecryptor();
+                    byte[] cipherBytes = Convert.FromBase64String(cipherText);
+                    byte[] plainBytes = decryptor.TransformFinalBlock(cipherBytes, 0, cipherBytes.Length);
+                    return Encoding.UTF8.GetString(plainBytes);
+                }
+
+                // Intenta descifrar formato rotativo de Microsoft
+                return _protector.Unprotect(storedValue);
+            }
+            catch
+            {
+                // Si no puede (datos viejos o sin cifrar), devuelve el valor original
+                return storedValue;
+            }
         }
+
+        public bool IsEncrypted(string? value) =>
+            !string.IsNullOrEmpty(value) && (value.StartsWith("DET:") || value.Length > 50);
     }
 }

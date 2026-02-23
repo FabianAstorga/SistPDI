@@ -1,16 +1,17 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using DotNetEnv;
+using MailKit.Net.Smtp;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using SistemaDeInvestigacion.Hubs;
 using SistemaDeInvestigacion.Server.Data;
 using SistemaDeInvestigacion.Server.Servicios;
 using System.Text;
 using System.Text.Json.Serialization;
-using MailKit.Net.Smtp;
-using SistemaDeInvestigacion.Hubs;
-using DotNetEnv;
 
 Env.Load();
 var originsString = Environment.GetEnvironmentVariable("ALLOWED_ORIGINS");
@@ -20,8 +21,7 @@ var allowedOrigins = originsString.Split(',')
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(connectionString));
+
 
 var urlDelEnv = Environment.GetEnvironmentVariable("APP_URL");
 
@@ -30,10 +30,21 @@ if (!string.IsNullOrEmpty(urlDelEnv))
     builder.WebHost.UseUrls(urlDelEnv);
 }
 
-const string MANUAL_SHARED_KEY = "XJP2-KEP8-3LNS-8A01-7DO1";
+var cryptoConnection = builder.Configuration.GetConnectionString("CryptoConnection");
 
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseNpgsql(connectionString));
 
-builder.Services.AddSingleton<IPayloadEncryptedService>(_ => new PayloadCryptoService(MANUAL_SHARED_KEY));
+builder.Services.AddDbContext<KeysDbContext>(options =>
+    options.UseNpgsql(cryptoConnection));
+
+builder.Services.AddDataProtection()
+    .PersistKeysToDbContext<KeysDbContext>()
+    .SetApplicationName("Sistema-Investigacion-PDI")
+    .SetDefaultKeyLifetime(TimeSpan.FromDays(90));
+
+builder.Services.AddScoped<IPayloadEncryptedService, PayloadCryptoService>();
+
 
 var jwtKey = builder.Configuration["Jwt:Key"];
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
@@ -96,7 +107,6 @@ builder.Services.AddSwaggerGen(options =>
         }
     );
 });
-builder.Services.AddScoped<SvgRenderService>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
@@ -183,6 +193,9 @@ app.UseStaticFiles(new StaticFileOptions
         ctx.Context.Response.Headers.Append("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     }
 });
+
+
+
 
 app.UseAuthentication();
 app.UseAuthorization();
