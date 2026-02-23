@@ -65,6 +65,8 @@ namespace SistemaDeInvestigacion.Server.Controllers
         [HttpPost("crear")]
         public async Task<ActionResult<Categoria>> CreateCategoria([FromForm] CreateCategoriaDto createCategoriaDto)
         {
+            var userID = User.GetUserId();
+
             var NewCategoria = new Categoria {
                 TipoCategoria = createCategoriaDto.DetalleCategoria,
                 IdEstado = 1
@@ -72,19 +74,49 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
             _context.Categoria.Add(NewCategoria);
             await _context.SaveChangesAsync();
+
+            var auditoria = new categoriaAuditoria
+            {
+                idpersona = userID,
+                accion = "Se creó una nueva categoría | INSERT",
+                fechacambio = DateTime.UtcNow,
+                idcategoria = NewCategoria.IdCategoria
+            };
+
+            _context.CategoriaAuditoria.Add(auditoria);
+            await _context.SaveChangesAsync();
             return (Ok("Categoria creada Correctamente."));
+
+
         }
 
         //Modifica una categoria existente
         [Authorize]
         [HttpPatch("modificar/{idCategoria}")]
-        public async Task<ActionResult<Categoria>> AlternarCategoria(int idCategoria, EditCategoriaDto editCategoriaDto)
+        public async Task<ActionResult<Categoria>> ModificarCategoria(int idCategoria, EditCategoriaDto editCategoriaDto)
         {
-            var newCategoria = editCategoriaDto;
+            var userID = User.GetUserId();
             var categoria = await _context.Categoria.FindAsync(idCategoria);
-            categoria.TipoCategoria = newCategoria.DetalleCategoria;
+
+            if (categoria == null) return NotFound("Categoría no encontrada");
+            var valorAnterior = categoria.TipoCategoria;
+
+            categoria.TipoCategoria = editCategoriaDto.DetalleCategoria;
             await _context.SaveChangesAsync();
-            return (Ok(new { message = "Categoria actualizada Correctamente."}));
+
+
+            var auditoria = new categoriaAuditoria
+            {
+                idpersona = userID,
+                accion = $"UPDATE: '{valorAnterior}' -> '{categoria.TipoCategoria}'",
+                fechacambio = DateTime.UtcNow,
+                idcategoria = idCategoria
+            };
+
+            _context.CategoriaAuditoria.Add(auditoria);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Categoria actualizada Correctamente." });
         }
 
         //Alterna una categoria
@@ -92,22 +124,41 @@ namespace SistemaDeInvestigacion.Server.Controllers
         [HttpPatch("alternar/{idCategoria}")]
         public async Task<ActionResult<Categoria>> AlternarCategoria(int idCategoria)
         {
+            var userID = User.GetUserId();
             var categoriaData = await _context.Categoria.FindAsync(idCategoria);
+
+            if (categoriaData == null) return NotFound("Categoría no encontrada");
+
+            int estadoAnterior = categoriaData.IdEstado;
+
             if (categoriaData.IdEstado == 1)
             {
                 categoriaData.IdEstado = 2;
-                await _context.SaveChangesAsync();
-                return NoContent();
             }
-
-            if (categoriaData.IdEstado == 2)
+            else if (categoriaData.IdEstado == 2)
             {
                 categoriaData.IdEstado = 1;
-                await _context.SaveChangesAsync();
-                return NoContent();
+            }
+            else
+            {
+                return BadRequest("Error en el alternado de la categoria");
             }
 
-            return BadRequest("Error en el alternado de la categoria");
+            await _context.SaveChangesAsync();
+
+            var auditoria = new categoriaAuditoria
+            {
+                
+                idpersona = userID,
+                accion = $"UPDATE (Estado {estadoAnterior} -> {categoriaData.IdEstado})",
+                fechacambio = DateTime.UtcNow,
+                idcategoria = idCategoria
+            };
+
+            _context.CategoriaAuditoria.Add(auditoria);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
 
     }

@@ -96,6 +96,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
         public async Task<IActionResult> CrearSvg([FromBody] CreateSvgDto createSvgDto)
         {
             var userId = User.GetUserId();
+
             var svgNuevo = new SvgTemplate
             {
                 SvgOriginal = createSvgDto.svg_original,
@@ -108,7 +109,17 @@ namespace SistemaDeInvestigacion.Server.Controllers
             _context.SvgTemplates.Add(svgNuevo);
             await _context.SaveChangesAsync();
 
-            var idsvg = svgNuevo.Id;
+            var auditoriaSvg = new svgAuditoria
+            {
+                idpersona = userId,
+                accion = "INSERT | Creación de nuevo Template SVG",
+                fechacambio = DateTime.UtcNow,
+                idsvg = svgNuevo.Id,
+                valorantiguo = null,
+                valornuevo = svgNuevo.SvgOriginal
+            };
+
+            _context.SvgAuditoria.Add(auditoriaSvg);
 
             var borradorNuevo = new AcuerdosUsersTemplates
             {
@@ -118,30 +129,49 @@ namespace SistemaDeInvestigacion.Server.Controllers
             };
 
             _context.AcuerdosUserTemplates.Add(borradorNuevo);
+
             await _context.SaveChangesAsync();
             return Ok(new { id = svgNuevo.Id });
-
         }
 
         [Authorize]
         [HttpPatch("editar")]
         public async Task<ActionResult> editarSvg(EditSvgDto editSvgDto)
         {
+            var userId = User.GetUserId();
             var userRol = User.GetUserRole();
+
             if (userRol != 1)
             {
                 return BadRequest("Usuario no es Administrador");
-            } 
+            }
+
             var svg = await _context.SvgTemplates.FindAsync(editSvgDto.idSvg);
+
+            if (svg == null) return NotFound("SVG no encontrado");
+
             if (svg.IdEstado != 3)
             {
                 return BadRequest("Svg no es plantilla");
             }
+
+            var svgAnterior = svg.SvgOriginal;
             svg.SvgOriginal = editSvgDto.svgOriginal;
+            svg.FechaActualizacion = DateTime.UtcNow;
+            var auditoria = new svgAuditoria
+            {
+                idpersona = userId,
+                accion = "UPDATE | Se editó el template",
+                fechacambio = DateTime.UtcNow,
+                idsvg = svg.Id,
+                valorantiguo = svgAnterior,
+                valornuevo = svg.SvgOriginal
+            };
 
+            _context.SvgAuditoria.Add(auditoria);
             await _context.SaveChangesAsync();
-            return NoContent();
 
+            return NoContent();
         }
 
     }
