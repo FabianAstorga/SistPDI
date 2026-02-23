@@ -40,10 +40,11 @@ const NAV_CONFIG = [
         items: [
             { label: 'Categoría', path: '/Categorias', icon: Tags },
             { label: 'Unidad', path: '/unidad', icon: Boxes },
+            { id: 'EditarSvg', label: 'EditarSvg', path: '/EditarSvg', icon: Layers }
         ]
     },
     { id: 'plantilla', label: 'Plantilla', path: '/lienzo', icon: Layers },
-    { id: 'EditarSvg', label: 'EditarSvg', path: '/EditarSvg', icon: Layers }
+    
     
 ];
 
@@ -71,9 +72,12 @@ export const Navbar = () => {
             };
             localStorage.setItem('modo', JSON.stringify(modoTemplate));
             localStorage.removeItem('temp_acuerdo');
+        } else if (path === '/EditarSvg') {
+            localStorage.removeItem('template_svg_edit');
         } else {
             localStorage.removeItem('modo');
             localStorage.removeItem('template_svg');
+            localStorage.removeItem('template_svg_edit'); 
             localStorage.removeItem('temp_acuerdo');
         }
 
