@@ -44,9 +44,10 @@ namespace SistemaDeInvestigacion.Server.Controllers
             }
 
             bool passValida = BCrypt.Net.BCrypt.Verify(loginRequest.Password, userAuth.Contrasena);
-
+            Console.WriteLine($"RUT Plano: {userAuth.Contrasena}");
+            Console.WriteLine($"RUT Cifrado generado ahora: {loginRequest.Password}");
             if (!passValida)
-            {
+            {   
                 return Unauthorized(new { Message = "Correo o contraseña incorrectos" });
             }
 

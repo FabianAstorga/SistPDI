@@ -222,6 +222,7 @@ const InstitucionItem = memo(({ inst, onToggle }: { inst: any, onToggle: (e: Rea
 ));
 
 const EditInstitucionModal = ({ inst, onClose, onUpdate }: { inst: any, onClose: () => void, onUpdate: () => void }) => {
+    // --- ESTADOS DE LA EMPRESA ---
     const [formData, setFormData] = useState({
         nombre: '',
         descripcion: '',
@@ -230,12 +231,75 @@ const EditInstitucionModal = ({ inst, onClose, onUpdate }: { inst: any, onClose:
         telefono: '',
         direccion: ''
     });
-
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [logoPreview, setLogoPreview] = useState<string | null>(inst.logoUrl);
     const [saving, setSaving] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // --- ESTADOS DE CONTACTOS ---
+    const [contactos, setContactos] = useState<any[]>([]);
+    const [loadingContactos, setLoadingContactos] = useState(false);
+    const [nuevoContacto, setNuevoContacto] = useState({
+        nombre: '',
+        email: '',
+        numero: ''
+    });
+    const [creandoContacto, setCreandoContacto] = useState(false);
+
+    // --- CARGA DE CONTACTOS (GET) ---
+    const fetchContactos = useCallback(async () => {
+        setLoadingContactos(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_BASE}/api/Contactos/${inst.id}`, {
+                headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setContactos(Array.isArray(data) ? data : (data?.$values || []));
+            }
+        } catch (error) {
+            console.error("Error cargando contactos:", error);
+        } finally {
+            setLoadingContactos(false);
+        }
+    }, [inst.id]);
+
+    useEffect(() => {
+        fetchContactos();
+    }, [fetchContactos]);
+
+    // --- CREACIÓN DE CONTACTO (POST) ---
+    const handleAddContacto = async () => {
+        if (!nuevoContacto.nombre || !nuevoContacto.email) return;
+        setCreandoContacto(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_BASE}/api/Contactos/crear`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify({
+                    idEmpresa: inst.id,
+                    nombre: nuevoContacto.nombre,
+                    email: nuevoContacto.email,
+                    numero: parseInt(nuevoContacto.numero) || 0
+                })
+            });
+            if (res.ok) {
+                setNuevoContacto({ nombre: '', email: '', numero: '' });
+                fetchContactos(); // Recargar la lista de contactos
+            }
+        } catch (error) {
+            console.error("Error creando contacto:", error);
+        } finally {
+            setCreandoContacto(false);
+        }
+    };
+
+    // --- LÓGICA DE EMPRESA ---
     const canSubmit = useMemo(() => {
         return Object.values(formData).some(val => val.trim() !== '') || logoFile !== null;
     }, [formData, logoFile]);
@@ -307,7 +371,7 @@ const EditInstitucionModal = ({ inst, onClose, onUpdate }: { inst: any, onClose:
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.97, opacity: 0 }}
                 transition={FAST_TRANSITION}
-                className="bg-[#002855] w-full max-w-5xl h-auto max-h-[90vh] rounded-sm shadow-2xl overflow-hidden flex flex-col md:flex-row relative border border-white/5"
+                className="bg-[#002855] w-full max-w-6xl h-auto max-h-[92vh] rounded-sm shadow-2xl overflow-hidden flex flex-col md:flex-row relative border border-white/5"
             >
                 <button
                     onClick={onClose}
@@ -321,81 +385,154 @@ const EditInstitucionModal = ({ inst, onClose, onUpdate }: { inst: any, onClose:
                         <Building size={24} />
                     </div>
                     <h2 className="text-2xl font-black uppercase tracking-tighter leading-tight">
-                        Modificar <br />
+                        Gestionar <br />
                         <span className="text-blue-400">Empresa</span>
                     </h2>
                     <div className="w-10 h-1 bg-blue-500 my-6" />
-                    <p className="text-[10px] text-blue-200/50 uppercase font-black tracking-[0.2em]">ID: {inst.id}</p>
+                    <p className="text-[10px] text-blue-200/50 uppercase font-black tracking-[0.2em]">ID Entidad: {inst.id}</p>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-10 bg-white relative z-20 rounded-r-sm">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                        <div className="space-y-6">
-                            <h3 className="text-[11px] font-black text-[#002855] uppercase tracking-[0.2em] border-b border-slate-100 pb-2 flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 bg-blue-600 rounded-full" /> Datos Maestros
-                            </h3>
-                            <div>
-                                <label className={LABEL_STYLE}>Nombre Institucional</label>
-                                <input name="nombre" className={INPUT_STYLE} value={formData.nombre} onChange={handleInputChange} placeholder={inst.nombre} />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-12">
+                        {/* SECCIÓN: DATOS MAESTROS */}
+                        <section className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                            <div className="space-y-6">
+                                <h3 className="text-[11px] font-black text-[#002855] uppercase tracking-[0.2em] border-b border-slate-100 pb-2 flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 bg-blue-600 rounded-full" /> Información General
+                                </h3>
                                 <div>
-                                    <label className={LABEL_STYLE}><Mail size={12} /> Email</label>
-                                    <input name="email" type="email" className={INPUT_STYLE} value={formData.email} onChange={handleInputChange} placeholder={inst.email} />
+                                    <label className={LABEL_STYLE}>Nombre Institucional</label>
+                                    <input name="nombre" className={INPUT_STYLE} value={formData.nombre} onChange={handleInputChange} placeholder={inst.nombre} />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className={LABEL_STYLE}><Mail size={12} /> Email</label>
+                                        <input name="email" type="email" className={INPUT_STYLE} value={formData.email} onChange={handleInputChange} placeholder={inst.email} />
+                                    </div>
+                                    <div>
+                                        <label className={LABEL_STYLE}><Phone size={12} /> Teléfono</label>
+                                        <input name="telefono" type="number" className={INPUT_STYLE} value={formData.telefono} onChange={handleInputChange} placeholder={inst.telefono} />
+                                    </div>
                                 </div>
                                 <div>
-                                    <label className={LABEL_STYLE}><Phone size={12} /> Teléfono</label>
-                                    <input name="telefono" type="number" className={INPUT_STYLE} value={formData.telefono} onChange={handleInputChange} placeholder={inst.telefono} />
+                                    <label className={LABEL_STYLE}><MapPin size={12} /> Dirección</label>
+                                    <input name="direccion" className={INPUT_STYLE} value={formData.direccion} onChange={handleInputChange} placeholder={inst.direccion} />
                                 </div>
                             </div>
-                            <div>
-                                <label className={LABEL_STYLE}><MapPin size={12} /> Dirección</label>
-                                <input name="direccion" className={INPUT_STYLE} value={formData.direccion} onChange={handleInputChange} placeholder={inst.direccion} />
-                            </div>
-                            <div>
-                                <label className={LABEL_STYLE}><FileText size={12} /> Descripción</label>
-                                <textarea name="descripcion" className={`${INPUT_STYLE} h-28 resize-none`} value={formData.descripcion} onChange={handleInputChange} placeholder={inst.descripcion} />
-                            </div>
-                        </div>
 
-                        <div className="space-y-6">
-                            <h3 className="text-[11px] font-black text-[#002855] uppercase tracking-[0.2em] border-b border-slate-100 pb-2 flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 bg-blue-600 rounded-full" /> Archivo Corporativo
-                            </h3>
-                            <div>
-                                <label className={LABEL_STYLE}><Globe size={12} /> Sitio Web</label>
-                                <input name="sitioWeb" className={INPUT_STYLE} value={formData.sitioWeb} onChange={handleInputChange} placeholder={inst.sitioWeb} />
-                            </div>
-                            <div>
-                                <label className={LABEL_STYLE}><ImageIcon size={12} /> Logotipo</label>
-                                <div
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="mt-2 h-44 bg-slate-50 border-2 border-dashed border-slate-200 rounded-sm flex items-center justify-center overflow-hidden cursor-pointer hover:border-blue-400 transition-all duration-150 group relative"
-                                >
-                                    {logoPreview ? (
-                                        <>
-                                            <img src={logoPreview} className="h-full w-full object-contain p-4" alt="Preview" />
-                                            <div className="absolute inset-0 bg-[#002855]/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-150">
-                                                <span className="text-white text-[10px] font-black uppercase tracking-widest">Cambiar Logotipo</span>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className="text-center">
-                                            <ImageIcon className="text-slate-300 mx-auto mb-2" size={32} />
-                                            <p className="text-[9px] text-slate-400 font-bold uppercase">Cargar Imagen</p>
-                                        </div>
-                                    )}
+                            <div className="space-y-6">
+                                <h3 className="text-[11px] font-black text-[#002855] uppercase tracking-[0.2em] border-b border-slate-100 pb-2 flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 bg-blue-600 rounded-full" /> Imagen y Web
+                                </h3>
+                                <div>
+                                    <label className={LABEL_STYLE}><Globe size={12} /> Sitio Web</label>
+                                    <input name="sitioWeb" className={INPUT_STYLE} value={formData.sitioWeb} onChange={handleInputChange} placeholder={inst.sitioWeb} />
                                 </div>
-                                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
+                                <div>
+                                    <label className={LABEL_STYLE}><ImageIcon size={12} /> Logotipo Corporativo</label>
+                                    <div
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="mt-2 h-32 bg-slate-50 border-2 border-dashed border-slate-200 rounded-sm flex items-center justify-center overflow-hidden cursor-pointer hover:border-blue-400 transition-all group relative"
+                                    >
+                                        {logoPreview ? (
+                                            <img src={logoPreview} className="h-full w-full object-contain p-4" alt="Preview" />
+                                        ) : (
+                                            <div className="text-center">
+                                                <ImageIcon className="text-slate-300 mx-auto mb-1" size={24} />
+                                                <p className="text-[8px] text-slate-400 font-bold uppercase">Subir Logo</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
+                                </div>
                             </div>
-                        </div>
+                        </section>
+
+                        {/* SECCIÓN: CONTACTOS (GET/POST) */}
+                        <section className="pt-10 border-t border-slate-100">
+                            <h3 className="text-[11px] font-black text-[#002855] uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 bg-blue-600 rounded-full" /> Contactos de la Empresa
+                            </h3>
+
+                            {/* Formulario de Alta de Contacto */}
+                            <div className="bg-slate-50 p-6 rounded-sm grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-8 border border-slate-100">
+                                <div>
+                                    <label className={LABEL_STYLE}>Nombre del Contacto</label>
+                                    <input
+                                        className={INPUT_STYLE}
+                                        value={nuevoContacto.nombre}
+                                        onChange={e => setNuevoContacto({ ...nuevoContacto, nombre: e.target.value })}
+                                        placeholder="Ej: Ana María"
+                                    />
+                                </div>
+                                <div>
+                                    <label className={LABEL_STYLE}>Email Personal</label>
+                                    <input
+                                        className={INPUT_STYLE}
+                                        value={nuevoContacto.email}
+                                        onChange={e => setNuevoContacto({ ...nuevoContacto, email: e.target.value })}
+                                        placeholder="ana@empresa.com"
+                                    />
+                                </div>
+                                <div>
+                                    <label className={LABEL_STYLE}>Número Directo</label>
+                                    <input
+                                        type="number"
+                                        className={INPUT_STYLE}
+                                        value={nuevoContacto.numero}
+                                        onChange={e => setNuevoContacto({ ...nuevoContacto, numero: e.target.value })}
+                                        placeholder="912345678"
+                                    />
+                                </div>
+                                <button
+                                    onClick={handleAddContacto}
+                                    disabled={creandoContacto || !nuevoContacto.nombre || !nuevoContacto.email}
+                                    className="bg-[#002855] text-white h-[46px] text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 disabled:bg-slate-300 transition-all duration-150 flex items-center justify-center gap-2"
+                                >
+                                    {creandoContacto ? <Loader2 className="animate-spin" size={16} /> : "Vincular Contacto"}
+                                </button>
+                            </div>
+
+                            {/* Tabla de Resultados */}
+                            <div className="min-h-[100px]">
+                                {loadingContactos ? (
+                                    <div className="flex justify-center py-4"><Loader2 className="animate-spin text-blue-600" /></div>
+                                ) : contactos.length > 0 ? (
+                                    <div className="border border-slate-100 rounded-sm overflow-hidden">
+                                        <table className="w-full text-left text-xs">
+                                            <thead className="bg-slate-50 text-slate-400 border-b border-slate-100">
+                                                <tr>
+                                                    <th className="px-4 py-3 font-black uppercase tracking-tighter">Nombre</th>
+                                                    <th className="px-4 py-3 font-black uppercase tracking-tighter">Email</th>
+                                                    <th className="px-4 py-3 font-black uppercase tracking-tighter">Número</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {contactos.map((cont, idx) => (
+                                                    <tr key={cont.idContacto || idx} className="hover:bg-slate-50 transition-colors">
+                                                        <td className="px-4 py-3 font-bold text-[#002855]">{cont.nombre}</td>
+                                                        <td className="px-4 py-3 text-slate-500">{cont.email}</td>
+                                                        <td className="px-4 py-3 text-slate-500">{cont.numero || 'N/A'}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-10 border-2 border-dashed border-slate-100 rounded-sm">
+                                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">No se encontraron contactos</p>
+                                    </div>
+                                )}
+                            </div>
+                        </section>
                     </div>
 
-                    <div className="sticky bottom-0 right-0 flex justify-end mt-10 pointer-events-none pb-2">
+                    {/* Botón Guardar Cambios Empresa */}
+                    <div className="sticky bottom-0 right-0 flex justify-end mt-12 pointer-events-none">
                         <button
                             onClick={handleSave}
                             disabled={!canSubmit || saving}
-                            className="h-16 w-16 rounded-full bg-[#002855] text-white flex items-center justify-center hover:bg-blue-600 hover:scale-110 shadow-[0_10px_30px_rgba(0,40,85,0.3)] transition-all duration-150 pointer-events-auto disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
+                            className="h-16 w-16 rounded-full bg-[#002855] text-white flex items-center justify-center hover:bg-blue-600 hover:scale-110 shadow-xl transition-all duration-150 pointer-events-auto disabled:bg-slate-200 disabled:text-slate-400"
                         >
                             {saving ? <Loader2 size={28} className="animate-spin" /> : <Save size={28} />}
                         </button>

@@ -41,7 +41,8 @@ builder.Services.AddDbContext<KeysDbContext>(options =>
 builder.Services.AddDataProtection()
     .PersistKeysToDbContext<KeysDbContext>()
     .SetApplicationName("Sistema-Investigacion-PDI")
-    .SetDefaultKeyLifetime(TimeSpan.FromDays(90));
+    .SetDefaultKeyLifetime(TimeSpan.FromDays(7));
+//.SetDefaultKeyLifetime(TimeSpan.FromDays(30));
 
 builder.Services.AddScoped<IPayloadEncryptedService, PayloadCryptoService>();
 
