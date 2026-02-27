@@ -8,6 +8,7 @@ import {
     Image,
     Font
 } from '@react-pdf/renderer';
+
 const styles = StyleSheet.create({
     page: {
         padding: 50,
@@ -17,7 +18,7 @@ const styles = StyleSheet.create({
     header: {
         marginBottom: 30,
         borderBottom: 2,
-        borderBottomColor: '#002855', 
+        borderBottomColor: '#002855',
         paddingBottom: 10,
     },
     categoryBadge: {
@@ -66,7 +67,7 @@ const styles = StyleSheet.create({
         fontSize: 11,
         color: '#334155',
         lineHeight: 1.6,
-        textAlign: 'justify',
+        textAlign: 'left',
     },
     infoGrid: {
         marginTop: 30,
@@ -94,6 +95,7 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
     },
 });
+
 interface PDFProps {
     data: {
         titulo: string;
@@ -105,6 +107,7 @@ interface PDFProps {
     };
     logoUrl: string | null;
 }
+
 export const PDFDocument: React.FC<PDFProps> = ({ data, logoUrl }) => {
     const fechaGeneracion = new Date().toLocaleDateString('es-CL', {
         day: '2-digit',
@@ -114,6 +117,17 @@ export const PDFDocument: React.FC<PDFProps> = ({ data, logoUrl }) => {
         minute: '2-digit'
     });
 
+    
+     
+    const renderFormattedText = (text: string, style: any) => {
+        if (!text) return null;
+        return text.split(/\r?\n/).map((line, index) => (
+            <Text key={index} style={style}>
+                {line.trim() === "" ? "\n" : line}
+            </Text>
+        ));
+    };
+
     return (
         <Document title={`Acuerdo - ${data.titulo}`}>
             <Page size="A4" style={styles.page}>
@@ -121,6 +135,7 @@ export const PDFDocument: React.FC<PDFProps> = ({ data, logoUrl }) => {
                     <Text style={styles.categoryBadge}>{data.nombreCategoria}</Text>
                     <Text style={styles.title}>{data.titulo}</Text>
                 </View>
+
                 <View style={styles.imageContainer}>
                     {logoUrl ? (
                         <Image
@@ -135,18 +150,30 @@ export const PDFDocument: React.FC<PDFProps> = ({ data, logoUrl }) => {
                         <Text style={{ color: '#cbd5e1', fontSize: 12 }}>Imagen no disponible</Text>
                     )}
                 </View>
+
                 <View style={styles.contentSection}>
-                    <Text style={styles.description}>"{data.descripcion}"</Text>
-                    <Text style={styles.details}>
-                        {data.detallesDescripcion || "No hay detalles adicionales disponibles para este convenio en este momento."}
-                    </Text>
+                    <View style={{ marginBottom: 15 }}>
+                        {renderFormattedText(`"${data.descripcion}"`, styles.description)}
+                    </View>
+
+                    <View>
+                        {data.detallesDescripcion ? (
+                            renderFormattedText(data.detallesDescripcion, styles.details)
+                        ) : (
+                            <Text style={styles.details}>
+                                No hay detalles adicionales disponibles para este convenio en este momento.
+                            </Text>
+                        )}
+                    </View>
                 </View>
+
                 <View style={styles.infoGrid}>
                     <Text style={styles.infoItem}>Estado: {data.estado || 'Activo'}</Text>
                     {data.fechaVencimiento && (
                         <Text style={styles.infoItem}>Vigente hasta: {data.fechaVencimiento}</Text>
                     )}
                 </View>
+
                 <View style={styles.footer}>
                     <Text>Documento Acuerdos PDI SISAC {new Date().getFullYear()}</Text>
                     <Text style={{ marginTop: 4 }}>Generado el: {fechaGeneracion}</Text>

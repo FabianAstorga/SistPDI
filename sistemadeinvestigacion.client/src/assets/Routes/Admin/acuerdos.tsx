@@ -98,6 +98,18 @@ export default function Acuerdos() {
             const listUni = Array.isArray(dataUni) ? dataUni : (dataUni?.$values || []);
             setUnidades(listUni);
 
+            setFormData(prev => {
+                if (prev.idsUnidades.length === 0 && listUni.length > 0) {
+                    return {
+                        ...prev,
+                        idsUnidades: listUni.map((u: any) => u.idUnidad ?? u.id)
+                    };
+                }
+                return prev;
+            });
+
+
+
         } catch (e: any) {
             if (e.name !== 'AbortError') console.error("Fetch Data Error:", e);
         } finally {
@@ -126,6 +138,11 @@ export default function Acuerdos() {
             return;
         }
         setFormData(p => ({ ...p, idCategoria: value }));
+    };
+
+    const handleSelectAllUnidades = () => {
+        const allIds = unidades.map(u => u.idUnidad ?? u.id);
+        setFormData(p => ({ ...p, idsUnidades: allIds }));
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -398,7 +415,20 @@ export default function Acuerdos() {
                             </div>
 
                             <div className="p-6 overflow-y-auto custom-list-scroll relative flex-1">
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-2 gap-3 mb-6">
+                                    <button
+                                        type="button"
+                                        onClick={handleSelectAllUnidades}
+                                        className="flex items-center justify-between p-3 border border-blue-200 bg-blue-50/50 rounded-sm hover:bg-blue-100 transition-all text-blue-700"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0">
+                                                <CheckCircle2 size={14} />
+                                            </div>
+                                            <span className="text-[11px] font-black uppercase">Seleccionar Todas</span>
+                                        </div>
+                                    </button>
+
                                     <button
                                         type="button"
                                         onClick={() => setFormData(p => ({ ...p, idsUnidades: [] }))}
@@ -408,14 +438,19 @@ export default function Acuerdos() {
                                             }`}
                                     >
                                         <div className="flex items-center gap-3 text-slate-900 min-w-0">
-                                            <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${(formData.idsUnidades || []).length === 0 ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-400'}`}>
+                                            <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${(formData.idsUnidades || []).length === 0 ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-400'
+                                                }`}>
                                                 <Info size={14} />
                                             </div>
                                             <span className="text-[11px] font-black uppercase truncate">Sin destinatarios</span>
                                         </div>
                                         {(formData.idsUnidades || []).length === 0 && <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />}
                                     </button>
+                                </div>
 
+                                <div className="h-px bg-slate-100 mb-6" />
+
+                                <div className="grid grid-cols-2 gap-3">
                                     {unidades.map(u => {
                                         const id = u.idUnidad ?? u.id;
                                         const isSelected = (formData.idsUnidades || []).includes(id);

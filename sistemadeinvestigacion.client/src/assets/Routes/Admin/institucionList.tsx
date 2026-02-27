@@ -222,7 +222,6 @@ const InstitucionItem = memo(({ inst, onToggle }: { inst: any, onToggle: (e: Rea
 ));
 
 const EditInstitucionModal = ({ inst, onClose, onUpdate }: { inst: any, onClose: () => void, onUpdate: () => void }) => {
-    // --- ESTADOS DE LA EMPRESA ---
     const [formData, setFormData] = useState({
         nombre: '',
         descripcion: '',
@@ -236,7 +235,6 @@ const EditInstitucionModal = ({ inst, onClose, onUpdate }: { inst: any, onClose:
     const [saving, setSaving] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // --- ESTADOS DE CONTACTOS ---
     const [contactos, setContactos] = useState<any[]>([]);
     const [loadingContactos, setLoadingContactos] = useState(false);
     const [nuevoContacto, setNuevoContacto] = useState({
@@ -246,7 +244,6 @@ const EditInstitucionModal = ({ inst, onClose, onUpdate }: { inst: any, onClose:
     });
     const [creandoContacto, setCreandoContacto] = useState(false);
 
-    // --- CARGA DE CONTACTOS (GET) ---
     const fetchContactos = useCallback(async () => {
         setLoadingContactos(true);
         try {
@@ -269,7 +266,6 @@ const EditInstitucionModal = ({ inst, onClose, onUpdate }: { inst: any, onClose:
         fetchContactos();
     }, [fetchContactos]);
 
-    // --- CREACIÓN DE CONTACTO (POST) ---
     const handleAddContacto = async () => {
         if (!nuevoContacto.nombre || !nuevoContacto.email) return;
         setCreandoContacto(true);
@@ -394,7 +390,6 @@ const EditInstitucionModal = ({ inst, onClose, onUpdate }: { inst: any, onClose:
 
                 <div className="flex-1 overflow-y-auto p-10 bg-white relative z-20 rounded-r-sm">
                     <div className="space-y-12">
-                        {/* SECCIÓN: DATOS MAESTROS */}
                         <section className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                             <div className="space-y-6">
                                 <h3 className="text-[11px] font-black text-[#002855] uppercase tracking-[0.2em] border-b border-slate-100 pb-2 flex items-center gap-2">
@@ -448,13 +443,11 @@ const EditInstitucionModal = ({ inst, onClose, onUpdate }: { inst: any, onClose:
                             </div>
                         </section>
 
-                        {/* SECCIÓN: CONTACTOS (GET/POST) */}
                         <section className="pt-10 border-t border-slate-100">
                             <h3 className="text-[11px] font-black text-[#002855] uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
                                 <span className="w-1.5 h-1.5 bg-blue-600 rounded-full" /> Contactos de la Empresa
                             </h3>
 
-                            {/* Formulario de Alta de Contacto */}
                             <div className="bg-slate-50 p-6 rounded-sm grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-8 border border-slate-100">
                                 <div>
                                     <label className={LABEL_STYLE}>Nombre del Contacto</label>
@@ -493,7 +486,6 @@ const EditInstitucionModal = ({ inst, onClose, onUpdate }: { inst: any, onClose:
                                 </button>
                             </div>
 
-                            {/* Tabla de Resultados */}
                             <div className="min-h-[100px]">
                                 {loadingContactos ? (
                                     <div className="flex justify-center py-4"><Loader2 className="animate-spin text-blue-600" /></div>
@@ -527,7 +519,6 @@ const EditInstitucionModal = ({ inst, onClose, onUpdate }: { inst: any, onClose:
                         </section>
                     </div>
 
-                    {/* Botón Guardar Cambios Empresa */}
                     <div className="sticky bottom-0 right-0 flex justify-end mt-12 pointer-events-none">
                         <button
                             onClick={handleSave}

@@ -108,18 +108,22 @@ export const guardarAcuerdoFinal = async (params: {
         Authorization: `Bearer ${token}`
     };
 
-    // --- LÓGICA MODO 4: EDICIÓN DE PLANTILLA (PATCH) ---
     if (modo.tipo === 4) {
         if (!modo.id) {
             await ui.error("ID de plantilla no encontrado.");
             return;
         }
-        url = `${import.meta.env.VITE_API_URL}/api/Svg/editar?idSvg=${modo.id}&svgOriginal=${encodeURIComponent(svgFinal)}`;
+
+        url = `${import.meta.env.VITE_API_URL}/api/Svg/editar`;
         method = 'PATCH';
+
         headers['Content-Type'] = 'application/json';
-        body = null;
+
+        body = JSON.stringify({
+            idSvg: modo.id,
+            svgOriginal: svgFinal
+        });
     }
-    // --- LÓGICA MODO 2: CREAR TEMPLATE ---
     else if (modo.tipo === 2) {
         url = `${import.meta.env.VITE_API_URL}/api/Svg/crearTemplate`;
         headers['Content-Type'] = 'application/json';
@@ -128,7 +132,6 @@ export const guardarAcuerdoFinal = async (params: {
             estado: true
         });
     }
-    // --- LÓGICA MODOS 1 Y 3: ACUERDOS ---
     else {
         const fd = new FormData();
         const acuerdoBase = safeJson(storageRaw) || {};

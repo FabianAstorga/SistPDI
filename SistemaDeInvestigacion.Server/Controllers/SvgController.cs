@@ -136,7 +136,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
         [Authorize]
         [HttpPatch("editar")]
-        public async Task<ActionResult> editarSvg(EditSvgDto editSvgDto)
+        public async Task<ActionResult> editarSvg([FromBody] EditSvgDto editSvgDto)
         {
             var userId = User.GetUserId();
             var userRol = User.GetUserRole();

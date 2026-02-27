@@ -285,6 +285,15 @@ const ModalConfiguracion = ({ id, empresas, onClose, onSuccess }: { id: number, 
                 if (res.ok) {
                     const result = await res.json();
                     setData(result);
+
+                    const info = result.datosAcuerdo;
+                    setFormChanges({
+                        titulo: info?.titulo || '',
+                        descripcion: info?.descripcion || '',
+                        detallesDescripcion: info?.detallesDescripcion || '',
+                        idEmpresa: info?.idEmpresa || '',
+                        fechaVencimiento: info?.fechaVencimiento ? info.fechaVencimiento.slice(0, 16) : ''
+                    });
                 }
             } finally {
                 setLoading(false);
@@ -296,25 +305,43 @@ const ModalConfiguracion = ({ id, empresas, onClose, onSuccess }: { id: number, 
     const handlePatchUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (Object.keys(formChanges).length === 0) {
+        const token = localStorage.getItem('token');
+        const formData = new FormData();
+        const infoOriginal = data?.datosAcuerdo;
+
+        let hasChanges = false;
+
+        const appendIfChanged = (key: string, newValue: any, oldValue: any) => {
+            const normalizedNew = String(newValue || '').trim();
+            const normalizedOld = String(oldValue || '').trim();
+
+            if (normalizedNew !== normalizedOld) {
+                formData.append(key, normalizedNew);
+                hasChanges = true;
+            }
+        };
+
+        appendIfChanged('titulo', formChanges.titulo, infoOriginal?.titulo);
+        appendIfChanged('descripcion', formChanges.descripcion, infoOriginal?.descripcion);
+        appendIfChanged('detallesDescripcion', formChanges.detallesDescripcion, infoOriginal?.detallesDescripcion);
+        appendIfChanged('idEmpresa', formChanges.idEmpresa, infoOriginal?.idEmpresa);
+
+        if (formChanges.fechaVencimiento) {
+            const newDate = new Date(formChanges.fechaVencimiento).toISOString();
+            const oldDate = infoOriginal?.fechaVencimiento ? new Date(infoOriginal.fechaVencimiento).toISOString() : '';
+
+            if (newDate !== oldDate) {
+                formData.append('fechaVencimiento', newDate);
+                hasChanges = true;
+            }
+        }
+
+        if (!hasChanges) {
             onClose();
             return;
         }
 
         setSaving(true);
-        const token = localStorage.getItem('token');
-        const formData = new FormData();
-
-        if (formChanges.titulo) formData.append('titulo', formChanges.titulo);
-        if (formChanges.descripcion) formData.append('descripcion', formChanges.descripcion);
-        if (formChanges.detallesDescripcion) formData.append('detallesDescripcion', formChanges.detallesDescripcion);
-        if (formChanges.idEmpresa) formData.append('idEmpresa', String(formChanges.idEmpresa));
-
-        if (formChanges.fechaVencimiento) {
-            const isoDate = new Date(formChanges.fechaVencimiento).toISOString();
-            formData.append('fechaVencimiento', isoDate);
-        }
-
         try {
             const res = await fetch(`${API_BASE}/api/Acuerdos/editar/${id}`, {
                 method: 'PATCH',
