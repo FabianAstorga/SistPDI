@@ -1,4 +1,30 @@
 ﻿import { pick, safeJson, toInt } from './lienzo.storage';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
+
+const MySwal = withReactContent(Swal);
+
+// Configuración de UI personalizada para mantener la estética del sistema
+const ui = {
+    error: (msj: string) => {
+        return MySwal.fire({
+            title: 'ERROR',
+            text: msj,
+            icon: 'error',
+            confirmButtonColor: '#002855',
+            customClass: { popup: 'rounded-none' }
+        });
+    },
+    exito: (msj: string) => {
+        return MySwal.fire({
+            title: 'ÉXITO',
+            text: msj,
+            icon: 'success',
+            confirmButtonColor: '#002855',
+            customClass: { popup: 'rounded-none' }
+        });
+    }
+};
 
 export const readResponseBody = async (res: Response) => {
     const text = await res.text();
@@ -59,7 +85,7 @@ export const guardarAcuerdoFinal = async (params: {
     const storageRaw = localStorage.getItem(storageKey);
 
     if (!token) {
-        alert('Error: La sesión expiró.');
+        await ui.error('La sesión expiró.');
         return;
     }
 
@@ -70,7 +96,7 @@ export const guardarAcuerdoFinal = async (params: {
             : getSvgStringFromDom();
 
     if (!rawSvgString) {
-        alert("Error: No se encontró el SVG del lienzo.");
+        await ui.error("No se encontró el SVG del lienzo.");
         return;
     }
     const svgFinal = sanitizeSvgString(rawSvgString);
@@ -85,10 +111,9 @@ export const guardarAcuerdoFinal = async (params: {
     // --- LÓGICA MODO 4: EDICIÓN DE PLANTILLA (PATCH) ---
     if (modo.tipo === 4) {
         if (!modo.id) {
-            alert("Error: ID de plantilla no encontrado.");
+            await ui.error("ID de plantilla no encontrado.");
             return;
         }
-        // AJUSTE: Se usa 'idSvg' y 'svgOriginal' como pide tu API
         url = `${import.meta.env.VITE_API_URL}/api/Svg/editar?idSvg=${modo.id}&svgOriginal=${encodeURIComponent(svgFinal)}`;
         method = 'PATCH';
         headers['Content-Type'] = 'application/json';
@@ -139,7 +164,7 @@ export const guardarAcuerdoFinal = async (params: {
             fd.append('svgOriginal', localStorage.getItem('template_svg') || '');
 
             if (!fd.get('titulo') || fd.get('idEmpresa') === '0') {
-                alert('Error: El acuerdo debe tener título y empresa seleccionada.');
+                await ui.error('El acuerdo debe tener título y empresa seleccionada.');
                 return;
             }
         }
@@ -164,9 +189,11 @@ export const guardarAcuerdoFinal = async (params: {
         const acuerdoBody = await readResponseBody(resAcuerdo);
 
         if (resAcuerdo.ok) {
-            if (modo.tipo === 4) alert('Plantilla base editada con éxito.');
-            else if (modo.tipo === 2) alert('Plantilla guardada.');
-            else alert('Acuerdo procesado exitosamente.');
+            let mensajeExito = 'Acuerdo procesado exitosamente.';
+            if (modo.tipo === 4) mensajeExito = 'Plantilla base editada con éxito.';
+            else if (modo.tipo === 2) mensajeExito = 'Plantilla guardada.';
+
+            await ui.exito(mensajeExito);
 
             localStorage.removeItem('temp_cambio');
             localStorage.removeItem('temp_acuerdo');
@@ -179,9 +206,9 @@ export const guardarAcuerdoFinal = async (params: {
         }
 
         console.error('Error API:', acuerdoBody);
-        alert(`Error al guardar: ${acuerdoBody.data?.message || 'Revisa la consola.'}`);
+        await ui.error(`Error al guardar: ${acuerdoBody.data?.message || 'Revisa la consola.'}`);
     } catch (error) {
         console.error('Error inesperado:', error);
-        alert('Error de conexión con el servidor.');
+        await ui.error('Error de conexión con el servidor.');
     }
 };

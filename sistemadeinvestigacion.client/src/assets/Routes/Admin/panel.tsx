@@ -4,6 +4,7 @@ import Autoplay from "embla-carousel-autoplay";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Navbar } from "../../components/Navbar";
+import { ui } from "./../../../utils/SwalService";
 import { LoginDrawer } from "./LoginDrawer";
 import { X, RefreshCw, Send, MessageSquare, Trash2, Search, FileText } from 'lucide-react';
 import { useSignalR } from "../../../context/SignalRContext";
@@ -384,14 +385,29 @@ const ModalDetalle = memo(({ data, onClose }: any) => {
         fetchComentarios();
     }, [fetchComentarios]);
 
+
     const handleDelete = async (idComentario: number) => {
-        if (!window.confirm("¿Estás seguro de que deseas eliminar este comentario?")) return;
-        try {
-            await fetch(`${API_BASE}/api/Comentarios/eliminar/${idComentario}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-            });
-        } catch (e) { console.error("Error deleting comment:", e); }
+        const seguro = await ui.confirmar(
+            "¿Eliminar Comentario?",
+            "Esta acción no se puede deshacer y el comentario desaparecerá del panel."
+        );
+
+        if (seguro) {
+            try {
+                const res = await fetch(`${API_BASE}/api/Comentarios/eliminar/${idComentario}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+
+                if (!res.ok) {
+                    console.error("Error al eliminar");
+                } else {
+                    console.error("Exito");
+                }
+            } catch (e) {
+                console.error("Error deleting comment:", e);
+            }
+        }
     };
 
     const handleSendComentario = async (e: React.FormEvent) => {
@@ -449,11 +465,15 @@ const ModalDetalle = memo(({ data, onClose }: any) => {
                         </div>
                     </div>
                     <section className="bg-white p-8 md:p-24 border-t border-slate-100">
+                        
+
                         <div className="max-w-4xl mx-auto">
                             <div className="flex items-center gap-4 mb-16">
                                 <MessageSquare size={32} className="text-[#002855]" />
                                 <h3 className="text-3xl font-black uppercase tracking-tighter text-[#002855]">Comentarios</h3>
-                                <div className="h-1 flex-1 bg-slate-100 ml-4" />
+                                                            
+
+                                <div className="h-1 flex-1 bg-slate-100 ml-4" /><h1 className="text-slate-400 items-center">Los comentarios solo pueden ser borrados por un administrador</h1>
                             </div>
                             <form onSubmit={handleSendComentario} className="bg-slate-50 p-10 border border-slate-200 shadow-xl mb-24 relative">
                                 <div className="absolute -top-4 left-10 bg-[#002855] text-white text-[10px] font-black px-6 py-2 uppercase tracking-widest shadow-lg">Agregar comentario</div>
@@ -470,6 +490,7 @@ const ModalDetalle = memo(({ data, onClose }: any) => {
                                 </div>
                             </form>
                             <div className="divide-y divide-slate-100">
+                            
                                 {loadingComentarios ? <div className="flex justify-center py-24"><RefreshCw className="animate-spin text-blue-600" size={40} /></div> : comentarios.map((c, idx) => (
                                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} key={idx} className="py-12 flex gap-10 items-start group">
                                         <div className="shrink-0 w-14 h-14 bg-[#002855] text-white flex items-center justify-center text-lg font-black uppercase shadow-lg">{(c.nombreUsuario || "A")[0].toUpperCase()}</div>
