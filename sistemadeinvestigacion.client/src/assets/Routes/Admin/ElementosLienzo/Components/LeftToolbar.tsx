@@ -53,6 +53,7 @@ export const LeftToolbar: React.FC<Props> = memo(({ model }) => {
     } = model;
 
     const [menuTrazosOpen, setMenuTrazosOpen] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     const TRZ = useMemo(() => [
         { id: 'linea', label: 'Línea' },
@@ -72,6 +73,18 @@ export const LeftToolbar: React.FC<Props> = memo(({ model }) => {
         if (idCapaDibujoActual?.current !== undefined) idCapaDibujoActual.current = null;
         cerrarMenus();
     }, [setHerramientaActiva, setModoPuntos, limpiarSeleccion, idCapaDibujoActual, cerrarMenus]);
+
+    const handleSave = async () => {
+        if (isSaving) return;
+        setIsSaving(true);
+        try {
+            await manejarGuardadoFinal();
+        } catch (error) {
+            console.error("Error saving:", error);
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     const renderToolbarBtn = (id: any, Icon: any, label: string, onClick: () => void, isActive: boolean) => (
         <button
@@ -174,12 +187,31 @@ export const LeftToolbar: React.FC<Props> = memo(({ model }) => {
 
             <div className="flex flex-col gap-2 pb-2">
                 <motion.button
-                    whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                    onClick={manejarGuardadoFinal}
-                    className="w-12 h-12 flex items-center justify-center text-green-400 bg-green-500/10 rounded-xl border border-green-500/20 hover:bg-green-500 hover:text-white transition-all"
-                    title="Guardar"
+                    whileHover={!isSaving ? { scale: 1.1 } : {}}
+                    whileTap={!isSaving ? { scale: 0.9 } : {}}
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className={`w-12 h-12 flex items-center justify-center rounded-xl border transition-all
+                        ${isSaving
+                            ? 'text-white/20 bg-white/5 border-white/5 cursor-not-allowed'
+                            : 'text-green-400 bg-green-500/10 border-green-500/20 hover:bg-green-500 hover:text-white'}`}
+                    title={isSaving ? "Guardando..." : "Guardar"}
                 >
-                    <Save size={20} />
+                    <AnimatePresence mode="wait">
+                        {isSaving ? (
+                            <motion.div
+                                key="loading"
+                                animate={{ rotate: 360 }}
+                                transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                            >
+                                <Save size={20} className="opacity-50" />
+                            </motion.div>
+                        ) : (
+                            <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                                <Save size={20} />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </motion.button>
 
                 <motion.button
