@@ -174,5 +174,46 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return NoContent();
         }
 
+        [Authorize]
+        [HttpDelete("borrarTemplate/{idTemplate}")]
+        public async Task<ActionResult> borrarTemplate(int idTemplate)
+        {
+            var userId = User.GetUserId();
+            var userRol = User.GetUserRole();
+
+            if (userRol != 1)
+            {
+                return BadRequest("Usuario no es Administrador");
+            }
+
+            if (idTemplate == null) return NotFound("SVG no encontrado");
+
+            var templateData = await _context.SvgTemplates.FindAsync(idTemplate);
+            var templateAcuerdosData = await _context.AcuerdosUserTemplates
+                .FirstOrDefaultAsync(x => x.IdSvg == idTemplate);
+
+            if (templateData.IdEstado != 3)
+            {
+                return BadRequest("Svg no es plantilla");
+            }
+            
+            var auditoria = new svgAuditoria
+            {
+                idpersona = userId,
+                accion = "DELETE | Se eliminó el template",
+                fechacambio = DateTime.UtcNow,
+                idsvg = templateData.Id,
+                valorantiguo = null,
+                valornuevo = null
+            };
+
+            _context.AcuerdosUserTemplates.Remove(templateAcuerdosData);
+            _context.SvgAuditoria.Add(auditoria);
+            _context.SvgTemplates.Remove(templateData);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
     }
 }

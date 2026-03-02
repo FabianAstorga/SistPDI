@@ -2,13 +2,15 @@
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from "framer-motion";
 import { Navbar } from '../../components/Navbar';
+import { ui } from "./../../../utils/SwalService";
 import {
     ArrowRight,
     Search,
     AlertCircle,
     LayoutGrid,
     CheckCircle2,
-    RefreshCw
+    RefreshCw,
+    Trash2
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL;
@@ -55,6 +57,37 @@ export default function EditarSvg() {
         }
     };
 
+    const handleDeleteTemplate = async (e: React.MouseEvent, id: number) => {
+        e.stopPropagation();
+
+        const seguro = await ui.confirmar(
+            "¿Eliminar Plantilla?",
+            "Esta acción eliminará el diseño SVG permanentemente del sistema."
+        );
+
+        if (seguro) {
+            const token = localStorage.getItem('token');
+            try {
+                const res = await fetch(`${API_BASE}/api/Svg/borrarTemplate/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (res.ok) {
+                    setTemplates(prev => prev.filter(t => t.id !== id));
+                    if (selectedTemplateId === id) setSelectedTemplateId(null);
+                } else {
+                    alert("Error al intentar borrar el template");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Error de red al intentar borrar");
+            }
+        }
+    };
+
     const filteredTemplates = useMemo(() => {
         return templates.filter(t => (t.nombre || "").toLowerCase().includes(searchTerm.toLowerCase()));
     }, [templates, searchTerm]);
@@ -96,6 +129,7 @@ export default function EditarSvg() {
                                         temp={temp}
                                         isSelected={selectedTemplateId === temp.id}
                                         onSelect={() => setSelectedTemplateId(temp.id)}
+                                        onDelete={(e: any) => handleDeleteTemplate(e, temp.id)}
                                     />
                                 ))}
                             </div>
@@ -125,7 +159,7 @@ export default function EditarSvg() {
     );
 }
 
-const TemplateCard = memo(({ temp, isSelected, onSelect }: any) => {
+const TemplateCard = memo(({ temp, isSelected, onSelect, onDelete }: any) => {
     return (
         <motion.div
             whileHover={{ y: -4 }}
@@ -133,13 +167,22 @@ const TemplateCard = memo(({ temp, isSelected, onSelect }: any) => {
             onClick={onSelect}
             className={`relative aspect-square rounded-xl cursor-pointer transition-all duration-300 border-2 flex flex-col items-center justify-center p-8
                 ${isSelected
-                    ? 'border-blue-500 bg-white shadow-[0_10px_30px_rgba(59,130,246,0.2)] scale-[1.02]'
+                    ? 'border-blue-500 bg-white shadow-[0_10px_30_rgba(59,130,246,0.2)] scale-[1.02]'
                     : 'border-slate-100 bg-white hover:border-slate-200 hover:shadow-xl'}`}
         >
             <div className={`absolute top-4 left-4 px-2 py-0.5 rounded text-[9px] font-black tracking-tighter uppercase
                 ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
                 #{temp.id}
             </div>
+
+            {/* BOTÓN BORRAR */}
+            <button
+                onClick={onDelete}
+                className="absolute top-4 right-4 p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors z-20"
+                title="Eliminar plantilla"
+            >
+                <Trash2 size={16} />
+            </button>
 
             {temp.svgOriginal ? (
                 <div
@@ -153,7 +196,7 @@ const TemplateCard = memo(({ temp, isSelected, onSelect }: any) => {
             )}
 
             {isSelected && (
-                <div className="absolute top-4 right-4 text-blue-600">
+                <div className="absolute bottom-4 right-4 text-blue-600">
                     <CheckCircle2 size={24} fill="currentColor" className="text-white" />
                 </div>
             )}

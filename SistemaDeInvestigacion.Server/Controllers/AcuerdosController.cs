@@ -2,17 +2,18 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Primitives;
 using SistemaDeInvestigacion.Hubs;
 using SistemaDeInvestigacion.Server.Data;
 using SistemaDeInvestigacion.Server.Dtos;
 using SistemaDeInvestigacion.Server.Models;
 using SistemaDeInvestigacion.Server.Servicios;
-using System.Drawing.Imaging;
 using Svg;
-using System.IO;
 using System.Drawing;
-using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Primitives;
+using System.Drawing.Imaging;
+using System.IO;
 using System.Text.Json;
 
 namespace SistemaDeInvestigacion.Server.Controllers
@@ -267,15 +268,11 @@ namespace SistemaDeInvestigacion.Server.Controllers
             try
             {
                 var query = _context.Funcionarios.AsQueryable();
-
-                if (acuerdos.idsUnidades != null && acuerdos.idsUnidades.Contains(0))
-                {
-                }
-                else if (acuerdos.idsUnidades != null && acuerdos.idsUnidades.Any())
+                if (acuerdos.idsUnidades != null && acuerdos.idsUnidades.Any() && !acuerdos.idsUnidades.Contains(0))
                 {
                     query = query.Where(f => acuerdos.idsUnidades.Contains(f.idUnidad));
                 }
-                else
+                else if (acuerdos.idsUnidades == null || !acuerdos.idsUnidades.Any())
                 {
                     query = query.Where(f => false);
                 }
@@ -286,15 +283,23 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
                 if (destinatarios.Any())
                 {
-                    var emailTasks = destinatarios.Select(func =>
-                        _authMailService.SendMailAcuerdo(
-                            func.CorreoElectronico,
-                            NewAcuerdo.Titulo,
-                            NewAcuerdo.Descripcion,
-                            rutaArchivoFisica
-                        ));
+                    int sizeLote = 50;
+                    var lotesDeDestinatarios = destinatarios.Chunk(sizeLote).ToList();
+                    var tareasLotes = lotesDeDestinatarios.Select(async (lote) =>
+                    {
+                        foreach (var func in lote)
+                        {
+                            await _authMailService.SendMailAcuerdo(
 
-                    await Task.WhenAll(emailTasks);
+                                func.CorreoElectronico,
+                                NewAcuerdo.Titulo,
+                                NewAcuerdo.Descripcion,
+                                rutaArchivoFisica
+                            );
+                        }
+                    });
+
+                    await Task.WhenAll(tareasLotes);
                 }
             }
             catch (Exception ex)
