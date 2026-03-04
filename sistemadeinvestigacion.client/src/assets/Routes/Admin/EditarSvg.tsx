@@ -175,7 +175,6 @@ const TemplateCard = memo(({ temp, isSelected, onSelect, onDelete }: any) => {
                 #{temp.id}
             </div>
 
-            {/* BOTÓN BORRAR */}
             <button
                 onClick={onDelete}
                 className="absolute top-4 right-4 p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors z-20"

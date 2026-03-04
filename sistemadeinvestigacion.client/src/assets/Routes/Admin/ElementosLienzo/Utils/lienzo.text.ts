@@ -9,7 +9,7 @@ export function sanitizeText(raw: any) {
 }
 
 export function estimateCharWidthPx(fontSize: number, fontFamily: string, fontWeight: number | string) {
-    const base = 0.55; // Factor base para fuentes proporcionales (Arial, Helvetica)
+    const base = 0.55; 
     const isBold = String(fontWeight) === '700' || String(fontWeight).toLowerCase() === 'bold';
     const weightFactor = isBold ? 1.1 : 1.0;
     return fontSize * base * weightFactor;

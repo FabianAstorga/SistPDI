@@ -6,23 +6,20 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Navbar } from "../../components/Navbar";
 import { ui } from "./../../../utils/SwalService";
 import { LoginDrawer } from "./LoginDrawer";
-import { X, RefreshCw, Send, MessageSquare, Trash2, Search, FileText, ChevronUp } from 'lucide-react';
+import { X, RefreshCw, Send, MessageSquare, Trash2, Search, FileText, ChevronUp, Calendar } from 'lucide-react';
 import { useSignalR } from "../../../context/SignalRContext";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import { PDFDocument } from "./PDFDocument";
 import { HubConnectionBuilder, LogLevel, HubConnection } from "@microsoft/signalr";
-
 const API_BASE = import.meta.env.VITE_API_URL;
 const PDI_LOGO_URL = "/elementor-placeholder-image.png";
 const HERO_BG = "/i_region_cuartel_investigaciones_arica.png";
-
 const resolveBackendUrl = (path?: string | null) => {
     if (!path) return null;
     const s = String(path).trim();
     if (!s || /^http?:\/\//i.test(s)) return s || null;
     return `${API_BASE}${s.startsWith('/') ? s : `/${s}`}`;
 };
-
 const normalizeAcuerdo = (a: any) => ({
     id: Number(a?.idAcuerdo ?? a?.id ?? 0),
     titulo: String(a?.titulo ?? ''),
@@ -34,17 +31,13 @@ const normalizeAcuerdo = (a: any) => ({
     estado: a?.estado || "Activo",
     idEmpresa: a?.idEmpresa
 });
-
 const FADE_VARIANT = {
     initial: { opacity: 0, y: 15 },
     animate: { opacity: 1, y: 0 },
     exit: { opacity: 0, y: -15 }
 };
-
-// Componente del Botón Scroll To Top
 const ScrollToTop = ({ containerRef }: { containerRef: React.RefObject<HTMLDivElement | null> }) => {
     const [isVisible, setIsVisible] = useState(false);
-
     useEffect(() => {
         const container = containerRef.current;
         if (!container) return;
@@ -59,7 +52,6 @@ const ScrollToTop = ({ containerRef }: { containerRef: React.RefObject<HTMLDivEl
     const scrollToTop = () => {
         containerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
     };
-
     return (
         <AnimatePresence>
             {isVisible && (
@@ -68,23 +60,21 @@ const ScrollToTop = ({ containerRef }: { containerRef: React.RefObject<HTMLDivEl
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
                     onClick={scrollToTop}
-                    className="fixed bottom-10 right-10 z-[150] p-4 bg-[#002855] text-white border-2 border-blue-500/30 shadow-2xl hover:bg-blue-600 transition-all active:scale-90"
+                    className="fixed bottom-10 right-10 z-[150] p-4 bg-[#FFD700] text-[#002855] rounded-full border-2 border-[#002855]/20 shadow-2xl hover:bg-[#ffdf33] hover:scale-110 transition-all active:scale-90"
                 >
-                    <ChevronUp size={24} />
+                    <ChevronUp size={28} strokeWidth={3} />
                 </motion.button>
             )}
         </AnimatePresence>
     );
 };
-
 export default function Panel() {
     const navigate = useNavigate();
     const location = useLocation();
     const carouselRef = useRef<HTMLElement | null>(null);
     const listSectionRef = useRef<HTMLElement | null>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
-    const scrollContainerRef = useRef<HTMLDivElement>(null); // Referencia para el scroll
-
+    const scrollContainerRef = useRef<HTMLDivElement>(null); 
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isLoginOpen, setIsLoginOpen] = useState(false);
     const [userName, setUserName] = useState("");
@@ -97,12 +87,10 @@ export default function Panel() {
     const currentYear = useMemo(() => new Date().getFullYear(), []);
     const handleCloseModal = useCallback(() => setModalData(null), []);
     const handleOpenModal = useCallback((item: any) => setModalData(item), []);
-
     useEffect(() => {
         document.body.style.overflow = 'hidden';
         return () => { document.body.style.overflow = 'unset'; };
     }, []);
-
     const fetchData = useCallback(async () => {
         if (abortControllerRef.current) abortControllerRef.current.abort();
         abortControllerRef.current = new AbortController();
@@ -124,7 +112,6 @@ export default function Panel() {
             setLoading(false);
         }
     }, []);
-
     useEffect(() => {
         if (connection) {
             const handleRefresh = () => fetchData();
@@ -132,7 +119,6 @@ export default function Panel() {
             return () => { connection.off("RecibirActualizacionAcuerdos", handleRefresh); };
         }
     }, [connection, fetchData]);
-
     const checkSession = useCallback(() => {
         const token = localStorage.getItem('token');
         const userJson = localStorage.getItem('user');
@@ -168,7 +154,6 @@ export default function Panel() {
     const scrollTo = useCallback((index: number) => {
         if (emblaApi) emblaApi.scrollTo(index);
     }, [emblaApi]);
-
     useEffect(() => {
         if (!emblaApi) return;
         onSelect();
@@ -181,7 +166,6 @@ export default function Panel() {
         const q = inputSearch.toLowerCase();
         return acuerdos.filter(a => a.titulo.toLowerCase().includes(q));
     }, [inputSearch, acuerdos]);
-
     return (
         <div className="fixed inset-0 overflow-hidden bg-white font-sans text-slate-900 selection:bg-[#002855] selection:text-white">
             <AnimatePresence>
@@ -191,7 +175,6 @@ export default function Panel() {
                     </motion.div>
                 )}
             </AnimatePresence>
-
             <div ref={scrollContainerRef} className="h-full overflow-y-auto snap-y snap-mandatory scroll-smooth overflow-x-hidden custom-list-scroll">
                 <section className={`snap-start w-full h-screen flex flex-col items-center justify-center px-6 relative bg-[#002855] transition-all duration-700 ${isLoggedIn ? 'pt-16' : ''}`}>
                     <div className="absolute inset-0 bg-cover bg-center opacity-40 animate-pulse-slow pointer-events-none" style={{ backgroundImage: `url(${HERO_BG})` }} />
@@ -217,7 +200,6 @@ export default function Panel() {
                         </div>
                     </div>
                 </section>
-
                 <section ref={carouselRef} className="snap-start w-full h-screen flex flex-col justify-center bg-slate-200 relative overflow-hidden transition-colors duration-500">
                     <div className="max-w-7xl mx-auto w-full px-6 mb-2 text-center">
                         <h2 className="text-3xl md:text-4xl font-black text-[#002855] uppercase tracking-tighter">Ultimos Acuerdos</h2>
@@ -233,7 +215,6 @@ export default function Panel() {
                     </div>
                     <CarouselDots snaps={scrollSnaps} selectedIndex={selectedIndex} onDotClick={scrollTo} />
                 </section>
-
                 <section ref={listSectionRef} className="snap-start w-full h-screen bg-[#002855] text-white py-12 px-6 flex flex-col items-center overflow-hidden">
                     <div className="max-w-7xl mx-auto w-full flex flex-col h-full">
                         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 shrink-0">
@@ -274,15 +255,11 @@ export default function Panel() {
                     </div>
                 </section>
             </div>
-
             <AnimatePresence>
                 {modalData && <ModalDetalle data={modalData} onClose={handleCloseModal} />}
             </AnimatePresence>
             <LoginDrawer isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} onLoginSuccess={checkSession} />
-
-            {/* Implementación del botón ScrollToTop */}
             <ScrollToTop containerRef={scrollContainerRef} />
-
             <style>{`
                 .custom-list-scroll::-webkit-scrollbar { width: 6px; }
                 .custom-list-scroll::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
@@ -293,7 +270,6 @@ export default function Panel() {
         </div>
     );
 }
-
 const CardItem = memo(({ item, onOpen }: any) => (
     <motion.div
         whileHover={{ y: -8 }}
@@ -309,6 +285,12 @@ const CardItem = memo(({ item, onOpen }: any) => (
             <h4 className="text-xl font-black text-[#002855] uppercase leading-tight tracking-tighter line-clamp-2 group-hover:text-blue-600 transition-colors">
                 {item.titulo}
             </h4>
+            {item.fechaVencimiento && (
+                <div className="flex items-center gap-1.5 text-[#002855]/60 font-bold uppercase text-[10px] tracking-widest">
+                    <Calendar size={12} className="text-blue-500" />
+                    <span>Vence: {new Date(item.fechaVencimiento).toLocaleDateString('es-CL')}</span>
+                </div>
+            )}
         </div>
         <div className="relative aspect-video bg-slate-50 rounded-none border border-slate-100 overflow-hidden mb-4 group-hover:bg-white transition-colors shadow-inner p-4 flex items-center justify-center">
             <img
@@ -325,7 +307,6 @@ const CardItem = memo(({ item, onOpen }: any) => (
         </div>
     </motion.div>
 ));
-
 const CarouselDots = memo(({ snaps, selectedIndex, onDotClick }: any) => (
     <div className="flex justify-center gap-3 mt-8">
         {snaps.map((_: any, i: number) => (
@@ -333,7 +314,6 @@ const CarouselDots = memo(({ snaps, selectedIndex, onDotClick }: any) => (
         ))}
     </div>
 ));
-
 const CarouselItem = memo(({ item, isActive, onClick }: any) => (
     <div className="embla__slide flex-[0_0_90%] md:flex-[0_0_42%] px-4">
         <motion.div
@@ -356,6 +336,12 @@ const CarouselItem = memo(({ item, isActive, onClick }: any) => (
                 <h3 className="text-xl md:text-2xl font-black text-slate-900 uppercase leading-tight flex-1 min-w-0 line-clamp-2 tracking-tighter">
                     {item.titulo}
                 </h3>
+                {item.fechaVencimiento && (
+                    <div className="flex items-center gap-1.5 text-[#002855]/60 font-bold uppercase text-[10px] tracking-widest">
+                        <Calendar size={12} className="text-blue-500" />
+                        <span>Vence: {new Date(item.fechaVencimiento).toLocaleDateString('es-CL')}</span>
+                    </div>
+                )}
                 <span className="shrink-0 text-[10px] font-black bg-blue-600 text-white px-2 py-1 rounded-none uppercase tracking-tighter mt-1 italic">
                     {item.nombreCategoria}
                 </span>
@@ -368,7 +354,6 @@ const CarouselItem = memo(({ item, isActive, onClick }: any) => (
         </motion.div>
     </div>
 ));
-
 const ModalDetalle = memo(({ data, onClose }: any) => {
     const [comentarios, setComentarios] = useState<any[]>([]);
     const [loadingComentarios, setLoadingComentarios] = useState(true);
@@ -378,7 +363,6 @@ const ModalDetalle = memo(({ data, onClose }: any) => {
     const comentariosConnRef = useRef<HubConnection | null>(null);
     const userObj = JSON.parse(localStorage.getItem('user') || '{}');
     const isAdmin = Number(userObj.rol) === 1;
-
     const fetchComentarios = useCallback(async () => {
         try {
             setLoadingComentarios(true);
@@ -393,7 +377,6 @@ const ModalDetalle = memo(({ data, onClose }: any) => {
             setLoadingComentarios(false);
         }
     }, [data.id]);
-
     useEffect(() => {
         const conn = new HubConnectionBuilder()
             .withUrl(`${API_BASE}/comentariosHub`)
@@ -413,7 +396,6 @@ const ModalDetalle = memo(({ data, onClose }: any) => {
                 console.error("Error al conectar al Hub de Comentarios:", err);
             }
         };
-
         startConnection();
 
         return () => {
@@ -424,7 +406,6 @@ const ModalDetalle = memo(({ data, onClose }: any) => {
             }
         };
     }, [data.id, fetchComentarios]);
-
     useEffect(() => {
         const userJson = localStorage.getItem('user');
         if (userJson) {
@@ -435,7 +416,6 @@ const ModalDetalle = memo(({ data, onClose }: any) => {
         }
         fetchComentarios();
     }, [fetchComentarios]);
-
     const handleDelete = async (idComentario: number) => {
         const seguro = await ui.confirmar(
             "¿Eliminar Comentario?",
@@ -452,7 +432,6 @@ const ModalDetalle = memo(({ data, onClose }: any) => {
             }
         }
     };
-
     const handleSendComentario = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!nuevoComentario.trim() || isSending) return;
@@ -467,7 +446,6 @@ const ModalDetalle = memo(({ data, onClose }: any) => {
         } catch (e) { console.error("Error al enviar", e); }
         finally { setIsSending(false); }
     };
-
     return (
         <div className="fixed inset-0 z-[9999] flex justify-center p-0 md:p-10 overflow-y-auto bg-[#001a35]/90 backdrop-blur-sm custom-list-scroll">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 z-[-1]" />

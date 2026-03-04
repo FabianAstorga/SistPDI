@@ -4,7 +4,6 @@ import withReactContent from 'sweetalert2-react-content';
 
 const MySwal = withReactContent(Swal);
 
-// Configuración de UI personalizada para mantener la estética del sistema
 const ui = {
     error: (msj: string) => {
         return MySwal.fire({

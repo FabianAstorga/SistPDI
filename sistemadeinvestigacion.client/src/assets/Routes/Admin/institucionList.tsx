@@ -286,7 +286,7 @@ const EditInstitucionModal = ({ inst, onClose, onUpdate }: { inst: any, onClose:
             });
             if (res.ok) {
                 setNuevoContacto({ nombre: '', email: '', numero: '' });
-                fetchContactos(); // Recargar la lista de contactos
+                fetchContactos(); 
             }
         } catch (error) {
             console.error("Error creando contacto:", error);
@@ -295,7 +295,6 @@ const EditInstitucionModal = ({ inst, onClose, onUpdate }: { inst: any, onClose:
         }
     };
 
-    // --- LÓGICA DE EMPRESA ---
     const canSubmit = useMemo(() => {
         return Object.values(formData).some(val => val.trim() !== '') || logoFile !== null;
     }, [formData, logoFile]);

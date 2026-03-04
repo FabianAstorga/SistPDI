@@ -116,29 +116,24 @@ export const useLienzoModel = (navigate: (path: string) => void): LienzoModel =>
 
     useEffect(() => {
         const modoRaw = localStorage.getItem('modo');
-        // Si no hay modo, evitamos que rompa
         if (!modoRaw) return;
 
         const modoParsed = JSON.parse(modoRaw);
         setModo(modoParsed);
 
-        // Lógica de recuperación de elementos
         if (modoParsed.tipo === 4) {
-            // Modo Edición de Plantilla Base
             const svgEdit = localStorage.getItem('template_svg_edit');
             if (svgEdit) {
                 console.log("[Lienzo] 🔄 Reconstruyendo plantilla para edición (Modo 4)");
                 setElementos(reconstruirEstadoDesdeGruposSVG(svgEdit));
             }
         } else {
-            // Modos 1, 2, 3 (usan la plantilla normal o empiezan vacíos)
             const templateSvg = localStorage.getItem('template_svg');
             if (templateSvg) {
                 setElementos(reconstruirEstadoDesdeGruposSVG(templateSvg));
             }
         }
 
-        // Lógica de Títulos según el modo
         if (modoParsed.tipo === 3) {
             const tempCambio = localStorage.getItem('temp_cambio');
             if (tempCambio) {

@@ -7,9 +7,8 @@ export const ui = {
         const result = await MySwal.fire({
             title: titulo.toUpperCase(),
             text: texto,
-            
             showCancelButton: true,
-            confirmButtonColor: '#002855', // Tu color principal
+            confirmButtonColor: '#002855', 
             cancelButtonColor: '#d33',
             confirmButtonText: 'Confirmar',
             cancelButtonText: 'Cancelar',
@@ -22,7 +21,6 @@ export const ui = {
         });
         return result.isConfirmed;
     },
-
     exito: (titulo: string, msj: string = '') => {
         MySwal.fire({
             title: titulo.toUpperCase(),
@@ -32,7 +30,6 @@ export const ui = {
             timer: 2000
         });
     },
-
     error: (msj: string) => {
         MySwal.fire({
             title: 'ERROR DE SISTEMA',
