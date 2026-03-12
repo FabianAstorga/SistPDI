@@ -14,9 +14,11 @@ import {
     AlertCircle
 } from 'lucide-react';
 import { Navbar } from '../../components/Navbar';
+
 const HERO_BG = "/i_region_cuartel_investigaciones_arica.png";
 const LABEL_STYLE = "text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 flex items-center gap-2";
 const INPUT_STYLE = "w-full bg-slate-100 border-b border-slate-200 text-slate-900 px-4 py-3 outline-none focus:border-[#002855] focus:bg-white transition-all duration-300 font-semibold text-sm";
+
 export default function Institucion() {
     const navigate = useNavigate();
     const abortControllerRef = useRef<AbortController | null>(null);
@@ -32,12 +34,14 @@ export default function Institucion() {
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
     const [status, setStatus] = useState<{ type: 'ok' | 'error' | null, msg: string | null }>({ type: null, msg: null });
+
     useEffect(() => {
         return () => {
             if (logoPreview) URL.revokeObjectURL(logoPreview);
             abortControllerRef.current?.abort();
         };
     }, [logoPreview]);
+
     const canSubmit = useMemo(() => {
         return formData.nombre.trim() &&
             formData.descripcion.trim() &&
@@ -45,10 +49,12 @@ export default function Institucion() {
             formData.direccion.trim() &&
             !!logoFile;
     }, [formData, logoFile]);
+
     const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     }, []);
+
     const handleLogoChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0] ?? null;
         if (logoPreview) URL.revokeObjectURL(logoPreview);
@@ -60,25 +66,42 @@ export default function Institucion() {
             setLogoPreview(null);
         }
     }, [logoPreview]);
+
     const handleSubmit = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
         if (!canSubmit || saving) return;
+
         setStatus({ type: null, msg: null });
         setSaving(true);
+
         if (abortControllerRef.current) abortControllerRef.current.abort();
         abortControllerRef.current = new AbortController();
+
         try {
             const token = localStorage.getItem('token');
             const fd = new FormData();
-            Object.entries(formData).forEach(([key, val]) => fd.append(key, val.trim()));
+
+            // Procesamos los datos para asegurar que el teléfono sea enviado como cadena numérica pura
+            Object.entries(formData).forEach(([key, val]) => {
+                if (key === 'telefono') {
+                    const cleanPhone = val.replace(/\D/g, '');
+                    fd.append(key, cleanPhone);
+                } else {
+                    fd.append(key, val.trim());
+                }
+            });
+
             if (logoFile) fd.append('logo', logoFile);
+
             const res = await fetch(`${import.meta.env.VITE_API_URL}/api/Empresa/crear`, {
                 method: 'POST',
                 headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
                 body: fd,
                 signal: abortControllerRef.current.signal
             });
+
             if (!res.ok) throw new Error(await res.text() || 'Error en el servidor');
+
             setStatus({ type: 'ok', msg: 'Institución registrada exitosamente.' });
             setFormData({ nombre: '', descripcion: '', sitioWeb: '', email: '', telefono: '', direccion: '' });
             setLogoFile(null);
@@ -91,6 +114,7 @@ export default function Institucion() {
             setSaving(false);
         }
     };
+
     return (
         <div className="h-screen w-full bg-[#002855] font-sans text-white overflow-hidden flex flex-col">
             <Navbar />
@@ -143,7 +167,19 @@ export default function Institucion() {
                                         </div>
                                         <div>
                                             <label className={LABEL_STYLE}><Phone size={12} /> Teléfono</label>
-                                            <input name="telefono" type="text" className={INPUT_STYLE} value={formData.telefono} onChange={handleInputChange} />
+                                            <input
+                                                name="telefono"
+                                                type="text"
+                                                inputMode="numeric"
+                                                className={INPUT_STYLE}
+                                                value={formData.telefono}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    if (val === '' || /^[0-9\b]+$/.test(val)) {
+                                                        handleInputChange(e);
+                                                    }
+                                                }}
+                                            />
                                         </div>
                                     </div>
                                     <div>
@@ -184,7 +220,7 @@ export default function Institucion() {
                         <div className="absolute bottom-10 right-10 flex flex-col items-center gap-2">
                             <span className="text-[10px] font-black text-[#002855] uppercase tracking-widest opacity-40">Registrar</span>
                             <button
-                                onClick={handleSubmit}
+                                onClick={() => handleSubmit()}
                                 disabled={!canSubmit || saving}
                                 className="h-16 w-16 rounded-full bg-[#002855] text-white flex items-center justify-center hover:bg-blue-600 hover:scale-110 shadow-2xl transition-all active:scale-95 disabled:bg-slate-200 disabled:text-slate-400"
                             >

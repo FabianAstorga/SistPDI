@@ -23,7 +23,8 @@ import {
     Plus,
     Boxes,
     Building2,
-    FileSpreadsheet 
+    FileSpreadsheet,
+    Download
 } from 'lucide-react';
 
 const FAST_TRANSITION = { type: "spring", stiffness: 400, damping: 30 };
@@ -241,6 +242,13 @@ export default function AdministracionIdentidad() {
                             </div>
 
                             <div className="pt-6 border-t border-white/10">
+                                <button
+                                    onClick={handleDownloadTemplate}
+                                    className="w-full py-3 px-4 border border-emerald-400/30 bg-emerald-400/5 hover:bg-emerald-400/20 text-emerald-400 flex items-center justify-center gap-3 transition-all group rounded-sm shadow-[0_0_15px_rgba(52,211,153,0.05)]"
+                                >
+                                    <Download size={16} className="group-hover:translate-y-0.5 transition-transform" />
+                                    <span className="text-[9px] font-black uppercase tracking-widest">Descargar Plantilla</span>
+                                </button>
                                 <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-white/10 hover:border-blue-400 hover:bg-white/5 transition-all cursor-pointer rounded-sm group">
                                     <FileSpreadsheet size={20} className="text-slate-500 group-hover:text-blue-400 mb-2 transition-colors" />
                                     <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 group-hover:text-white transition-colors text-center px-4">Importar Excel</p>
@@ -316,6 +324,16 @@ export default function AdministracionIdentidad() {
         </div>
     );
 }
+
+const handleDownloadTemplate = () => {
+    const templatePath = '/CargaMassiva.xlsx'; 
+    const link = document.createElement('a');
+    link.href = templatePath;
+    link.download = 'Plantilla_Carga_Funcionarios.xlsx'; 
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
 
 const ModalExcelPreview = ({ data, onClose, onConfirm, loading }: any) => (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-[#001a35]/90 backdrop-blur-sm">
