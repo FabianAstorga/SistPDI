@@ -157,7 +157,10 @@ export const guardarAcuerdoFinal = async (params: {
             fd.append('detallesDescripcion', String(pick(acuerdoBase, ['DetallesDescripcion', 'detallesDescripcion'], '') || '').trim());
 
             const fVenc = pick(acuerdoBase, ['FechaVencimiento', 'fechaVencimiento'], null);
-            fd.append('fechaVencimiento', fVenc ? new Date(fVenc).toISOString() : new Date().toISOString());
+
+            if (fVenc) {
+                fd.append('fechaVencimiento', new Date(fVenc).toISOString());
+            }
 
             fd.append('idEmpresa', String(toInt(pick(acuerdoBase, ['IdEmpresa', 'idEmpresa'], 0), 0)));
             fd.append('idCategoria', String(toInt(pick(acuerdoBase, ['IdCategoria', 'idCategoria'], 0), 0)));
