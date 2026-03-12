@@ -123,6 +123,7 @@ builder.Services.AddScoped<AuthMailService>();
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 builder.Services.AddSignalR();
 builder.Services.AddMemoryCache();
+builder.Services.AddHostedService<AcuerdosExpirationWorker>();
 
 var app = builder.Build();
 
@@ -162,7 +163,6 @@ app.UseStaticFiles(new StaticFileOptions
 var logosPath = Path.Combine(builder.Environment.ContentRootPath, "LogosMedia");
 var acuerdosPath = Path.Combine(builder.Environment.ContentRootPath, "media", "acuerdosmedia");
 
-Console.WriteLine(acuerdosPath);
 if (!Directory.Exists(logosPath))
 {
     Directory.CreateDirectory(logosPath);

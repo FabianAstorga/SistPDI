@@ -25,8 +25,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Funcionarios>>> GetEmpleados()
         {
-
-            Console.WriteLine("ola");
             return await _context.Funcionarios.ToListAsync();
         }
         //obtiene detalles de un empleado en especifico

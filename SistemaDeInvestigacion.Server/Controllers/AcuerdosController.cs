@@ -46,6 +46,8 @@ namespace SistemaDeInvestigacion.Server.Controllers
             _cache = cache;
         }
 
+        //crear petición para actualizar estados
+
         //Muestra el detalle de un acuerdo
         [HttpGet("{id}")]
         public async Task<ActionResult<Acuerdo>> GetAcuerdos(int id)
@@ -68,7 +70,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
         [HttpGet("mejores")]
         public async Task<ActionResult<IEnumerable<getAcuerdoDto>>> GetMejores()
         {
-            // Cambiamos el tipo de la lista en la caché a getAcuerdoDto
             if (!_cache.TryGetValue(AcuerdosRecientes, out List<getAcuerdoDto> acuerdos))
             {
                 acuerdos = await _context.Acuerdos
@@ -183,7 +184,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 return BadRequest("svgEditado es requerido.");
 
             var userRole = User.GetUserRole();
-            if (userRole == null) { return BadRequest("Usuario no tiene un rol definido"); };
+            if (userRole == null) return BadRequest("Usuario no tiene un rol definido");
 
             var NewAcuerdo = new Acuerdo
             {
@@ -199,17 +200,14 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
             _context.Acuerdos.Add(NewAcuerdo);
             await _context.SaveChangesAsync();
-
-            var auditAcuerdo = new acuerdosAuditoria{
+            var auditAcuerdo = new acuerdosAuditoria
+            {
                 idpersona = userId,
                 accion = "INSERT | Se creó un acuerdo",
                 fechacambio = DateTime.UtcNow,
                 idacuerdo = NewAcuerdo.IdAcuerdo,
-                valorantiguo = null,
                 valornuevo = JsonSerializer.Serialize(new { NewAcuerdo.Titulo, NewAcuerdo.IdEmpresa, NewAcuerdo.IdCategoria })
-
             };
-
             _context.AcuerdosAuditoria.Add(auditAcuerdo);
 
             string fileName = $"acuerdo_{Guid.NewGuid().ToString().Substring(0, 8)}.jpg";
@@ -224,14 +222,14 @@ namespace SistemaDeInvestigacion.Server.Controllers
             {
                 byte[] imageData = _svgService.RenderToJpg(acuerdos.svgEditado);
                 await System.IO.File.WriteAllBytesAsync(rutaArchivoFisica, imageData);
+
+                NewAcuerdo.ImagenUrl = $"/media/acuerdosmedia/{NewAcuerdo.IdAcuerdo}/{fileName}";
+                await _context.SaveChangesAsync();
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Error generando la imagen del acuerdo: {ex.Message}");
+                return StatusCode(500, $"Error generando la imagen: {ex.Message}");
             }
-
-            NewAcuerdo.ImagenUrl = $"/media/acuerdosmedia/{NewAcuerdo.IdAcuerdo}/{fileName}";
-            await _context.SaveChangesAsync();
 
             var NewSvg = new SvgTemplate
             {
@@ -240,20 +238,8 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 IdEstado = 1,
                 FechaCreacion = DateTime.UtcNow
             };
-
             _context.SvgTemplates.Add(NewSvg);
             await _context.SaveChangesAsync();
-
-            var auditSvg = new svgAuditoria
-            {
-                idpersona = userId,
-                accion = $"INSERT | Registro de SVG creado para el acuerdo con id: {NewAcuerdo.IdAcuerdo}",
-                fechacambio = DateTime.UtcNow,
-                idsvg = NewSvg.Id,
-                valorantiguo = null,
-                valornuevo = JsonSerializer.Serialize(new { NewSvg.SvgEditado })
-            };
-            _context.SvgAuditoria.Add(auditSvg);
 
             var NewDatos = new AcuerdosUsersTemplates
             {
@@ -261,7 +247,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 IdAcuerdo = NewAcuerdo.IdAcuerdo,
                 IdSvg = NewSvg.Id
             };
-
             _context.AcuerdosUserTemplates.Add(NewDatos);
             await _context.SaveChangesAsync();
 
@@ -285,17 +270,25 @@ namespace SistemaDeInvestigacion.Server.Controllers
                 {
                     int sizeLote = 50;
                     var lotesDeDestinatarios = destinatarios.Chunk(sizeLote).ToList();
+
                     var tareasLotes = lotesDeDestinatarios.Select(async (lote) =>
                     {
                         foreach (var func in lote)
                         {
-                            await _authMailService.SendMailAcuerdo(
-
-                                func.CorreoElectronico,
-                                NewAcuerdo.Titulo,
-                                NewAcuerdo.Descripcion,
-                                rutaArchivoFisica
-                            );
+                            try
+                            {
+                                await _authMailService.SendMailAcuerdo(
+                                    func.CorreoElectronico,
+                                    NewAcuerdo.Titulo,
+                                    NewAcuerdo.Descripcion,
+                                    rutaArchivoFisica
+                                );
+                                await RegistarLogEnvio(NewAcuerdo.IdAcuerdo, func.CorreoElectronico, NewAcuerdo.Titulo, true);
+                            }
+                            catch (Exception mailEx)
+                            {
+                                await RegistarLogEnvio(NewAcuerdo.IdAcuerdo, func.CorreoElectronico, NewAcuerdo.Titulo, false, mailEx.Message);
+                            }
                         }
                     });
 
@@ -314,6 +307,39 @@ namespace SistemaDeInvestigacion.Server.Controllers
             await _hubContext.Clients.All.SendAsync("RecibirActualizacionAcuerdos");
 
             return Ok(new { Message = "Acuerdo Creado", Url = NewAcuerdo.ImagenUrl });
+        }
+
+
+        private async Task RegistarLogEnvio(int idAcuerdo, string correo, string titulo, bool exitoso, string error = "")
+        {
+                string folderPath = Path.Combine(_env.ContentRootPath, "logs", "envios_acuerdos");
+                if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
+
+                string fileName = $"log_acuerdo_{idAcuerdo}.txt";
+                string filePath = Path.Combine(folderPath, fileName);
+
+                string estado = exitoso ? "EXITOSO" : $"FALLIDO - {error}";
+                string linea = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] | Correo: {correo} | Título: {titulo} | Estado: {estado}{Environment.NewLine}";
+
+                await System.IO.File.AppendAllTextAsync(filePath, linea);
+
+                LimpiarLogsAntiguos(folderPath, 10);
+        }
+
+        private void LimpiarLogsAntiguos(string folderPath, int maxArchivos)
+        {
+                var archivos = new DirectoryInfo(folderPath).GetFiles("*.txt")
+                                    .OrderByDescending(f => f.LastWriteTime)
+                                    .ToList();
+
+                if (archivos.Count > maxArchivos)
+                {
+                    var archivosParaEliminar = archivos.Skip(maxArchivos);
+                    foreach (var archivo in archivosParaEliminar)
+                    {
+                        archivo.Delete();
+                    }
+                }
         }
 
         //Edita un acuerdo

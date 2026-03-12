@@ -27,7 +27,7 @@ namespace SistemaDeInvestigacion.Server.Models
         public string? Email { get; set; }
 
         [Column("Telefono")]
-        public int? Telefono { get; set; }
+        public long? Telefono { get; set; }
 
         [Column("Direccion")]
         public string? Direccion { get; set; }

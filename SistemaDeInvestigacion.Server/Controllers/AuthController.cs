@@ -32,8 +32,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
             var Login = loginRequest;
 
-            Console.WriteLine(Login);
-
             var userAuth = await _context.Users
                 .Include(u => u.Funcionarios)
                 .FirstOrDefaultAsync(u => u.Funcionarios != null && u.Funcionarios.CorreoElectronico == loginRequest.Email);
@@ -44,8 +42,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
             }
 
             bool passValida = BCrypt.Net.BCrypt.Verify(loginRequest.Password, userAuth.Contrasena);
-            Console.WriteLine($"RUT Plano: {userAuth.Contrasena}");
-            Console.WriteLine($"RUT Cifrado generado ahora: {loginRequest.Password}");
             if (!passValida)
             {   
                 return Unauthorized(new { Message = "Correo o contraseña incorrectos" });
@@ -106,7 +102,6 @@ namespace SistemaDeInvestigacion.Server.Controllers
             }
 
             string RanCode = new Random().Next(100000, 999999).ToString();
-            Console.WriteLine($"Codigo: {RanCode}");
 
             var mailer = new AuthMailService();
             await mailer.SendCode(userData.Email, RanCode);

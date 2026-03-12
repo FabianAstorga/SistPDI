@@ -10,21 +10,18 @@ Base de datos:
 // -Agregar ESTADO a USERS
 // Agregar una tabla COMENTARIOS para acuerdos
 // agregar tabla de olvidar contraseña
-
 //editar svg
 //devolver id como parte del acuerdo
 //cambiar peticion para poder crear
 //crear patch de svg
-
 // tabla de auditoria de acuerdos
 // tabla de auditoria empresas
 // tabla de auditoria estados
 // tabla de auditoria usuarios
 // tabla de auditoria categoria
-tabla de auditoria contactos
-tabla de auditoria svg_templates
-
-Crear una base de datos para las claves de cifrado
+// tabla de auditoria contactos
+// tabla de auditoria svg_templates
+//Crear una base de datos para las claves de cifrado
 
 Back-end
 
@@ -39,13 +36,9 @@ Back-end
 // recuperacion de contraseña
 // Insertar comentarios
 // ver comentarios 
-
-
-// modificar empleados
+//modificar empleados
 //modificar empresas
-
 //eliminar acuerdos (confirmacion previa)
-
 //gestionar usuarios
 //crear modificar asignar rol
 
@@ -73,6 +66,10 @@ Realizar vista de plantilla:
 Crear una plantilla como superadmin
 Habilitar o deshabilitar una plantilla como superadmin
 Crear una plantilla sobre un acuerdo ya creado
+
+
+
+==========
 
 
 
