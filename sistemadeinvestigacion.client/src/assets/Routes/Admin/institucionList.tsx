@@ -1,4 +1,8 @@
-﻿import React, { useEffect, useMemo, useState, useCallback, useRef, memo } from 'react';
+﻿//Listado de las empresas, con su respectivo boton para editar los campos.
+//Tambien maneja la logica de desactivar una empresa cambiando su estado mediante el boton de desactivar/activar
+//Aqui es donde podemos asignarle a cada empresa un contacto, esto se hace aca y no en acuerdos porque son contactos con la empresa
+//No contactos entre empresa y acuerdos.
+import React, { useEffect, useMemo, useState, useCallback, useRef, memo } from 'react';
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Building,

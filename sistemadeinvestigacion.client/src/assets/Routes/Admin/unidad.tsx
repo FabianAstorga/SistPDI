@@ -1,4 +1,5 @@
-﻿import React, { useEffect, useMemo, useState, useCallback, useRef, memo } from 'react';
+﻿//ruta de creacion de las unidades, pueden crearse y destruirse las unidades.
+import React, { useEffect, useMemo, useState, useCallback, useRef, memo } from 'react';
 import { motion } from "framer-motion";
 import {
     Boxes,

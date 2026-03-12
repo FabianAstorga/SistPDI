@@ -2,7 +2,6 @@
 import './App.css'
 import {  Route, Routes } from 'react-router-dom'
 import React from 'react'
-//import Login from './assets/Routes/Admin/login'
 import Panel from './assets/Routes/Admin/panel'
 import { SignalRProvider } from './context/SignalRContext';
 import Configuracion from './assets/Routes/Admin/configuracion';

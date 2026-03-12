@@ -1,4 +1,5 @@
-﻿import React from 'react';
+﻿//Plantilla del pdf generado en el panel al abrir un acuerdo
+import React from 'react';
 import {
     Document,
     Page,

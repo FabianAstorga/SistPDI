@@ -1,0 +1,21 @@
+El lienzo editor es una herramienta compleja que es el producto de la evolucion de un concepto
+se buscaba poder manejar los svg de manera dinamica para crear imagenes en tiempo real, pero fue complejizandose
+a medida que se buscaba que la herramienta realizara distintas funcionalidades, es por eso que de un solo archivo se buscó
+dividirlo en diversos componentes que permitieran hacer un debugg mas facil.
+
+El corazon de la logica de este sistema es el Hook, un componente que se encarga de entender que modo se esta utilizando
+(edicion de una plantilla, creacion de una plantilla, creacion de un acuerdo, edicion de un acuerdo), por lo que es el elemento mas complejo
+del sistema.
+
+El resto de elementos se dividen tanto en la logica y el render al usuario.
+De la carpeta Components todos son renders visuales, que utilizan funciones definidas en los otros archivos del ElementosLienzo
+
+La carpeta Types se encarga de abstraer los distintos tipos y modelos que usara el sistema, esto con el fin de que no ocupen espacio
+y no complejizar el sistema a la hora de cargarlos en distintos componentes render.
+
+La carpeta Utils se encarga de las pequeñas logicas, tanto de manejar la geometria de los objetos a renderizar, como del 
+manejo de las distintas apis del backend (este archivo en especifico alimenta al hook para hacer funcionar el sistema), como de manejar 
+la obtencion de los datos guardados en localstorage y el manejo de textos renderizados en el lienzo
+
+Finalmente todo se monta en Lienzo.tsx que es un pequeño archivo que reune todos los renders de Components y los muestra al usuario
+Tambien sirve para saber donde colocar la ruta, ya que es aqui donde lleva la ruta de /Lienzo

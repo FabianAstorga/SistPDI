@@ -1,4 +1,6 @@
-﻿import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+﻿//Este es el apartado de creacion de empresa, antes llamados institucion, por lo que todas las apis y refencias internas tienen este nombre
+//Es el relleno de un formulario y la llamada de una api, nada mas.
+import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -81,7 +83,6 @@ export default function Institucion() {
             const token = localStorage.getItem('token');
             const fd = new FormData();
 
-            // Procesamos los datos para asegurar que el teléfono sea enviado como cadena numérica pura
             Object.entries(formData).forEach(([key, val]) => {
                 if (key === 'telefono') {
                     const cleanPhone = val.replace(/\D/g, '');
@@ -102,7 +103,7 @@ export default function Institucion() {
 
             if (!res.ok) throw new Error(await res.text() || 'Error en el servidor');
 
-            setStatus({ type: 'ok', msg: 'Institución registrada exitosamente.' });
+            setStatus({ type: 'ok', msg: 'Empresa registrada exitosamente.' });
             setFormData({ nombre: '', descripcion: '', sitioWeb: '', email: '', telefono: '', direccion: '' });
             setLogoFile(null);
             setLogoPreview(null);

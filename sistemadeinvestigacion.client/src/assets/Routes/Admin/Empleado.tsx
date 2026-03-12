@@ -1,4 +1,11 @@
-﻿import React, { useEffect, useMemo, useState, useCallback, useRef, memo } from 'react';
+﻿//Ruta para la creacion de funcionarios, aqui se maneja la logica de que tanto funcionarios como administradores pueden acceder
+//y estos dos roles pueden crear FUNCIONARIOS en el sistema, mas no asignarles usuario, esto porque a nivel de base de datos tenemos
+//los funcionarios (reflejo real de los datos de cada persona, por ende estan cifrados) y los usuarios de sistema (tomamos el rut
+// de los funcionarios y le creamos una cuenta con correo y contraseña) Esto se hace asi para resguardar los datos privados, ya que el
+//sistema existe desde los usuarios para adelante, no desde los funcionarios
+//Solo los administradores pueden asignarle a los funcionarios creados en sistema un usuario y contraseña para que accedan.
+//Tambien se implemento un metodo de carga massiva con un excel para hacer esta tarea mas facil (carga massiva de funcinoarios no de usuarios)
+import React, { useEffect, useMemo, useState, useCallback, useRef, memo } from 'react';
 import { motion, AnimatePresence } from "framer-motion";
 import { Virtuoso } from 'react-virtuoso';
 import * as XLSX from 'xlsx'; 

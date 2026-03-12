@@ -1,4 +1,8 @@
-﻿import React, { useEffect, useState, useMemo, useCallback, useRef, memo } from 'react';
+﻿//Aqui se maneja la lista de los acuerdos para su edicion
+//Todos los acuerods pueden desactivarse/activarse y como estan ligados al socket, se vera reflejado de forma automatica en el panel
+//Aqui podemos realizar tanto cambios directos a los metadatos como a la edicion de la imange, si se escoge lo segundo,
+//los metadatos se guardaran en localstorage y se navegara a la ruta del lienzo
+import React, { useEffect, useState, useMemo, useCallback, useRef, memo } from 'react';
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Search,
@@ -12,7 +16,7 @@ import {
     FileText,
     Loader2,
     ArrowRight,
-    Layout // Importado para el selector de categoría
+    Layout 
 } from 'lucide-react';
 import { Virtuoso } from 'react-virtuoso';
 import { useNavigate } from 'react-router-dom';
@@ -272,19 +276,17 @@ const AcuerdoItem = memo(({ acuerdo, onOpen, onToggle }: {
 const ModalConfiguracion = ({ id, empresas, onClose, onSuccess }: { id: number, empresas: any[], onClose: () => void, onSuccess: () => void }) => {
     const [data, setData] = useState<any>(null);
     const [formChanges, setFormChanges] = useState<any>({});
-    const [categorias, setCategorias] = useState<any[]>([]); // Nuevo estado para categorías
+    const [categorias, setCategorias] = useState<any[]>([]); 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const navigate = useNavigate();
 
-    // Carga de datos iniciales y categorías
     useEffect(() => {
         const fetchDataModal = async () => {
             const token = localStorage.getItem('token');
             const headers = { ...(token ? { Authorization: `Bearer ${token}` } : {}) };
 
             try {
-                // Obtener datos del acuerdo y categorías en paralelo
                 const [resAcuerdo, resCat] = await Promise.all([
                     fetch(`${API_BASE}/api/Acuerdos/${id}`, { headers }),
                     fetch(`${API_BASE}/api/Categoria/categorias`, { headers })
@@ -299,7 +301,7 @@ const ModalConfiguracion = ({ id, empresas, onClose, onSuccess }: { id: number, 
                         descripcion: info?.descripcion || '',
                         detallesDescripcion: info?.detallesDescripcion || '',
                         idEmpresa: info?.idEmpresa || '',
-                        idCategoria: info?.idCategoria || '', // Nuevo campo
+                        idCategoria: info?.idCategoria || '', 
                         fechaVencimiento: info?.fechaVencimiento ? info.fechaVencimiento.slice(0, 16) : ''
                     });
                 }
@@ -340,7 +342,7 @@ const ModalConfiguracion = ({ id, empresas, onClose, onSuccess }: { id: number, 
         appendIfChanged('descripcion', formChanges.descripcion, infoOriginal?.descripcion);
         appendIfChanged('detallesDescripcion', formChanges.detallesDescripcion, infoOriginal?.detallesDescripcion);
         appendIfChanged('idEmpresa', formChanges.idEmpresa, infoOriginal?.idEmpresa);
-        appendIfChanged('idCategoria', formChanges.idCategoria, infoOriginal?.idCategoria); // Nueva comparación
+        appendIfChanged('idCategoria', formChanges.idCategoria, infoOriginal?.idCategoria); 
 
         if (formChanges.fechaVencimiento) {
             const newDate = new Date(formChanges.fechaVencimiento).toISOString();

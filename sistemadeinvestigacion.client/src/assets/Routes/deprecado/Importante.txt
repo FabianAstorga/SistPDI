@@ -1,0 +1,4 @@
+Estos archivos quedaron como basura debido a que ya no son utilizados en el sistema
+sus logicas y estilos quedaron deprecados por las versiones que estan colocadas en el resto del sistema
+no estan elimandos definitivamente porque pensamos que seria util para entender ciertas logicas a futuro, pero
+pueden ser borradas si es necesario, ya que no afectan al sistema.

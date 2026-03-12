@@ -1,4 +1,6 @@
-﻿import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+﻿//Este apartado es para poder realizar los ajustes personales, pero actualmente como algunas apis del backend estan protegidas por rol
+//solo los administradores pueden editar sus datos personales, los funcionarios no, por ende ellos no pueden entrar aqui.
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from "framer-motion";
 import {
     User, Mail, Lock, Save, RefreshCw,

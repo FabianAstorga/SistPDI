@@ -1,17 +1,28 @@
-﻿import React, { useEffect, useState, useCallback, useRef } from 'react';
+﻿//Ruta principal de creacion de los acuerdos.
+//En acuerdos no se maneja directamente el llamado a la api, sino que se guarda en un localstorage, esto
+//debido a que el flujo de creacion termina en el editor de imagenes, por lo que acuerdos realiza lo siguiente:
+//Guardar la informacion del acuerdo segun las especificaciones del formulario
+//Permite escoge empresa, fecha de vencimiento (autocolocada para dentro de un año) y categoria, a su vez como las plantillas del lienzo
+//La informacion una vez colocada, al navegar a otra ruta queda guardada en localstorage, asi no es necesario volver a escribirla devuelta
+//Permite escoger a que unidades enviar los correos electronicos
+//todos los componentes se desmontan una vez dejan de ser utilizados, esto para evitar fugas de memoria y lagasos
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from "framer-motion";
 import { Navbar } from '../../components/Navbar';
-import { Settings2, ArrowRight, Building2, Calendar, FileText, Info, Layout, X, CheckCircle2 } from 'lucide-react';
+import { Settings2, ArrowRight, Building2, Calendar, FileText, Info, Layout, X, CheckCircle2, Infinity } from 'lucide-react';
+
 const HERO_BG = "/i_region_cuartel_investigaciones_arica.png";
 const LABEL_STYLE = "text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 flex items-center gap-2";
 const INPUT_STYLE = "w-full bg-slate-100 border-b border-slate-200 text-slate-900 px-4 py-4 outline-none focus:border-[#002855] focus:bg-white transition-all duration-300 font-semibold text-sm";
 const FORM_DRAFT_KEY = 'acuerdos_form_draft';
+
 const getOneYearFromNow = () => {
     const date = new Date();
     date.setFullYear(date.getFullYear() + 1);
     return date.toISOString().slice(0, 16);
 };
+
 export default function Acuerdos() {
     const navigate = useNavigate();
     const [categorias, setCategorias] = useState<any[]>([]);
@@ -26,12 +37,13 @@ export default function Acuerdos() {
         titulo: '',
         descripcion: '',
         detallesDescripcion: '',
-        fechaVencimiento: getOneYearFromNow(),
+        fechaVencimiento: getOneYearFromNow() as string | null,
         idEmpresa: '' as string | number,
         idCategoria: '' as string | number,
         templateSvg: '',
         idsUnidades: [] as number[]
     });
+
     useEffect(() => {
         const savedDraft = localStorage.getItem(FORM_DRAFT_KEY);
         if (savedDraft) {
@@ -47,11 +59,13 @@ export default function Acuerdos() {
             }
         }
     }, []);
+
     useEffect(() => {
         if (!loading) {
             localStorage.setItem(FORM_DRAFT_KEY, JSON.stringify(formData));
         }
     }, [formData, loading]);
+
     const fetchData = useCallback(async () => {
         if (abortControllerRef.current) abortControllerRef.current.abort();
         abortControllerRef.current = new AbortController();
@@ -107,19 +121,18 @@ export default function Acuerdos() {
                 }
                 return prev;
             });
-
-
-
         } catch (e: any) {
             if (e.name !== 'AbortError') console.error("Fetch Data Error:", e);
         } finally {
             setLoading(false);
         }
     }, [formData.idEmpresa, formData.idCategoria]);
+
     useEffect(() => {
         fetchData();
         return () => abortControllerRef.current?.abort();
     }, [fetchData]);
+
     const handleEmpresaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const value = e.target.value;
         if (value === "CREATE_NEW_ENTITY") {
@@ -243,13 +256,23 @@ export default function Acuerdos() {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className={LABEL_STYLE}><Calendar size={12} /> Fecha de vencimiento</label>
+                                    <div className="flex justify-between items-center">
+                                        <label className={LABEL_STYLE}><Calendar size={12} /> Fecha de vencimiento</label>
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData(p => ({ ...p, fechaVencimiento: p.fechaVencimiento === null ? getOneYearFromNow() : null }))}
+                                            className={`text-[9px] font-black uppercase px-2 py-1 rounded-full transition-all flex items-center gap-1 ${formData.fechaVencimiento === null ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
+                                        >
+                                            <Infinity size={10} /> Acuerdo Perpetuo
+                                        </button>
+                                    </div>
                                     <input
                                         type="datetime-local"
-                                        value={formData.fechaVencimiento}
+                                        value={formData.fechaVencimiento || ''}
                                         onChange={e => setFormData(p => ({ ...p, fechaVencimiento: e.target.value }))}
-                                        className={INPUT_STYLE}
-                                        required
+                                        className={`${INPUT_STYLE} ${formData.fechaVencimiento === null ? 'opacity-30 pointer-events-none' : ''}`}
+                                        required={formData.fechaVencimiento !== null}
+                                        disabled={formData.fechaVencimiento === null}
                                     />
                                 </div>
 
@@ -260,6 +283,7 @@ export default function Acuerdos() {
                                         onChange={handleCategoriaChange}
                                         className={`${INPUT_STYLE} cursor-pointer`}
                                         required
+                                        disabled={loading}
                                     >
                                         {categorias.length > 0 ? (
                                             categorias.map(c => (
@@ -433,8 +457,8 @@ export default function Acuerdos() {
                                         type="button"
                                         onClick={() => setFormData(p => ({ ...p, idsUnidades: [] }))}
                                         className={`flex items-center justify-between p-3 border rounded-sm transition-all ${(formData.idsUnidades || []).length === 0
-                                                ? 'border-emerald-500 bg-emerald-50 shadow-inner'
-                                                : 'border-slate-100 bg-slate-50 hover:bg-slate-100'
+                                            ? 'border-emerald-500 bg-emerald-50 shadow-inner'
+                                            : 'border-slate-100 bg-slate-50 hover:bg-slate-100'
                                             }`}
                                     >
                                         <div className="flex items-center gap-3 text-slate-900 min-w-0">

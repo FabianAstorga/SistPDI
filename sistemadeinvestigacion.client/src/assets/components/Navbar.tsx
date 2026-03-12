@@ -1,4 +1,7 @@
-﻿import React, { useEffect, useMemo, useState, useCallback, memo } from 'react';
+﻿//Ajustes del navbar del sistema una vez loggeado, la logica aqui es agrupar las distintas rutas en grupos comunes
+//Tambien se hace la distincion entre los usuarios de rol 1(administradores) y rol 2 (funcionarios dentro del sistema)
+//El diseño esta creado utilizando framer motion y tailwind, a su vez tambien se usaron plantillas.
+import React, { useEffect, useMemo, useState, useCallback, memo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authService } from '../Routes/Services/authService';
@@ -36,16 +39,14 @@ const NAV_CONFIG = [
     },
     { id: 'funcionarios', label: 'Funcionarios', path: '/empleado', icon: Users },
     {
-        id: 'datos', label: 'Datos', icon: Database, 
+        id: 'datos', label: 'Datos', icon: Database,
         items: [
             { label: 'Categoría', path: '/Categorias', icon: Tags },
             { label: 'Unidad', path: '/unidad', icon: Boxes },
-            { id: 'EditarSvg', label: 'EditarSvg', path: '/EditarSvg', icon: Layers }
+            { id: 'EditarSvg', label: 'EditarSvg', path: '/EditarSvg', icon: Layers, rolesPermitidos: [1] }
         ]
     },
-    { id: 'plantilla', label: 'Plantilla', path: '/lienzo', icon: Layers },
-    
-    
+    { id: 'plantilla', label: 'Plantilla', path: '/lienzo', icon: Layers, rolesPermitidos: [1] },
 ];
 
 export const Navbar = () => {
@@ -64,6 +65,18 @@ export const Navbar = () => {
             }
         }
     }, []);
+
+    const filteredNavConfig = useMemo(() => {
+        if (!user) return [];
+
+        return NAV_CONFIG
+            .filter(section => !section.rolesPermitidos || section.rolesPermitidos.includes(user.rol))
+            .map(section => ({
+                ...section,
+                items: section.items?.filter(item => !item.rolesPermitidos || item.rolesPermitidos.includes(user.rol))
+            }));
+    }, [user]);
+
     const handleNavigation = useCallback((path: string) => {
         if (path === '/lienzo') {
             const modoTemplate = {
@@ -77,7 +90,7 @@ export const Navbar = () => {
         } else {
             localStorage.removeItem('modo');
             localStorage.removeItem('template_svg');
-            localStorage.removeItem('template_svg_edit'); 
+            localStorage.removeItem('template_svg_edit');
             localStorage.removeItem('temp_acuerdo');
         }
 
@@ -112,14 +125,14 @@ export const Navbar = () => {
                     </div>
 
                     <div className="hidden lg:flex items-center bg-white/5 p-1 rounded-2xl border border-white/5 h-12 relative">
-                        {NAV_CONFIG.map((section) => (
+                        {filteredNavConfig.map((section) => (
                             <NavItem
                                 key={section.id}
                                 section={section}
                                 isActive={activeSectionId === section.id}
                                 isHovered={hoveredMenu === section.id}
                                 onHover={setHoveredMenu}
-                                onNavigate={handleNavigation} 
+                                onNavigate={handleNavigation}
                             />
                         ))}
                     </div>
@@ -138,14 +151,16 @@ export const Navbar = () => {
 
                     <div className="h-6 w-[1px] bg-white/10 mx-1" />
 
-                    <motion.button
-                        whileHover={{ rotate: 90 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => handleNavigation('/configuracion')}
-                        className={`p-1.5 transition-colors ${location.pathname === '/configuracion' ? 'text-blue-500' : 'text-white/50 hover:text-white'}`}
-                    >
-                        <Settings size={22} strokeWidth={2.5} />
-                    </motion.button>
+                    {user?.rol === 1 && (
+                        <motion.button
+                            whileHover={{ rotate: 90 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => handleNavigation('/configuracion')}
+                            className={`p-1.5 transition-colors ${location.pathname === '/configuracion' ? 'text-blue-500' : 'text-white/50 hover:text-white'}`}
+                        >
+                            <Settings size={22} strokeWidth={2.5} />
+                        </motion.button>
+                    )}
 
                     <button
                         onClick={handleLogout}

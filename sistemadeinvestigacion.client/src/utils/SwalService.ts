@@ -1,4 +1,5 @@
-﻿// src/utils/SwalService.ts
+﻿//Aqui se maneja la plantilla de las alertas de sweet alert 2   
+// src/utils/SwalService.ts
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 const MySwal = withReactContent(Swal);

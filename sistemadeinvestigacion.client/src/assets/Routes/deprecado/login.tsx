@@ -25,7 +25,6 @@ export const LoginDrawer = ({ isOpen, onClose }: LoginDrawerProps) => {
 
         try {
             await authService.login(email, password);
-            // Al loguear, simplemente cerramos y refrescamos el estado del Panel
             onClose();
             window.location.reload();
         } catch (err: any) {
@@ -39,7 +38,6 @@ export const LoginDrawer = ({ isOpen, onClose }: LoginDrawerProps) => {
         <AnimatePresence>
             {isOpen && (
                 <>
-                    {/* Overlay desenfocado */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -48,7 +46,6 @@ export const LoginDrawer = ({ isOpen, onClose }: LoginDrawerProps) => {
                         className="fixed inset-0 bg-[#001a35]/40 backdrop-blur-sm z-[150]"
                     />
 
-                    {/* Panel Lateral */}
                     <motion.aside
                         initial={{ x: '100%' }}
                         animate={{ x: 0 }}

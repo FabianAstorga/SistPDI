@@ -6,20 +6,23 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Navbar } from "../../components/Navbar";
 import { ui } from "./../../../utils/SwalService";
 import { LoginDrawer } from "./LoginDrawer";
-import { X, RefreshCw, Send, MessageSquare, Trash2, Search, FileText, ChevronUp, Calendar } from 'lucide-react';
+import { X, RefreshCw, Send, MessageSquare, Trash2, Search, FileText, ChevronUp, Calendar, LogIn } from 'lucide-react';
 import { useSignalR } from "../../../context/SignalRContext";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import { PDFDocument } from "./PDFDocument";
 import { HubConnectionBuilder, LogLevel, HubConnection } from "@microsoft/signalr";
+
 const API_BASE = import.meta.env.VITE_API_URL;
 const PDI_LOGO_URL = "/elementor-placeholder-image.png";
 const HERO_BG = "/i_region_cuartel_investigaciones_arica.png";
+
 const resolveBackendUrl = (path?: string | null) => {
     if (!path) return null;
     const s = String(path).trim();
     if (!s || /^http?:\/\//i.test(s)) return s || null;
     return `${API_BASE}${s.startsWith('/') ? s : `/${s}`}`;
 };
+
 const normalizeAcuerdo = (a: any) => ({
     id: Number(a?.idAcuerdo ?? a?.id ?? 0),
     titulo: String(a?.titulo ?? ''),
@@ -31,11 +34,13 @@ const normalizeAcuerdo = (a: any) => ({
     estado: a?.estado || "Activo",
     idEmpresa: a?.idEmpresa
 });
+
 const FADE_VARIANT = {
     initial: { opacity: 0, y: 15 },
     animate: { opacity: 1, y: 0 },
     exit: { opacity: 0, y: -15 }
 };
+
 const ScrollToTop = ({ containerRef }: { containerRef: React.RefObject<HTMLDivElement | null> }) => {
     const [isVisible, setIsVisible] = useState(false);
     useEffect(() => {
@@ -68,13 +73,14 @@ const ScrollToTop = ({ containerRef }: { containerRef: React.RefObject<HTMLDivEl
         </AnimatePresence>
     );
 };
+
 export default function Panel() {
     const navigate = useNavigate();
     const location = useLocation();
     const carouselRef = useRef<HTMLElement | null>(null);
     const listSectionRef = useRef<HTMLElement | null>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
-    const scrollContainerRef = useRef<HTMLDivElement>(null); 
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isLoginOpen, setIsLoginOpen] = useState(false);
     const [userName, setUserName] = useState("");
@@ -87,10 +93,12 @@ export default function Panel() {
     const currentYear = useMemo(() => new Date().getFullYear(), []);
     const handleCloseModal = useCallback(() => setModalData(null), []);
     const handleOpenModal = useCallback((item: any) => setModalData(item), []);
+
     useEffect(() => {
         document.body.style.overflow = 'hidden';
         return () => { document.body.style.overflow = 'unset'; };
     }, []);
+
     const fetchData = useCallback(async () => {
         if (abortControllerRef.current) abortControllerRef.current.abort();
         abortControllerRef.current = new AbortController();
@@ -112,6 +120,7 @@ export default function Panel() {
             setLoading(false);
         }
     }, []);
+
     useEffect(() => {
         if (connection) {
             const handleRefresh = () => fetchData();
@@ -119,6 +128,7 @@ export default function Panel() {
             return () => { connection.off("RecibirActualizacionAcuerdos", handleRefresh); };
         }
     }, [connection, fetchData]);
+
     const checkSession = useCallback(() => {
         const token = localStorage.getItem('token');
         const userJson = localStorage.getItem('user');
@@ -166,8 +176,23 @@ export default function Panel() {
         const q = inputSearch.toLowerCase();
         return acuerdos.filter(a => a.titulo.toLowerCase().includes(q));
     }, [inputSearch, acuerdos]);
+
     return (
         <div className="fixed inset-0 overflow-hidden bg-white font-sans text-slate-900 selection:bg-[#002855] selection:text-white">
+            <AnimatePresence>
+                {!isLoggedIn && (
+                    <motion.button
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        onClick={() => setIsLoginOpen(true)}
+                        className="fixed top-6 right-8 z-[110] px-6 py-3 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-full font-bold text-sm hover:bg-blue-600 hover:border-blue-500 transition-all flex items-center gap-2 shadow-2xl uppercase tracking-wider"
+                    >
+                        <LogIn size={16} />
+                    </motion.button>
+                )}
+            </AnimatePresence>
+
             <AnimatePresence>
                 {isLoggedIn && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="z-[100] relative">
@@ -175,6 +200,7 @@ export default function Panel() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
             <div ref={scrollContainerRef} className="h-full overflow-y-auto snap-y snap-mandatory scroll-smooth overflow-x-hidden custom-list-scroll">
                 <section className={`snap-start w-full h-screen flex flex-col items-center justify-center px-6 relative bg-[#002855] transition-all duration-700 ${isLoggedIn ? 'pt-16' : ''}`}>
                     <div className="absolute inset-0 bg-cover bg-center opacity-40 animate-pulse-slow pointer-events-none" style={{ backgroundImage: `url(${HERO_BG})` }} />
@@ -192,11 +218,15 @@ export default function Panel() {
                         </AnimatePresence>
                         <div className="flex flex-col md:flex-row gap-4 justify-center">
                             <button onClick={() => carouselRef.current?.scrollIntoView({ behavior: 'smooth' })} className="px-10 py-5 bg-white text-[#002855] rounded-xl font-black text-lg hover:shadow-2xl transition-all active:scale-95 uppercase">Ver Destacados</button>
-                            {isLoggedIn ? (
-                                <button onClick={() => listSectionRef.current?.scrollIntoView({ behavior: 'smooth' })} className="px-10 py-5 bg-transparent border-2 border-white/20 text-white rounded-xl font-black text-lg hover:bg-white/10 transition-all uppercase">Catálogo Completo</button>
-                            ) : (
-                                <button onClick={() => setIsLoginOpen(true)} className="px-10 py-5 bg-blue-600 text-white rounded-xl font-black text-lg hover:bg-blue-700 transition-all shadow-xl uppercase">Ingreso Funcionarios</button>
-                            )}
+                            <button
+                                onClick={() => listSectionRef.current?.scrollIntoView({ behavior: 'smooth' })}
+                                className={`px-10 py-5 rounded-xl font-black text-lg transition-all uppercase ${isLoggedIn
+                                        ? 'bg-transparent border-2 border-white/20 text-white hover:bg-white/10'
+                                        : 'bg-blue-600 text-white hover:bg-blue-700 shadow-xl'
+                                    }`}
+                            >
+                                Catálogo Completo
+                            </button>
                         </div>
                     </div>
                 </section>
@@ -270,6 +300,7 @@ export default function Panel() {
         </div>
     );
 }
+
 const CardItem = memo(({ item, onOpen }: any) => (
     <motion.div
         whileHover={{ y: -8 }}
@@ -307,6 +338,7 @@ const CardItem = memo(({ item, onOpen }: any) => (
         </div>
     </motion.div>
 ));
+
 const CarouselDots = memo(({ snaps, selectedIndex, onDotClick }: any) => (
     <div className="flex justify-center gap-3 mt-8">
         {snaps.map((_: any, i: number) => (
@@ -314,6 +346,7 @@ const CarouselDots = memo(({ snaps, selectedIndex, onDotClick }: any) => (
         ))}
     </div>
 ));
+
 const CarouselItem = memo(({ item, isActive, onClick }: any) => (
     <div className="embla__slide flex-[0_0_90%] md:flex-[0_0_42%] px-4">
         <motion.div
@@ -354,6 +387,7 @@ const CarouselItem = memo(({ item, isActive, onClick }: any) => (
         </motion.div>
     </div>
 ));
+
 const ModalDetalle = memo(({ data, onClose }: any) => {
     const [comentarios, setComentarios] = useState<any[]>([]);
     const [loadingComentarios, setLoadingComentarios] = useState(true);
@@ -363,6 +397,7 @@ const ModalDetalle = memo(({ data, onClose }: any) => {
     const comentariosConnRef = useRef<HubConnection | null>(null);
     const userObj = JSON.parse(localStorage.getItem('user') || '{}');
     const isAdmin = Number(userObj.rol) === 1;
+
     const fetchComentarios = useCallback(async () => {
         try {
             setLoadingComentarios(true);
@@ -377,6 +412,7 @@ const ModalDetalle = memo(({ data, onClose }: any) => {
             setLoadingComentarios(false);
         }
     }, [data.id]);
+
     useEffect(() => {
         const conn = new HubConnectionBuilder()
             .withUrl(`${API_BASE}/comentariosHub`)
@@ -406,6 +442,7 @@ const ModalDetalle = memo(({ data, onClose }: any) => {
             }
         };
     }, [data.id, fetchComentarios]);
+
     useEffect(() => {
         const userJson = localStorage.getItem('user');
         if (userJson) {
@@ -416,6 +453,7 @@ const ModalDetalle = memo(({ data, onClose }: any) => {
         }
         fetchComentarios();
     }, [fetchComentarios]);
+
     const handleDelete = async (idComentario: number) => {
         const seguro = await ui.confirmar(
             "¿Eliminar Comentario?",
@@ -432,6 +470,7 @@ const ModalDetalle = memo(({ data, onClose }: any) => {
             }
         }
     };
+
     const handleSendComentario = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!nuevoComentario.trim() || isSending) return;
@@ -446,6 +485,7 @@ const ModalDetalle = memo(({ data, onClose }: any) => {
         } catch (e) { console.error("Error al enviar", e); }
         finally { setIsSending(false); }
     };
+
     return (
         <div className="fixed inset-0 z-[9999] flex justify-center p-0 md:p-10 overflow-y-auto bg-[#001a35]/90 backdrop-blur-sm custom-list-scroll">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 z-[-1]" />

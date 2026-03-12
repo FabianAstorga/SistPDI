@@ -1,4 +1,5 @@
-﻿import React, { useState } from 'react';
+﻿//Modal de ingreso al sistema, maneja tambien la recuperacion de la contraseña mediante el correo.
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authService } from '../Services/authService';
@@ -139,7 +140,7 @@ export const LoginDrawer = ({ isOpen, onClose, onLoginSuccess }: LoginDrawerProp
 
                         <div className={`flex-1 ${isRecovering ? 'max-w-md mx-auto w-full flex flex-col justify-center' : ''}`}>
                             <h2 className="text-2xl font-black text-[#002855] text-center uppercase tracking-tighter mb-2">
-                                {isRecovering ? 'Nueva Contraseña' : 'Acceso Funcionarios'}
+                                {isRecovering ? 'Nueva Contraseña' : 'Acceso Tecnico'}
                             </h2>
                             <p className="text-slate-500 text-sm text-center mb-10 font-medium leading-relaxed px-4">
                                 {isRecovering ? `Validación de identidad para:\n${email}` : 'Ingrese sus credenciales de sistema'}

@@ -38,3 +38,5 @@ export const useSignalR = () => {
     }
     return context;
 };
+//Configuracion de conexion con el socket, este archivo permite la conexion con backend mediante el hub del socket
+//Si desea conectar con una nueva ip, debe ajustar la direccion con la direccion del backend

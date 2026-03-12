@@ -1,4 +1,6 @@
-﻿import React, { useEffect, useState, useCallback, useMemo, memo } from 'react';
+﻿//Selector de plantillas para la edicion en el editor de imagenes, se selecciona, se guardan los datos en localstorage y luego
+//se navega a la ruta de edicion
+import React, { useEffect, useState, useCallback, useMemo, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from "framer-motion";
 import { Navbar } from '../../components/Navbar';

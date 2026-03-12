@@ -96,7 +96,6 @@ export const ListaAcuerdos = ({
                                                 className="w-full text-left bg-white rounded-2xl p-7 border border-gray-200 hover:shadow-lg hover:border-[#003385]/30 transition-all active:scale-[0.99]"
                                             >
                                                 <div className="flex items-start gap-5">
-                                                    {/* ✅ Thumbnail con relación 4:3 (tipo 800x600) */}
                                                     <div className="rounded-2xl w-28 aspect-[4/3] bg-gray-50 border border-gray-100 shadow shrink-0 overflow-hidden flex items-center justify-center">
                                                         <img
                                                             src={a.imagenUrl || 'https://via.placeholder.com/800x600?text=Acuerdo'}

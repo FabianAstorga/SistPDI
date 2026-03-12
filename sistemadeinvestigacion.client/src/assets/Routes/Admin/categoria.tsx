@@ -1,4 +1,6 @@
-﻿import React, { useEffect, useMemo, useState, useCallback, useRef, memo } from 'react';
+﻿//Esta ruta permite la creacion de categorias directamente usando la api del backend, a su vez tambien permite alternar
+//entre los estados de la misma con el boton de desactivar, es decir, pueden habilitar categorias como deshabilitar
+import React, { useEffect, useMemo, useState, useCallback, useRef, memo } from 'react';
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Tags,

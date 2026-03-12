@@ -1,0 +1,5 @@
+SISAC es un sistema construido por los alumnos practicantes
+Fabian Astorga Castillo 
+Angel Alarcon Carvajal
+Universidad de Tarapacá
+Ingeneria civil en informatica e computacion.
