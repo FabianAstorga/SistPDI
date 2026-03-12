@@ -11,7 +11,8 @@ import {
     Info,
     FileText,
     Loader2,
-    ArrowRight
+    ArrowRight,
+    Layout // Importado para el selector de categoría
 } from 'lucide-react';
 import { Virtuoso } from 'react-virtuoso';
 import { useNavigate } from 'react-router-dom';
@@ -271,35 +272,49 @@ const AcuerdoItem = memo(({ acuerdo, onOpen, onToggle }: {
 const ModalConfiguracion = ({ id, empresas, onClose, onSuccess }: { id: number, empresas: any[], onClose: () => void, onSuccess: () => void }) => {
     const [data, setData] = useState<any>(null);
     const [formChanges, setFormChanges] = useState<any>({});
+    const [categorias, setCategorias] = useState<any[]>([]); // Nuevo estado para categorías
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const navigate = useNavigate();
 
+    // Carga de datos iniciales y categorías
     useEffect(() => {
-        const fetchById = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                const res = await fetch(`${API_BASE}/api/Acuerdos/${id}`, {
-                    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
-                });
-                if (res.ok) {
-                    const result = await res.json();
-                    setData(result);
+        const fetchDataModal = async () => {
+            const token = localStorage.getItem('token');
+            const headers = { ...(token ? { Authorization: `Bearer ${token}` } : {}) };
 
+            try {
+                // Obtener datos del acuerdo y categorías en paralelo
+                const [resAcuerdo, resCat] = await Promise.all([
+                    fetch(`${API_BASE}/api/Acuerdos/${id}`, { headers }),
+                    fetch(`${API_BASE}/api/Categoria/categorias`, { headers })
+                ]);
+
+                if (resAcuerdo.ok) {
+                    const result = await resAcuerdo.json();
+                    setData(result);
                     const info = result.datosAcuerdo;
                     setFormChanges({
                         titulo: info?.titulo || '',
                         descripcion: info?.descripcion || '',
                         detallesDescripcion: info?.detallesDescripcion || '',
                         idEmpresa: info?.idEmpresa || '',
+                        idCategoria: info?.idCategoria || '', // Nuevo campo
                         fechaVencimiento: info?.fechaVencimiento ? info.fechaVencimiento.slice(0, 16) : ''
                     });
                 }
+
+                if (resCat.ok) {
+                    const dataCat = await resCat.json();
+                    setCategorias(Array.isArray(dataCat) ? dataCat : (dataCat?.$values || []));
+                }
+            } catch (error) {
+                console.error("Error cargando datos del modal:", error);
             } finally {
                 setLoading(false);
             }
         };
-        fetchById();
+        fetchDataModal();
     }, [id]);
 
     const handlePatchUpdate = async (e: React.FormEvent) => {
@@ -325,6 +340,7 @@ const ModalConfiguracion = ({ id, empresas, onClose, onSuccess }: { id: number, 
         appendIfChanged('descripcion', formChanges.descripcion, infoOriginal?.descripcion);
         appendIfChanged('detallesDescripcion', formChanges.detallesDescripcion, infoOriginal?.detallesDescripcion);
         appendIfChanged('idEmpresa', formChanges.idEmpresa, infoOriginal?.idEmpresa);
+        appendIfChanged('idCategoria', formChanges.idCategoria, infoOriginal?.idCategoria); // Nueva comparación
 
         if (formChanges.fechaVencimiento) {
             const newDate = new Date(formChanges.fechaVencimiento).toISOString();
@@ -457,8 +473,24 @@ const ModalConfiguracion = ({ id, empresas, onClose, onSuccess }: { id: number, 
                                 >
                                     <option value="">No cambiar empresa</option>
                                     {empresas.map((e: any) => (
-                                        <option key={e.idEmpresa} value={e.idEmpresa}>
+                                        <option key={e.idEmpresa ?? e.id} value={e.idEmpresa ?? e.id}>
                                             {e.nombre}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className={LABEL_STYLE}><Layout size={12} /> Cambiar Categoría</label>
+                                <select
+                                    value={formChanges.idCategoria || ''}
+                                    onChange={e => setFormChanges({ ...formChanges, idCategoria: e.target.value })}
+                                    className={`${INPUT_STYLE} cursor-pointer`}
+                                >
+                                    <option value="">No cambiar categoría</option>
+                                    {categorias.map((c: any) => (
+                                        <option key={c.idCategoria ?? c.id} value={c.idCategoria ?? c.id}>
+                                            {c.tipoCategoria}
                                         </option>
                                     ))}
                                 </select>

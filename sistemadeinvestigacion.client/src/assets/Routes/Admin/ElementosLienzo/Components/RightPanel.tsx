@@ -41,7 +41,7 @@ export const RightPanel: React.FC<Props> = memo(({ model }) => {
         actualizarAtributo,
         clonarElemento,
         eliminarElemento,
-        bloquearElemento, // <--- Agregado aquí
+        bloquearElemento, 
         seleccionarElementoDesdeCapas,
         moverCapa,
         moverCapaExtremo,
