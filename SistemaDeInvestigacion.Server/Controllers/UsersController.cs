@@ -57,7 +57,8 @@ namespace SistemaDeInvestigacion.Server.Controllers
             return await _context.Users.ToListAsync();
         }
 
-        [Authorize]
+        //[Authorize]
+        [AllowAnonymous]
         [HttpPost]
         public async Task<ActionResult<User>> CrearUsuario([FromForm] CreateUserDto createUserDto)
         {
@@ -68,7 +69,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             {
                 return BadRequest("Usuario no es SuperAdministrador");
             }
-
+            
             var user = createUserDto;
 
             bool rutExiste = await _context.Funcionarios.AnyAsync(x => x.Rut == user.Rut);
@@ -89,7 +90,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
 
             _context.Users.Add(newUser);
             await _context.SaveChangesAsync();
-
+            
             var auditoria = new usersAuditoria
             {
                 idpersona = userId,
@@ -101,6 +102,7 @@ namespace SistemaDeInvestigacion.Server.Controllers
             _context.UsersAuditoria.Add(auditoria);
             await _context.SaveChangesAsync();
             return Ok(new { Message = "Usuario Nuevo Creado" });
+            
         }
 
         [Authorize]

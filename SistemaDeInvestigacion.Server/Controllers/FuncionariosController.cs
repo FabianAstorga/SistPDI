@@ -62,10 +62,11 @@ namespace SistemaDeInvestigacion.Server.Controllers
         }
 
         //crea un empleado
+        //[AllowAnonymous]
         [HttpPost("crear")]
         public async Task<ActionResult> crearUsuario(createEmpleadoDto createEmpleadoDto)
         {
-            var userID = User.GetUserId();
+           var userID = User.GetUserId();
             var userRole = User.GetUserRole();
 
             if (userRole is not( 1 or 2))

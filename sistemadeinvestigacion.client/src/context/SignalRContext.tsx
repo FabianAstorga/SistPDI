@@ -9,7 +9,7 @@ export const SignalRProvider = ({ children }: { children: ReactNode }) => {
     const [connection, setConnection] = useState<signalR.HubConnection | null>(null);
     useEffect(() => {
         const newConnection = new signalR.HubConnectionBuilder()
-            .withUrl("http://172.25.7.102:5091/acuerdosHub", { 
+            .withUrl("http://152.173.213.152:5091/acuerdosHub", { 
                 accessTokenFactory: () => localStorage.getItem('token') || ""
             })
             .withAutomaticReconnect()
