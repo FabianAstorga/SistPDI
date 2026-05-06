@@ -117,6 +117,13 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader()
               .AllowCredentials();
     });
+    options.AddPolicy("CloudflarePolicy", policy =>
+{
+    policy.WithOrigins("https://sisac.pelardopolis.cl") // El dominio de tu front
+          .AllowAnyHeader()
+          .AllowAnyMethod()
+          .AllowCredentials();
+});
 });
 
 builder.Services.AddScoped<AuthMailService>();
