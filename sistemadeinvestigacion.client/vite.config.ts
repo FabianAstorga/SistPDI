@@ -7,4 +7,9 @@ export default defineConfig({
     optimizeDeps: {
         include: ['react-window']
     },
+    server:{
+        allowedHosts: [
+            'sisac.pelardopolis.cl'
+        ]
+    },
 })
