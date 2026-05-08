@@ -211,7 +211,7 @@ export default function Panel() {
                                     {isLoggedIn ? `Bienvenido, ${userName}` : 'Portal Institucional'}
                                 </h2>
                                 <h1 className="text-5xl md:text-8xl font-black text-white uppercase leading-none mb-6">
-                                    {isLoggedIn ? 'PELADOS ' : 'ELPAPU '}
+                                    {isLoggedIn ? 'SISAC ' : 'SISAC '}
                                     <span className="text-blue-500">{isLoggedIn ? 'ADMINISTRADOR' : currentYear}</span>
                                 </h1>
                             </motion.div>
